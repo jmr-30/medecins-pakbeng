@@ -1562,6 +1562,15 @@ table.data-table tr:last-child td { border-bottom: none; }
     Autres fonctions
   </div>
 
+  <div class="section-label">Historique</div>
+  <div class="nav-grid">
+    <button class="nav-card" style="background:#e8eaf6;color:#283593;border:1.5px solid #9fa8da;grid-column:1/-1" onclick="goScreen('historique')">
+      <span class="nav-card-icon">📚</span>
+      <span class="nav-card-label">Historique des missions</span>
+      <span class="nav-card-desc">Vision macro et micro de toutes les missions passées · Export détaillé</span>
+    </button>
+  </div>
+
   <div class="section-label">Stock médicaments</div>
   <div class="nav-grid">
     <button class="nav-card vert" onclick="goScreen('reception')">
@@ -2347,6 +2356,55 @@ table.data-table tr:last-child td { border-bottom: none; }
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- HISTORIQUE DES MISSIONS                                        -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-historique">
+  <div class="form-title">
+    <div class="form-title-icon" style="background:#e8eaf6">📚</div>
+    Historique des missions
+  </div>
+
+  <!-- Vue macro : liste des missions -->
+  <div id="historique-macro">
+    <div style="font-size:.8rem;color:var(--brun-doux);margin-bottom:12px;padding:10px 14px;background:var(--sable-fonce);border-radius:8px;line-height:1.6">
+      Cliquez sur une mission pour voir le détail de toutes ses consultations.
+    </div>
+    <div id="historiqueMissionsList"></div>
+  </div>
+
+  <!-- Vue micro : détail d'une mission -->
+  <div id="historique-micro" style="display:none">
+    <button onclick="retourMacro()"
+      style="background:none;border:none;color:var(--brun-doux);font-size:.85rem;font-weight:700;cursor:pointer;margin-bottom:14px;display:flex;align-items:center;gap:6px;font-family:var(--font);padding:0">
+      ← Retour à la liste
+    </button>
+
+    <!-- En-tête mission sélectionnée -->
+    <div id="historiqueDetailHeader" style="background:var(--creme);border-radius:var(--radius);padding:16px;box-shadow:var(--ombre-card);border:1px solid var(--sable-fonce);border-left:4px solid #283593;margin-bottom:14px"></div>
+
+    <!-- KPIs de la mission -->
+    <div id="historiqueDetailKPIs" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px"></div>
+
+    <!-- Top pathologies -->
+    <div class="section-label">Top pathologies</div>
+    <div id="historiqueDetailPathos" style="background:var(--creme);border-radius:var(--radius);padding:14px;box-shadow:var(--ombre-card);border:1px solid var(--sable-fonce);margin-bottom:14px"></div>
+
+    <!-- Répartition démographique -->
+    <div class="section-label">Démographie</div>
+    <div id="historiqueDetailDemo" style="background:var(--creme);border-radius:var(--radius);padding:14px;box-shadow:var(--ombre-card);border:1px solid var(--sable-fonce);margin-bottom:14px"></div>
+
+    <!-- Export -->
+    <button class="btn btn-export" style="width:100%;margin-bottom:14px" id="btnExportMission" onclick="exporterMission()">
+      📥 Exporter le rapport de cette mission (.xlsx)
+    </button>
+
+    <!-- Liste consultations -->
+    <div class="section-label">Toutes les consultations</div>
+    <div id="historiqueDetailConsults"></div>
+  </div>
+</div>
+
 </div><!-- .app -->
 
 <!-- TOAST -->
@@ -2675,6 +2733,7 @@ const SCREEN_LABELS = {
   'stock_config': '📐 Seuils de stock',
   'mission':      '🗺️ Mission',
   'plus':         '⋯ Autres fonctions',
+  'historique':   '📚 Historique des missions',
 };
 
 function goScreen(name) {
@@ -2694,6 +2753,7 @@ function goScreen(name) {
     if (name === 'parametres')   chargerParametres();
     if (name === 'stock_config') chargerStockConfig();
     if (name === 'mission')      chargerEcranMission();
+    if (name === 'historique')   chargerHistorique();
   }
   window.scrollTo(0, 0);
 }
@@ -4981,7 +5041,237 @@ async function importerDonnéesStock(entrees, source) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// GESTION DE LA MISSION
+// HISTORIQUE DES MISSIONS
+// ═══════════════════════════════════════════════════════════════════
+let _histoMissionData = {}; // { missionId: [consultations] }
+let _histoMissionCourante = null;
+
+async function chargerHistorique() {
+  const consults = await dbGetAll('consultations');
+
+  // Grouper par mission
+  _histoMissionData = {};
+  consults.forEach(c => {
+    const m = c.mission || '(sans mission)';
+    if (!_histoMissionData[m]) _histoMissionData[m] = [];
+    _histoMissionData[m].push(c);
+  });
+
+  // Afficher la vue macro
+  retourMacro();
+  const container = document.getElementById('historiqueMissionsList');
+  container.innerHTML = '';
+
+  if (!Object.keys(_histoMissionData).length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div><p>Aucune consultation enregistrée</p></div>';
+    return;
+  }
+
+  // Trier les missions (plus récente en premier)
+  const missions = Object.entries(_histoMissionData)
+    .sort((a, b) => {
+      const lastA = a[1].reduce((max, c) => c.date > max ? c.date : max, '');
+      const lastB = b[1].reduce((max, c) => c.date > max ? c.date : max, '');
+      return lastB.localeCompare(lastA);
+    });
+
+  missions.forEach(([mission, cs]) => {
+    const patients  = new Set(cs.map(c => (c.nom+'_'+c.prenom).toLowerCase())).size;
+    const lieux     = [...new Set(cs.map(c => c.lieu).filter(Boolean))];
+    const dates     = cs.map(c => c.date).filter(Boolean).sort();
+    const dateDebut = dates[0]  ? new Date(dates[0]).toLocaleDateString('fr-FR',  { day:'numeric', month:'short', year:'numeric' }) : '—';
+    const dateFin   = dates[dates.length-1] ? new Date(dates[dates.length-1]).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' }) : '—';
+    const top1      = topPathos(cs, 1)[0] || '—';
+    const hCount    = cs.filter(c => c.genre === 'Masculin').length;
+    const fCount    = cs.filter(c => c.genre === 'Féminin').length;
+
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--creme);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;box-shadow:var(--ombre-card);border:1px solid var(--sable-fonce);border-left:4px solid #283593;cursor:pointer;transition:all var(--transition)';
+    card.onmouseover = () => { card.style.transform = 'translateY(-2px)'; card.style.boxShadow = 'var(--ombre-lg)'; };
+    card.onmouseout  = () => { card.style.transform = ''; card.style.boxShadow = 'var(--ombre-card)'; };
+    card.onclick     = () => afficherDetailMission(mission);
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px">
+        <div style="font-size:1rem;font-weight:800;color:#283593;font-style:italic">🗺️ ${mission}</div>
+        <span class="badge badge-blue">${cs.length} consultation${cs.length > 1 ? 's' : ''}</span>
+      </div>
+      <div style="font-size:.78rem;color:var(--brun-doux);margin-bottom:6px">
+        📅 ${dateDebut} → ${dateFin}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">
+        <span class="badge badge-ok">👥 ${patients} patient${patients > 1 ? 's' : ''}</span>
+        <span class="badge badge-ok">♂ ${hCount} / ♀ ${fCount}</span>
+        <span class="badge badge-ok">📍 ${lieux.length} lieu${lieux.length > 1 ? 'x' : ''}</span>
+      </div>
+      <div style="font-size:.78rem;color:var(--brun-doux)">🏆 ${top1}</div>
+      <div style="text-align:right;font-size:.72rem;color:var(--brun-clair);margin-top:6px">Voir le détail →</div>`;
+    container.appendChild(card);
+  });
+}
+
+function retourMacro() {
+  document.getElementById('historique-macro').style.display = 'block';
+  document.getElementById('historique-micro').style.display = 'none';
+  _histoMissionCourante = null;
+}
+
+function afficherDetailMission(mission) {
+  _histoMissionCourante = mission;
+  const cs = _histoMissionData[mission] || [];
+  document.getElementById('historique-macro').style.display = 'none';
+  document.getElementById('historique-micro').style.display = 'block';
+
+  // En-tête
+  const dates   = cs.map(c => c.date).filter(Boolean).sort();
+  const debut   = dates[0]  ? new Date(dates[0]).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' }) : '—';
+  const fin     = dates[dates.length-1] ? new Date(dates[dates.length-1]).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' }) : '—';
+  const medecins = [...new Set([...cs.map(c=>c.medecin1), ...cs.map(c=>c.medecin2)].filter(Boolean))].join(', ') || '—';
+  const lieux   = [...new Set(cs.map(c => c.lieu).filter(Boolean))].join(', ') || '—';
+  document.getElementById('historiqueDetailHeader').innerHTML = `
+    <div style="font-size:1.05rem;font-weight:800;color:#283593;font-style:italic;margin-bottom:8px">🗺️ ${mission}</div>
+    <div style="font-size:.82rem;color:var(--brun-doux);line-height:1.8">
+      📅 Du ${debut} au ${fin}<br>
+      👨‍⚕️ ${medecins}<br>
+      📍 ${lieux}
+    </div>`;
+
+  // KPIs
+  const patients = new Set(cs.map(c => (c.nom+'_'+c.prenom).toLowerCase())).size;
+  const h = cs.filter(c => c.genre === 'Masculin').length;
+  const f = cs.filter(c => c.genre === 'Féminin').length;
+  document.getElementById('historiqueDetailKPIs').innerHTML = `
+    <div class="kpi-card"><div class="kpi-card-value" style="color:#283593">${cs.length}</div><div class="kpi-card-label">Consultations</div></div>
+    <div class="kpi-card"><div class="kpi-card-value" style="color:#283593">${patients}</div><div class="kpi-card-label">Patients</div></div>
+    <div class="kpi-card"><div class="kpi-card-value" style="font-size:1rem;color:#283593">${h}H / ${f}F</div><div class="kpi-card-label">Genre</div></div>`;
+
+  // Top 5 pathologies
+  const pathoCounts = {};
+  cs.forEach(c => (c.pathologies||[]).forEach(p => {
+    if (p.pathologie) pathoCounts[p.pathologie] = (pathoCounts[p.pathologie]||0) + 1;
+  }));
+  const top5 = Object.entries(pathoCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxP  = top5[0]?.[1] || 1;
+  const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+  document.getElementById('historiqueDetailPathos').innerHTML = top5.length
+    ? top5.map(([p,n],i) => `
+        <div style="margin-bottom:${i<4?'8px':'0'}">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:.82rem;font-weight:700;color:var(--brun)">${medals[i]} ${p}</span>
+            <span style="font-size:.8rem;font-weight:800;color:#283593">${n}</span>
+          </div>
+          <div style="height:6px;background:var(--sable-fonce);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${Math.round(n/maxP*100)}%;background:#283593;border-radius:3px"></div>
+          </div>
+        </div>`).join('')
+    : '<div style="color:var(--brun-clair);font-style:italic;font-size:.82rem">Aucune pathologie enregistrée</div>';
+
+  // Démographie par tranche d'âge
+  const tranches = ['0-5 ans','6-15 ans','16-60 ans','+60 ans'];
+  document.getElementById('historiqueDetailDemo').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      ${tranches.map(t => {
+        const n = cs.filter(c => c.tranche === t).length;
+        return `<div style="text-align:center">
+          <div style="font-size:1.1rem;font-weight:800;color:#283593">${n}</div>
+          <div style="font-size:.65rem;font-weight:700;color:var(--brun-clair);text-transform:uppercase;letter-spacing:.4px">${t}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  // Liste des consultations
+  const listEl = document.getElementById('historiqueDetailConsults');
+  listEl.innerHTML = '';
+  const sorted = [...cs].sort((a,b) => b.date.localeCompare(a.date));
+  sorted.forEach(c => {
+    const dateStr  = c.date ? new Date(c.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' }) : '—';
+    const pathos   = (c.pathologies||[]).filter(p=>p.pathologie).map(p=>`<span class="badge badge-danger" style="font-size:.68rem">${p.pathologie}</span>`).join('');
+    const meds     = (c.prescription||[]).filter(p=>p.molecule).map(p=>`${p.molecule}${p.quantite?' ×'+p.quantite:''}`).join(' · ');
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.style.cursor = 'default';
+    card.innerHTML = `
+      <div class="result-card-top">
+        <span class="result-card-name">${c.nom || '—'} ${c.prenom || ''}</span>
+        <span class="result-card-date">${dateStr}</span>
+      </div>
+      <div style="font-size:.75rem;color:var(--brun-doux);margin-bottom:5px">
+        ${c.age ? c.age + ' ans · ' : ''}${c.genre || ''} ${c.lieu ? '· 📍 ' + c.lieu : ''}
+      </div>
+      ${pathos ? `<div class="result-card-tags" style="margin-bottom:4px">${pathos}</div>` : ''}
+      ${meds ? `<div style="font-size:.72rem;color:var(--brun-doux)">💊 ${meds}</div>` : ''}
+      ${c.notes ? `<div style="font-size:.72rem;color:var(--brun-doux);font-style:italic;margin-top:3px">📝 ${c.notes}</div>` : ''}`;
+    listEl.appendChild(card);
+  });
+}
+
+async function exporterMission() {
+  if (!_histoMissionCourante) return;
+  const cs = _histoMissionData[_histoMissionCourante] || [];
+  if (!cs.length) { toast('Aucune consultation à exporter', 'error'); return; }
+
+  toast('⏳ Génération du rapport…', 'success');
+  if (!window.XLSX) {
+    await new Promise((res,rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  // Onglet Consultations détaillées
+  const rowsC = cs.map(c => ({
+    'Mission':      c.mission || '',
+    'Date':         c.date,
+    'Lieu':         c.lieu || '',
+    'Médecin 1':    c.medecin1 || '',
+    'Médecin 2':    c.medecin2 || '',
+    'Nom':          c.nom || '',
+    'Prénom':       c.prenom || '',
+    'Âge':          c.age || '',
+    'Tranche':      c.tranche || '',
+    'Genre':        c.genre || '',
+    'Pathologie 1': c.pathologies?.[0]?.pathologie || '',
+    'Spécialité 1': c.pathologies?.[0]?.specialite || '',
+    'Pathologie 2': c.pathologies?.[1]?.pathologie || '',
+    'Pathologie 3': c.pathologies?.[2]?.pathologie || '',
+    'Pathologie 4': c.pathologies?.[3]?.pathologie || '',
+    'Molécule 1':   c.prescription?.[0]?.molecule || '',
+    'Qté 1':        c.prescription?.[0]?.quantite || '',
+    'Molécule 2':   c.prescription?.[1]?.molecule || '',
+    'Qté 2':        c.prescription?.[1]?.quantite || '',
+    'Molécule 3':   c.prescription?.[2]?.molecule || '',
+    'Qté 3':        c.prescription?.[2]?.quantite || '',
+    'Notes':        c.notes || '',
+    'ID Patient':   c.patientId || '',
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsC), 'Consultations');
+
+  // Onglet Résumé statistique
+  const pathoCounts = {};
+  cs.forEach(c => (c.pathologies||[]).forEach(p => {
+    if (p.pathologie) pathoCounts[p.pathologie] = (pathoCounts[p.pathologie]||0)+1;
+  }));
+  const rowsStats = Object.entries(pathoCounts)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([p,n]) => ({ 'Pathologie': p, 'Nb consultations': n }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsStats), 'Pathologies');
+
+  // Onglet Résumé par lieu
+  const lieuxData = {};
+  cs.forEach(c => {
+    const l = c.lieu || '(non renseigné)';
+    lieuxData[l] = (lieuxData[l]||0)+1;
+  });
+  const rowsLieux = Object.entries(lieuxData).sort((a,b)=>b[1]-a[1]).map(([l,n])=>({'Lieu':l,'Nb consultations':n}));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsLieux), 'Par lieu');
+
+  const mission = _histoMissionCourante.replace(/[^a-zA-Z0-9]/g, '_');
+  XLSX.writeFile(wb, `Rapport_${mission}.xlsx`);
+  toast('✅ Rapport exporté', 'success');
+}
 // ═══════════════════════════════════════════════════════════════════
 const MISSION_KEY = 'mission_active';
 
