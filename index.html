@@ -4287,7 +4287,12 @@ async function importerJSON(input) {
     }
 
     // Restaurer les préférences localStorage
-    if (data.mission)    localStorage.setItem('mission_active', data.mission);
+    // Restaurer la mission — data.mission peut être une string JSON ou un objet
+    if (data.mission) {
+      const missionStr = typeof data.mission === 'string' ? data.mission : JSON.stringify(data.mission);
+      localStorage.setItem('mission_active', missionStr);
+      majBadgeMission(JSON.parse(missionStr));
+    }
     if (data.dernierLieu) localStorage.setItem('dernier_lieu', data.dernierLieu);
     if (data.dernierMed1) localStorage.setItem('dernier_med1', data.dernierMed1);
     if (data.dernierMed2) localStorage.setItem('dernier_med2', data.dernierMed2);
@@ -4381,7 +4386,7 @@ async function genererBlobJSON() {
     version:      '1.0',
     exportedAt:   new Date().toISOString(),
     appName:      'MedecinsPakbeng',
-    mission:      localStorage.getItem('mission_active') || null,
+    mission:      (() => { try { const r = localStorage.getItem('mission_active'); return r ? JSON.parse(r) : null; } catch(e) { return null; } })(),
     dernierLieu:  localStorage.getItem('dernier_lieu')   || null,
     dernierMed1:  localStorage.getItem('dernier_med1')   || null,
     dernierMed2:  localStorage.getItem('dernier_med2')   || null,
