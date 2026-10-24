@@ -1291,6 +1291,18 @@ button[onclick^="supprimerItem"], .btn-sortir-lot, #missionBadge button {
 /* ── Étapes numérotées (aide sauvegarde) ── */
 .etape { display: flex; gap: 10px; align-items: flex-start; }
 .etape-num { background: #1a73e8; color: #fff; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; }
+/* Suggestions de patients déjà vus (saisie du nom) */
+.sugg-patients { margin: -4px 0 12px; border: 1.5px solid var(--bleu); border-radius: 10px; background: #fff; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+.sugg-titre { padding: 7px 14px; font-size: .72rem; font-weight: 800; color: var(--bleu); background: var(--bleu-clair); }
+.sugg-ligne { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 54px; padding: 8px 14px; border: none; border-top: 1px solid var(--sable-fonce);
+  background: #fff; text-align: left; font-family: var(--font); color: var(--brun); cursor: pointer; }
+.sugg-ligne:active, .sugg-ligne:hover { background: var(--bleu-clair); }
+.sugg-nom { font-weight: 800; font-size: .95rem; }
+.sugg-detail { font-size: .74rem; color: var(--brun-clair); margin-top: 2px; }
+.sugg-nouveau { color: var(--brun-clair); font-size: .8rem; font-weight: 700; justify-content: center; min-height: 46px; }
+.patient-choisi { margin: -4px 0 12px; padding: 8px 12px; border-radius: 8px; background: #e8f5e9; color: #1b5e20; font-size: .8rem; font-weight: 700;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.patient-choisi button { margin-left: auto; min-height: 40px; padding: 6px 12px; border-radius: 8px; border: 1.5px solid #a5d6a7; background: #fff; color: #1b5e20; font-weight: 700; font-family: var(--font); cursor: pointer; }
 </style>
 </head>
 <body>
@@ -1712,13 +1724,15 @@ button[onclick^="supprimerItem"], .btn-sortir-lot, #missionBadge button {
       <div class="field-row">
         <div class="field">
           <div class="field-label">Nom <span class="req">*</span></div>
-          <input type="text" id="c_nom" placeholder="Nom de famille" oninput="rechercherHistoriquePatient();majPatientIdBadge();autosaverConsultation()">
+          <input type="text" id="c_nom" placeholder="Nom de famille" autocomplete="off" onfocus="chargerIndexPatients()" onblur="fermerSuggestionsBientot()" onkeydown="if(event.key==='Escape')fermerSuggestions()" oninput="suggererPatients();rechercherHistoriquePatient();majPatientIdBadge();autosaverConsultation()">
         </div>
         <div class="field">
           <div class="field-label">Prénom</div>
-          <input type="text" id="c_prenom" placeholder="Prénom" oninput="rechercherHistoriquePatient();majPatientIdBadge();autosaverConsultation()">
+          <input type="text" id="c_prenom" placeholder="Prénom" autocomplete="off" onfocus="chargerIndexPatients()" onblur="fermerSuggestionsBientot()" onkeydown="if(event.key==='Escape')fermerSuggestions()" oninput="suggererPatients();rechercherHistoriquePatient();majPatientIdBadge();autosaverConsultation()">
         </div>
       </div>
+      <div id="suggPatients" class="sugg-patients" style="display:none" onmousedown="event.preventDefault()"></div>
+      <div id="patientChoisiInfo" class="patient-choisi" style="display:none"></div>
       <div class="field-row">
         <div class="field">
           <div class="field-label">Âge (années)</div>
@@ -3625,6 +3639,108 @@ async function determinerIdPatient(exclureId) {
   return connu ? { id: connu.patientId, connu: true } : { id: genererIdPatient(nom, prenom, age, date), connu: false };
 }
 
+// ── Suggestions de patients déjà vus pendant la saisie du nom ──
+// Clé « sonore » : rapproche les transcriptions courantes des noms lao (Phommachanh / Pommachan, Xay / Say / Chay, Souk / Suk…)
+function cleSonore(s) {
+  return normNomPatient(s)
+    .replace(/PH/g, 'P').replace(/KH/g, 'K').replace(/TH/g, 'T').replace(/CH/g, 'S').replace(/NH/g, 'N')
+    .replace(/OU/g, 'U').replace(/OO/g, 'U')
+    .replace(/H(?=[^AEIOUY]|$)/g, '')
+    .replace(/[XJ]/g, 'S').replace(/W/g, 'V').replace(/Y/g, 'I').replace(/R/g, 'L')
+    .replace(/(.)\1+/g, '$1');
+}
+let _indexPatients = [], _suggListe = [], _suggChoisi = null, _suggTimer = null, _suggFermeture = null;
+async function chargerIndexPatients() {
+  const groupes = {};
+  for (const c of await dbGetAll('consultations')) {
+    if (!c.nom && !c.prenom) continue;
+    const k = c.patientId || normNomPatient(c.nom) + '|' + normNomPatient(c.prenom);
+    const g = groupes[k] || (groupes[k] = { n: 0, c: null });
+    g.n++;
+    if (!g.c || (c.date || '') > (g.c.date || '') || ((c.date || '') === (g.c.date || '') && (c.createdAt || '') > (g.c.createdAt || ''))) g.c = c;
+  }
+  _indexPatients = Object.values(groupes).map(g => ({ ...g,
+    nNom: normNomPatient(g.c.nom), nPre: normNomPatient(g.c.prenom), sNom: cleSonore(g.c.nom), sPre: cleSonore(g.c.prenom) }));
+}
+// 3 : début identique · 2 : début « sonore » identique · 1 : correspond à l'autre champ (nom et prénom inversés) · 0 : non
+function scoreChamp(q, n, s, nAutre, sAutre) {
+  const qn = normNomPatient(q), qs = cleSonore(q);
+  if (!qn) return -1;
+  if (n.startsWith(qn)) return 3;
+  if (qs && s.startsWith(qs)) return 2;
+  if (nAutre.startsWith(qn) || (qs && sAutre.startsWith(qs))) return 1;
+  return 0;
+}
+function cleSaisieIdentite() { return normNomPatient(document.getElementById('c_nom').value) + '|' + normNomPatient(document.getElementById('c_prenom').value); }
+function suggererPatients() {
+  clearTimeout(_suggTimer);
+  _suggTimer = setTimeout(async () => {
+    if (_suggChoisi && _suggChoisi.cle !== cleSaisieIdentite()) { _suggChoisi = null; majPatientChoisi(); }
+    const qNom = document.getElementById('c_nom').value.trim(), qPre = document.getElementById('c_prenom').value.trim();
+    if (_suggChoisi || (normNomPatient(qNom).length < 2 && normNomPatient(qPre).length < 2)) { fermerSuggestions(); return; }
+    if (!_indexPatients.length) await chargerIndexPatients();
+    const auj = dateAujourdhui();
+    _suggListe = _indexPatients.map(p => {
+      const a = scoreChamp(qNom, p.nNom, p.sNom, p.nPre, p.sPre), b = scoreChamp(qPre, p.nPre, p.sPre, p.nNom, p.sNom);
+      return { p, score: (a === 0 || b === 0) ? 0 : Math.max(a, 0) + Math.max(b, 0) };
+    }).filter(x => x.score > 0)
+      .sort((x, y) => y.score - x.score || String(y.p.c.date).localeCompare(String(x.p.c.date)))
+      .slice(0, 6).map(x => x.p);
+    const zone = document.getElementById('suggPatients');
+    if (!_suggListe.length) { fermerSuggestions(); return; }
+    zone.innerHTML = `<div class="sugg-titre">👥 Patients déjà vus — touchez pour reprendre</div>` +
+      _suggListe.map((p, i) => {
+        const c = p.c, age = ageActuel(c);
+        const det = [c.genre === 'Féminin' ? '♀ F' : c.genre === 'Masculin' ? '♂ M' : '', age !== '' ? age + ' ans' : '', c.habitation || '',
+          `${p.n} consultation${p.n > 1 ? 's' : ''}, dernière le ${c.date ? jourLocal(c.date).toLocaleDateString('fr-FR') : '?'}`].filter(Boolean).join(' · ');
+        return `<button type="button" class="sugg-ligne" onclick="choisirPatientSuggere(${i})"><span style="font-size:1.3rem">👤</span>
+          <span><div class="sugg-nom">${esc((c.nom || '').toUpperCase())} ${esc(c.prenom || '')}</div><div class="sugg-detail">${esc(det)}</div></span></button>`;
+      }).join('') +
+      `<button type="button" class="sugg-ligne sugg-nouveau" onclick="fermerSuggestions()">✚ Aucun de ces patients — continuer la saisie</button>`;
+    zone.style.display = 'block';
+  }, 150);
+}
+function fermerSuggestions() { clearTimeout(_suggFermeture); const z = document.getElementById('suggPatients'); if (z) { z.style.display = 'none'; z.innerHTML = ''; } }
+function fermerSuggestionsBientot() {
+  clearTimeout(_suggFermeture);
+  _suggFermeture = setTimeout(() => { const a = document.activeElement?.id; if (a !== 'c_nom' && a !== 'c_prenom') fermerSuggestions(); }, 250);
+}
+function choisirPatientSuggere(i) {
+  const p = _suggListe[i]; if (!p) return;
+  const c = p.c, edition = !!window._editionConsultation;
+  document.getElementById('c_nom').value = c.nom || '';
+  document.getElementById('c_prenom').value = c.prenom || '';
+  if (c.genre) document.getElementById('c_genre').value = c.genre;
+  if (!edition) document.getElementById('c_age').value = ageActuel(c);
+  let village = false;
+  if (!edition && c.habitation && COMBOS.c_habitation && !COMBOS.c_habitation.getValue()) { COMBOS.c_habitation.setValue(c.habitation); village = true; }
+  _suggChoisi = { cle: cleSaisieIdentite(), p, village };
+  fermerSuggestions(); document.activeElement?.blur?.();
+  majPatientChoisi();
+  majTranche(); majGrossesseUI();
+  try { rechercherHistoriquePatient(); } catch(e) {}
+  majPatientIdBadge(); autosaverConsultation();
+}
+function majPatientChoisi() {
+  const el = document.getElementById('patientChoisiInfo'); if (!el) return;
+  if (!_suggChoisi) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const { p } = _suggChoisi;
+  el.innerHTML = `✅ Patient déjà vu — ${p.n} consultation${p.n > 1 ? 's' : ''}, dernière le ${p.c.date ? jourLocal(p.c.date).toLocaleDateString('fr-FR') : '?'}${p.c.habitation ? ' · ' + esc(p.c.habitation) : ''}
+    <button type="button" onclick="annulerPatientChoisi()">✕ Ce n'est pas ce patient</button>`;
+  el.style.display = 'flex';
+}
+function annulerPatientChoisi() {
+  const village = _suggChoisi?.village;
+  _suggChoisi = null; majPatientChoisi();
+  ['c_nom', 'c_prenom', 'c_genre'].forEach(id => { document.getElementById(id).value = ''; });
+  if (!window._editionConsultation) document.getElementById('c_age').value = '';
+  if (village) COMBOS.c_habitation?.setValue('');
+  majTranche(); majGrossesseUI();
+  try { rechercherHistoriquePatient(); } catch(e) {}
+  majPatientIdBadge(); reprendreFichePatient(); autosaverConsultation();
+  document.getElementById('c_nom').focus();
+}
+
 let _idTimer = null;
 function majPatientIdBadge() {
   clearTimeout(_idTimer);
@@ -3912,6 +4028,7 @@ async function enregistrerConsultation() {
 
 function effacerConsultation() {
   clearTimeout(_autosaveTimer);
+  _suggChoisi = null; _indexPatients = []; try { majPatientChoisi(); fermerSuggestions(); } catch(e) {}
   localStorage.removeItem(AUTOSAVE_KEY);
   ['c_nom','c_prenom','c_age','c_genre'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
@@ -6751,10 +6868,11 @@ async function lancerRecherche() {
   const du     = document.getElementById('rch_du').value;
   const au     = document.getElementById('rch_au').value;
 
+  const qsNom = cleSonore(nom).length >= 2 ? cleSonore(nom) : '', qsPre = cleSonore(prenom).length >= 2 ? cleSonore(prenom) : '';
   const consults = await dbGetAll('consultations');
   const results  = consults.filter(c => {
-    if (nom    && !c.nom?.toLowerCase().includes(nom))       return false;
-    if (prenom && !c.prenom?.toLowerCase().includes(prenom)) return false;
+    if (nom    && !c.nom?.toLowerCase().includes(nom) && !(qsNom && cleSonore(c.nom).includes(qsNom)))          return false;
+    if (prenom && !c.prenom?.toLowerCase().includes(prenom) && !(qsPre && cleSonore(c.prenom).includes(qsPre))) return false;
     if (genre  && c.genre !== genre)                         return false;
     if (lieu   && c.lieu  !== lieu)                          return false;
     if (habitation && (c.habitation || '').toLowerCase() !== habitation) return false;
