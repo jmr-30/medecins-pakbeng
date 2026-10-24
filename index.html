@@ -150,7 +150,7 @@
 #dlg .dlg-msg { padding: 12px 20px 4px; font-size: .95rem; line-height: 1.55; color: var(--brun); white-space: pre-line; }
 #dlg .dlg-champs { padding: 6px 20px 0; display: flex; flex-direction: column; gap: 10px; }
 #dlg .dlg-champs label { font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--brun-doux); display: flex; flex-direction: column; gap: 5px; }
-#dlg .dlg-champs input, #dlg .dlg-champs textarea { width: 100%; min-height: 48px; border: 1.5px solid var(--sable-fonce); border-radius: 10px; padding: 10px 12px; font-size: 1rem; font-family: var(--font); color: var(--brun); background: #fff; text-transform: none; letter-spacing: 0; font-weight: 500; }
+#dlg .dlg-champs input, #dlg .dlg-champs textarea, #dlg .dlg-champs select { width: 100%; min-height: 48px; border: 1.5px solid var(--sable-fonce); border-radius: 10px; padding: 10px 12px; font-size: 1rem; font-family: var(--font); color: var(--brun); background: #fff; text-transform: none; letter-spacing: 0; font-weight: 500; }
 #dlg .dlg-boutons { display: flex; gap: 10px; padding: 18px 20px 20px; flex-wrap: wrap; }
 #dlg .dlg-boutons button { flex: 1 1 140px; min-height: 52px; border-radius: 12px; font-size: 1rem; font-weight: 800; font-family: var(--font); cursor: pointer; border: none; padding: 10px 14px; }
 #dlg .dlg-annuler { background: var(--sable-fonce); color: var(--brun); }
@@ -1586,8 +1586,13 @@ button[onclick^="supprimerItem"], .btn-sortir-lot, #missionBadge button {
     </button>
     <input type="file" id="importJSONFile" accept=".json" style="display:none" onchange="importerJSON(this)">
   </div>
+  <button class="btn" style="width:100%;margin-top:8px;background:var(--vert);color:#fff;font-weight:800" onclick="document.getElementById('repriseJSONFile').click()">
+    🔁 Reprendre les données d'une sauvegarde
+  </button>
+  <input type="file" id="repriseJSONFile" accept=".json" style="display:none" onchange="reprendreSauvegarde(this)">
   <div style="margin-top:8px;font-size:.72rem;color:var(--brun-clair);padding:8px 12px;background:var(--sable-fonce);border-radius:7px;line-height:1.5">
-    💡 <strong>Transfert vers un autre appareil</strong> : Sauvegarder base (.json) sur l'ancien → Restaurer .json sur le nouveau.
+    💡 <strong>Passage de relais</strong> (tablette ⇄ pharmacienne) : « Reprendre les données » <strong>remplace</strong> les données de cet appareil par celles de la sauvegarde, corrections et annulations comprises. Les saisies faites ici et absentes de la sauvegarde sont conservées.<br>
+    <strong>Restaurer .json</strong> ne fait qu'<strong>ajouter</strong> ce qui manque : à réserver à un appareil vide.
   </div>
   <div style="margin-top:10px;">
     <button class="btn btn-secondary" style="width:100%;border:1.5px dashed var(--brun-clair);color:var(--brun-doux)"
@@ -3375,7 +3380,8 @@ function _dlgSuivant() {
   const zc = document.getElementById('dlgChamps'); zc.innerHTML = '';
   (o.champs || []).forEach((c, i) => {
     const l = document.createElement('label'); l.textContent = c.label || '';
-    const inp = document.createElement(c.multiligne ? 'textarea' : 'input');
+    const inp = document.createElement(c.options ? 'select' : c.multiligne ? 'textarea' : 'input');
+    if (c.options) c.options.forEach(([v, lib]) => { const o = document.createElement('option'); o.value = v; o.textContent = lib; inp.appendChild(o); });
     inp.id = 'dlgChamp' + i; inp.value = c.valeur ?? ''; if (c.placeholder) inp.placeholder = c.placeholder;
     if (c.multiligne) inp.rows = 3;
     l.appendChild(inp); zc.appendChild(l);
@@ -4826,6 +4832,127 @@ async function afficherFichePatient() {
     <div style="font-size:.7rem;color:var(--brun-clair);text-align:right">Fiche éditée le ${new Date().toLocaleDateString('fr-FR')} — Dispensaire de Pakbeng</div>`;
 }
 function fmtNum(v) { return String(v).replace('.', ','); }
+
+// ═══════════════════════════════════════════════════════════════════
+// RÔLE DE L'APPAREIL ET REPRISE DES DONNÉES D'UNE SAUVEGARDE (passage de relais)
+// ═══════════════════════════════════════════════════════════════════
+const ROLES_APPAREIL = [['tablette', 'Tablette du dispensaire'], ['pharmacie', 'Appareil de la pharmacienne'], ['autre', 'Autre appareil']];
+function roleAppareil() { try { return localStorage.getItem('role_appareil') || ''; } catch(e) { return ''; } }
+function libelleRole(r) { return (ROLES_APPAREIL.find(x => x[0] === r) || [])[1] || 'Appareil non précisé'; }
+function prefixeFichier() { return 'Pakbeng_' + ({ tablette: 'tablette', pharmacie: 'pharmacie' }[roleAppareil()] || 'appareil'); }
+function horodatageFichier() { const n = new Date(); return `${dateLocaleISO(n)}_${String(n.getHours()).padStart(2, '0')}h${String(n.getMinutes()).padStart(2, '0')}`; }
+
+async function choisirRoleAppareil(premiereFois) {
+  const r = await demanderChamps(premiereFois ? 'Quel est cet appareil ?' : 'Changer le rôle de cet appareil',
+    [{ label: 'Cet appareil est', valeur: roleAppareil() || 'tablette', options: ROLES_APPAREIL }],
+    { ok: 'Enregistrer', annuler: premiereFois ? 'Plus tard' : 'Retour',
+      message: 'Ce choix sert à nommer les sauvegardes (« Pakbeng_tablette_… », « Pakbeng_pharmacie_… ») et à indiquer leur provenance. Il ne concerne que cet appareil et peut être changé dans les Paramètres.' });
+  if (r === null) return;
+  localStorage.setItem('role_appareil', r[0]);
+  majEtatProtection();
+  toast('✅ ' + libelleRole(r[0]), 'success');
+}
+function demanderRoleSiBesoin() { if (!roleAppareil()) choisirRoleAppareil(true); }
+
+// Date de la dernière modification connue d'un enregistrement
+const dateModif = r => r ? (r.modifieLe || r.createdAt || '') : '';
+const STORES_DONNEES = [['consultations', 'consultation'], ['receptions', 'reception'], ['sorties', 'sortie']];
+
+function viderStore(store) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite'); tx.objectStore(store).clear();
+    tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
+  });
+}
+
+async function reprendreSauvegarde(input) {
+  if (!input.files?.length) return;
+  const file = input.files[0]; input.value = '';
+  let data;
+  try { data = JSON.parse(await file.text()); } catch(e) { toast('❌ Fichier illisible', 'error'); return; }
+  if (data.appName !== 'MedecinsPakbeng' || !data.version) { toast('❌ Fichier JSON invalide ou incompatible', 'error'); return; }
+  const f = iso => iso ? new Date(iso).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '?';
+
+  // Saisies annulées volontairement (selon le journal de la sauvegarde) : à ne pas réintégrer
+  const journalSauv = (data.parametres || []).find(p => p.cle === 'journal_corrections')?.valeur || [];
+  const annuleesSauv = new Set(journalSauv.filter(j => j.action === 'annulation' && j.avant?.createdAt).map(j => j.type + '|' + j.avant.createdAt));
+  const dateRelais = data.base?.exportedAt || '';   // quand cet appareil a transmis ses données (si connu)
+
+  // Saisies de cet appareil absentes de la sauvegarde (à conserver) et modifications plus récentes (à garder)
+  const aGarder = [], modifsGardees = [];
+  for (const [store, type] of STORES_DONNEES) {
+    const sauv = new Map((data[store] || []).map(r => [r.createdAt, r]));
+    for (const r of await dbGetAll(store)) {
+      const s = sauv.get(r.createdAt);
+      if (!s) { if (!annuleesSauv.has(type + '|' + r.createdAt) && !String(r.fournisseur || '').startsWith('Stock initial')) aGarder.push({ store, type, r }); }
+      else if (r.modifieLe && r.modifieLe > dateModif(s) && (!dateRelais || r.modifieLe > dateRelais)) modifsGardees.push({ store, type, r });
+    }
+  }
+  const resume = x => x.type === 'consultation' ? `• Consultation ${x.r.nom || ''} ${x.r.prenom || ''} du ${x.r.date ? jourLocal(x.r.date).toLocaleDateString('fr-FR') : '?'}`
+    : `• ${x.type === 'reception' ? 'Réception' : 'Sortie'} ${x.r.molecule || ''} × ${x.r.quantite || 0}`;
+  const liste = l => l.slice(0, 6).map(resume).join('\n') + (l.length > 6 ? `\n• … et ${l.length - 6} autre(s)` : '');
+
+  let msg = `Sauvegarde de : ${data.provenance ? data.provenance.libelle : 'appareil non précisé'} — ${f(data.exportedAt)}`;
+  if (data.base?.exportedAt) msg += `\nConstruite à partir de : ${libelleRole(data.base.role)} — ${f(data.base.exportedAt)}`;
+  msg += `\n\nContenu : ${(data.consultations || []).length} consultation(s), ${(data.receptions || []).length} réception(s), ${(data.sorties || []).length} sortie(s).`;
+  msg += `\n\nLes données de cet appareil seront REMPLACÉES par celles de la sauvegarde (corrections et annulations comprises). Les réglages de l'appareil sont conservés.`;
+  if (aGarder.length) msg += `\n\n✅ Saisies faites ici et absentes de la sauvegarde, qui seront CONSERVÉES (${aGarder.length}) :\n${liste(aGarder)}`;
+  if (modifsGardees.length) msg += `\n\n✅ Corrections faites ici plus récentes que la sauvegarde, qui seront CONSERVÉES (${modifsGardees.length}) :\n${liste(modifsGardees)}`;
+  if (data.provenance?.role && data.provenance.role === roleAppareil()) msg += `\n\n⚠ Cette sauvegarde vient d'un appareil de même rôle que celui-ci (${libelleRole(roleAppareil())}). Vérifiez qu'il s'agit bien du bon fichier.`;
+  if (!(await confirmer(msg, { titre: 'Reprendre les données de cette sauvegarde ?', ok: 'Remplacer', danger: true }))) return;
+
+  // Copie de sécurité des données actuelles (obligatoire)
+  try {
+    const blob = await genererBlobJSON(); const nom = `${prefixeFichier()}_avant_reprise_${horodatageFichier()}.json`;
+    telechargerBlob(blob, nom);
+    if (_driveDirectoryHandle && _dossierAutorise) { try { await ecrireDansDossierDrive(nom, blob); } catch(e) {} }
+  } catch(e) { toast('❌ Copie de sécurité impossible : rien n\'a été modifié', 'error'); return; }
+
+  toast('⏳ Reprise des données…', 'success');
+  clearTimeout(_sauvegardeAutoTimer); clearTimeout(_autosaveTimer);
+  try {
+    // 1. Remplacement des données (les identifiants de la sauvegarde sont conservés)
+    for (const [store] of STORES_DONNEES) {
+      await viderStore(store);
+      for (const r of (data[store] || [])) await dbPut(store, r);
+    }
+    await viderStore('stock_config');
+    for (const sc of (data.stockConfig || [])) await dbPut('stock_config', sc);
+    // Paramètres : ceux de la sauvegarde ; le journal et les inventaires sont fusionnés ; le dossier de sauvegarde de l'appareil est gardé
+    const paramsLocaux = await dbGetAll('parametres');
+    const local = cle => paramsLocaux.find(p => p.cle === cle)?.valeur;
+    for (const p of paramsLocaux) if (p.cle !== CLE_DOSSIER) await dbDelete('parametres', p.cle);
+    for (const p of (data.parametres || [])) {
+      if (p.cle === CLE_DOSSIER) continue;
+      if (p.cle === 'journal_corrections' || p.cle === 'inventaires') {
+        const l = Array.isArray(local(p.cle)) ? local(p.cle) : [];
+        const k = x => (x.le || '') + '|' + (x.resume || x.type || '');
+        const vus = new Set(p.valeur.map(k));
+        await dbPut('parametres', { cle: p.cle, valeur: [...p.valeur, ...l.filter(x => !vus.has(k(x)))].sort((a, b) => String(b.le).localeCompare(String(a.le))).slice(0, p.cle === 'journal_corrections' ? 500 : 50) });
+      } else await dbPut('parametres', p);
+    }
+    // 2. Réintégration des saisies et corrections propres à cet appareil
+    for (const x of aGarder) { const c = { ...x.r }; delete c.id; await dbAdd(x.store, c); }
+    for (const x of modifsGardees) {
+      const cible = (await dbGetAll(x.store)).find(r => r.createdAt === x.r.createdAt);
+      await dbPut(x.store, { ...x.r, id: cible ? cible.id : x.r.id });
+    }
+    await journaliser('reprise', 'sauvegarde', null, null,
+      `Reprise de « ${file.name} » (${data.provenance ? data.provenance.libelle : '?'}, ${f(data.exportedAt)}) — ${aGarder.length} saisie(s) et ${modifsGardees.length} correction(s) locales conservées`);
+    // 3. Mission et repères de la reprise
+    if (data.mission) localStorage.setItem('mission_active', JSON.stringify(typeof data.mission === 'string' ? JSON.parse(data.mission) : data.mission));
+    localStorage.setItem('base_reprise', JSON.stringify({ role: data.provenance?.role || '', exportedAt: data.exportedAt }));
+    localStorage.setItem('stock_initial_charge', localStorage.getItem('stock_initial_charge') || new Date().toISOString());
+    localStorage.setItem('nbConsultationsConnu', String((await dbGetAll('consultations')).length));
+    localStorage.setItem('message_apres_reprise', `✅ Données reprises — ${aGarder.length + modifsGardees.length} saisie(s) locale(s) conservée(s)`);
+  } catch(e) {
+    console.error(e);
+    await confirmer('La reprise a échoué en cours de route. Restaurez la copie de sécurité qui vient d\'être téléchargée (« avant_reprise ») avec « Reprendre les données d\'une sauvegarde ».',
+      { titre: '❌ Erreur pendant la reprise', ok: 'Compris', annuler: false });
+    return;
+  }
+  location.reload();
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // CORRECTION ET ANNULATION DES SAISIES
@@ -7354,7 +7481,7 @@ async function sauvegardeAuto() {
   clearTimeout(_sauvegardeAutoTimer);
   if (!_driveDirectoryHandle || !_dossierAutorise) return false;
   try {
-    await ecrireDansDossierDrive(`MedecinsPakbeng_auto_${dateAujourdhui()}.json`, await genererBlobJSON());
+    await ecrireDansDossierDrive(`${prefixeFichier()}_auto_${dateAujourdhui()}.json`, await genererBlobJSON());
     localStorage.setItem('derniereSauvegardeAuto', new Date().toISOString());
     marquerExport();
     majEtatProtection();
@@ -7410,7 +7537,7 @@ async function reinitialiserApplication() {
   // 1. Sauvegarde obligatoire de ce qui va être effacé
   try {
     const blob = await genererBlobJSON();
-    const nom = `MedecinsPakbeng_avant_reinitialisation_${dateAujourdhui()}_${String(new Date().getHours()).padStart(2, '0')}h${String(new Date().getMinutes()).padStart(2, '0')}.json`;
+    const nom = `${prefixeFichier()}_avant_reinitialisation_${horodatageFichier()}.json`;
     telechargerBlob(blob, nom);
     if (_driveDirectoryHandle && _dossierAutorise) { try { await ecrireDansDossierDrive(nom, blob); } catch(e) {} }
   } catch(e) {
@@ -7497,7 +7624,9 @@ function majEtatProtection() {
   if (driveSupported() && btnPartage && !lAuto.includes('partagerSauvegarde')) lAuto += btnPartage;
   const ad = document.getElementById('aideDossier'); if (ad) ad.style.display = driveSupported() ? '' : 'none';
   const ap = document.getElementById('aidePartage'); if (ap) ap.style.display = partageFichiersPossible() ? '' : 'none';
-  el.innerHTML = `<div style="margin-bottom:10px"><div style="font-weight:800;color:var(--brun)">Stockage protégé</div>${lStock}</div>
+  el.innerHTML = `<div style="margin-bottom:10px"><div style="font-weight:800;color:var(--brun)">Cet appareil</div>${esc(libelleRole(roleAppareil()))} — les sauvegardes s'appellent « ${esc(prefixeFichier())}_… ».
+      <button class="btn btn-secondary" style="margin-top:8px;width:100%" onclick="choisirRoleAppareil(false)">🏷️ Changer le rôle de l'appareil</button></div>
+    <div style="margin-bottom:10px"><div style="font-weight:800;color:var(--brun)">Stockage protégé</div>${lStock}</div>
     <div style="margin-bottom:10px"><div style="font-weight:800;color:var(--brun)">Sauvegarde automatique</div>${lAuto}</div>
     <div><div style="font-weight:800;color:var(--brun)">Dernière sauvegarde</div>${der ? fmt(der) : 'jamais'}</div>`;
 }
@@ -7784,19 +7913,11 @@ async function genererWorkbook() {
 }
 
 function nomFichierExport() {
-  const now = new Date();
-  const date = dateLocaleISO(now);
-  const hh   = String(now.getHours()).padStart(2, '0');
-  const mm   = String(now.getMinutes()).padStart(2, '0');
-  return `MedecinsPakbeng_export_${date}_${hh}h${mm}.xlsx`;
+  return `${prefixeFichier()}_export_${horodatageFichier()}.xlsx`;
 }
 
 function nomFichierJSON() {
-  const now = new Date();
-  const date = dateLocaleISO(now);
-  const hh   = String(now.getHours()).padStart(2, '0');
-  const mm   = String(now.getMinutes()).padStart(2, '0');
-  return `MedecinsPakbeng_base_${date}_${hh}h${mm}.json`;
+  return `${prefixeFichier()}_${horodatageFichier()}.json`;
 }
 
 async function genererBlobJSON() {
@@ -7812,6 +7933,8 @@ async function genererBlobJSON() {
     dernierLieu:  localStorage.getItem('dernier_lieu')   || null,
     dernierMed1:  localStorage.getItem('dernier_med1')   || null,
     dernierMed2:  localStorage.getItem('dernier_med2')   || null,
+    provenance:   { role: roleAppareil(), libelle: libelleRole(roleAppareil()) },
+    base:         (() => { try { return JSON.parse(localStorage.getItem('base_reprise') || 'null'); } catch(e) { return null; } })(),
     consultations, receptions, sorties, stockConfig, parametres: parametres.filter(p => p.cle !== CLE_DOSSIER),
   };
   return new Blob([JSON.stringify(sauvegarde, null, 2)], { type: 'application/json' });
@@ -8517,6 +8640,9 @@ async function init() {
   demanderStockagePersistant();
   restaurerDossierSauvegarde();
   enregistrerServiceWorker();
+  const msgReprise = localStorage.getItem('message_apres_reprise');
+  if (msgReprise) { localStorage.removeItem('message_apres_reprise'); setTimeout(() => toast(msgReprise, 'success'), 1200); }
+  setTimeout(() => demanderRoleSiBesoin(), 2500);
   if (localStorage.getItem('apres_reinitialisation')) setTimeout(() => proposerRestaurationApresReinit(), 1500);
   else setTimeout(() => verifierPerteDonnees(), 1500);
 
