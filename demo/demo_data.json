@@ -1,0 +1,2265 @@
+{
+  "version": "1.0",
+  "exportedAt": "2026-10-23T09:54:19.039Z",
+  "appName": "MedecinsPakbeng",
+  "mission": {
+    "numero": "Mission 9",
+    "debut": "2026-10-12",
+    "fin": "2026-10-30",
+    "medecins": "Dr. Dupont, Dr. Bernard, Dr. Moreau",
+    "notes": "Mission de démonstration",
+    "createdAt": "2026-10-11T08:00:00.000Z"
+  },
+  "dernierLieu": "Dispensaire Pakbeng",
+  "dernierMed1": "Dr. Dupont",
+  "dernierMed2": null,
+  "consultations": [
+    {
+      "date": "2026-06-15",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Martin",
+      "medecin2": "Dr. Lefèvre",
+      "nom": "SOUK",
+      "prenom": "Kham",
+      "age": 49,
+      "tranche": "16-60 ans",
+      "genre": "Masculin",
+      "notes": "",
+      "habitation": "Chomphou",
+      "examen": "Céphalées matinales. Auscultation normale. Pas de signe de gravité.",
+      "constantes": {
+        "poids": 71,
+        "taille": 168,
+        "tas": 165,
+        "tad": 95,
+        "pouls": 80
+      },
+      "allergies": "Pénicilline",
+      "antecedents": "HTA depuis 2019",
+      "traitements": "Amlodipine 5 mg 1/j",
+      "aRevoir": {
+        "delai": "Prochaine mission",
+        "motif": "contrôle tension",
+        "echeance": ""
+      },
+      "patientId": "SOUK-KHA-1977-LL5V",
+      "pathologies": [
+        {
+          "specialite": "CARDIO-VASCULAIRE",
+          "pathologie": "HTA"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "AMLODIPINE — 5 mg — cpr",
+          "quantite": 90,
+          "lot": "Exp. 02/2028 (90)",
+          "lots": [
+            {
+              "lot": "Exp. 02/2028",
+              "datePeremption": "2028-02-01",
+              "quantite": 90
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "jours": 90,
+            "consigne": "le matin"
+          }
+        }
+      ],
+      "mission": "Mission 8",
+      "createdAt": "2026-06-15T02:17:00.000Z",
+      "id": 1
+    },
+    {
+      "date": "2026-06-15",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Lefèvre",
+      "medecin2": "",
+      "nom": "KHAM",
+      "prenom": "Noy",
+      "age": 55,
+      "tranche": "16-60 ans",
+      "genre": "Féminin",
+      "notes": "",
+      "habitation": "Chomphou",
+      "examen": "Épigastralgies post-prandiales depuis 2 mois. Abdomen souple.",
+      "constantes": {
+        "poids": 54,
+        "tas": 128,
+        "tad": 78
+      },
+      "allergies": "Aspirine",
+      "antecedents": "",
+      "traitements": "",
+      "patientId": "KHAM-NOY-1971-LM25",
+      "pathologies": [
+        {
+          "specialite": "GASTRO-ENTÉROLOGIE",
+          "pathologie": "Gastralgies/RGO"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "OMEPRAZOLE — 20 mg — gélule",
+          "quantite": 28,
+          "lot": "Exp. 05/2027 (28)",
+          "lots": [
+            {
+              "lot": "Exp. 05/2027",
+              "datePeremption": "2027-05-01",
+              "quantite": 28
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "jours": 28,
+            "consigne": "avant le petit-déjeuner"
+          }
+        }
+      ],
+      "mission": "Mission 8",
+      "createdAt": "2026-06-15T02:34:00.000Z",
+      "id": 2
+    },
+    {
+      "date": "2026-06-17",
+      "lieu": "Chaeng",
+      "medecin1": "Dr. Martin",
+      "medecin2": "",
+      "nom": "VONG",
+      "prenom": "Bounmy",
+      "age": 62,
+      "tranche": "+60 ans",
+      "genre": "Féminin",
+      "notes": "",
+      "habitation": "Chaeng",
+      "examen": "Polyurie. Pieds : pas de plaie.",
+      "constantes": {
+        "poids": 66,
+        "taille": 152,
+        "tas": 138,
+        "tad": 82,
+        "glyc": 2.1
+      },
+      "allergies": "aucune connue",
+      "antecedents": "Diabète type 2 depuis 2021",
+      "traitements": "Metformine 500 mg 2/j",
+      "aRevoir": {
+        "delai": "Prochaine mission",
+        "motif": "glycémie à jeun",
+        "echeance": ""
+      },
+      "patientId": "VONG-BOU-1964-LMYG",
+      "pathologies": [
+        {
+          "specialite": "ENDOCRINOLOGIE/METABOLISME",
+          "pathologie": "Diabète Connu / Suivi"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "METFORMINE — 500 mg — cpr",
+          "quantite": 180,
+          "lot": "Exp. 08/2027 (110) + Exp. 08/2028 (70)",
+          "lots": [
+            {
+              "lot": "Exp. 08/2027",
+              "datePeremption": "2027-08-01",
+              "quantite": 110
+            },
+            {
+              "lot": "Exp. 08/2028",
+              "datePeremption": "2028-08-01",
+              "quantite": 70
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "soir": 1,
+            "jours": 90,
+            "consigne": "au repas"
+          }
+        }
+      ],
+      "mission": "Mission 8",
+      "createdAt": "2026-06-17T02:17:00.000Z",
+      "id": 3
+    },
+    {
+      "date": "2026-06-17",
+      "lieu": "Chaeng",
+      "medecin1": "Dr. Martin",
+      "medecin2": "",
+      "nom": "KEO",
+      "prenom": "Sing",
+      "age": 57,
+      "tranche": "16-60 ans",
+      "genre": "Masculin",
+      "notes": "",
+      "habitation": "Chaeng",
+      "examen": "",
+      "constantes": {
+        "poids": 78,
+        "taille": 165,
+        "tas": 158,
+        "tad": 96,
+        "glyc": 1.8
+      },
+      "allergies": "",
+      "antecedents": "HTA, diabète type 2",
+      "traitements": "Énalapril 20 mg, metformine",
+      "aRevoir": {
+        "delai": "Prochaine tournée dans le village",
+        "motif": "tension et glycémie",
+        "echeance": ""
+      },
+      "patientId": "KEOX-SIN-1969-LNVP",
+      "pathologies": [
+        {
+          "specialite": "CARDIO-VASCULAIRE",
+          "pathologie": "HTA"
+        },
+        {
+          "specialite": "ENDOCRINOLOGIE/METABOLISME",
+          "pathologie": "Diabète Connu / Suivi"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "ENALAPRIL — 20 mg — cpr",
+          "quantite": 60,
+          "lot": "Exp. 03/2027 (60)",
+          "lots": [
+            {
+              "lot": "Exp. 03/2027",
+              "datePeremption": "2027-03-01",
+              "quantite": 60
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "jours": 60
+          }
+        },
+        {
+          "molecule": "METFORMINE — 500 mg — cpr",
+          "quantite": 120,
+          "lot": "Exp. 08/2028 (120)",
+          "lots": [
+            {
+              "lot": "Exp. 08/2028",
+              "datePeremption": "2028-08-01",
+              "quantite": 120
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "soir": 1,
+            "jours": 60,
+            "consigne": "au repas"
+          }
+        }
+      ],
+      "mission": "Mission 8",
+      "createdAt": "2026-06-17T02:34:00.000Z",
+      "id": 4
+    },
+    {
+      "date": "2026-06-17",
+      "lieu": "Chaeng",
+      "medecin1": "Dr. Martin",
+      "medecin2": "",
+      "nom": "SAYSANA",
+      "prenom": "Bouakham",
+      "age": 68,
+      "tranche": "+60 ans",
+      "genre": "Féminin",
+      "notes": "",
+      "habitation": "Chaeng",
+      "examen": "Lombalgie mécanique, pas de déficit.",
+      "constantes": {
+        "tas": 132,
+        "tad": 80
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "aRevoir": {
+        "delai": "Prochaine tournée dans le village",
+        "motif": "douleur lombaire",
+        "echeance": ""
+      },
+      "patientId": "SAYS-BOU-1958-LORS",
+      "pathologies": [
+        {
+          "specialite": "RHUMATOLOGIE/TRAUMATOLOGIE",
+          "pathologie": "Rachis (douleur : cervicale, thoracique, lombaire)"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "DICLOFENAC — 50 mg — cpr",
+          "quantite": 10,
+          "lot": "Exp. 03/2028 (10)",
+          "lots": [
+            {
+              "lot": "Exp. 03/2028",
+              "datePeremption": "2028-03-01",
+              "quantite": 10
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "soir": 1,
+            "jours": 5,
+            "consigne": "au repas"
+          }
+        },
+        {
+          "molecule": "OMEPRAZOLE — 20 mg — gélule",
+          "quantite": 5,
+          "lot": "Exp. 05/2027 (5)",
+          "lots": [
+            {
+              "lot": "Exp. 05/2027",
+              "datePeremption": "2027-05-01",
+              "quantite": 5
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "jours": 5
+          }
+        }
+      ],
+      "mission": "Mission 8",
+      "createdAt": "2026-06-17T03:51:00.000Z",
+      "id": 5
+    },
+    {
+      "date": "2026-06-19",
+      "lieu": "Chomlaeng-Yai",
+      "medecin1": "Dr. Lefèvre",
+      "medecin2": "",
+      "nom": "SENG",
+      "prenom": "Khamla",
+      "age": 2,
+      "tranche": "0-5 ans",
+      "genre": "Féminin",
+      "notes": "Conseils d'hydratation donnés à la mère.",
+      "habitation": "Chomlaeng-Yai",
+      "examen": "Diarrhée aqueuse depuis 2 jours, enfant tonique, pli cutané absent.",
+      "constantes": {
+        "poids": 11,
+        "temp": 37.8
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "patientId": "SENG-KHA-2024-LPNW",
+      "pathologies": [
+        {
+          "specialite": "GASTRO-ENTÉROLOGIE",
+          "pathologie": "Diarrhée"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "SOLUTE DE REHYDRATATION ORALE (SRO) — sachet",
+          "quantite": 9,
+          "lot": "Exp. 12/2026 (9)",
+          "lots": [
+            {
+              "lot": "Exp. 12/2026",
+              "datePeremption": "2026-12-01",
+              "quantite": 9
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "midi": 1,
+            "soir": 1,
+            "jours": 3,
+            "consigne": "après chaque selle liquide"
+          }
+        }
+      ],
+      "mission": "Mission 8",
+      "createdAt": "2026-06-19T02:17:00.000Z",
+      "id": 6
+    },
+    {
+      "date": "2026-06-19",
+      "lieu": "Chomlaeng-Noy",
+      "medecin1": "Dr. Lefèvre",
+      "medecin2": "",
+      "nom": "MALY",
+      "prenom": "Xay",
+      "age": 9,
+      "tranche": "6-15 ans",
+      "genre": "Féminin",
+      "notes": "",
+      "habitation": "Chomlaeng-Noy",
+      "examen": "Lésions de grattage interdigitales, prurit nocturne. Fratrie atteinte.",
+      "constantes": {
+        "poids": 26
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "patientId": "MALY-XAY-2017-LQK2",
+      "pathologies": [
+        {
+          "specialite": "DERMATOLOGIE",
+          "pathologie": "Dermatoses parasitaires (gale, poux)"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "IVERMECTINE — cpr",
+          "quantite": 3,
+          "lot": "Exp. 11/2028 (3)",
+          "lots": [
+            {
+              "lot": "Exp. 11/2028",
+              "datePeremption": "2028-11-01",
+              "quantite": 3
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 3,
+            "jours": 1,
+            "consigne": "à jeun, à renouveler dans 7 jours"
+          }
+        }
+      ],
+      "mission": "Mission 8",
+      "createdAt": "2026-06-19T02:34:00.000Z",
+      "id": 7
+    },
+    {
+      "date": "2026-06-22",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Martin",
+      "medecin2": "",
+      "nom": "KHAMPHOUI",
+      "prenom": "Vanh",
+      "age": 38,
+      "tranche": "16-60 ans",
+      "genre": "Masculin",
+      "notes": "",
+      "habitation": "Chomphou",
+      "examen": "Pas de crise depuis 4 mois. Bonne observance.",
+      "constantes": {
+        "poids": 60
+      },
+      "allergies": "",
+      "antecedents": "Épilepsie depuis l'enfance",
+      "traitements": "Phénobarbital 100 mg le soir",
+      "aRevoir": {
+        "delai": "Prochaine mission",
+        "motif": "renouvellement du traitement",
+        "echeance": ""
+      },
+      "patientId": "KHAM-VAN-1988-LRG6",
+      "pathologies": [
+        {
+          "specialite": "NEUROLOGIE",
+          "pathologie": "Épilepsie Connue / Suivie"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "PHENOBARBITAL — 100 mg — cpr",
+          "quantite": 120,
+          "lot": "Exp. 05/2027 (120)",
+          "lots": [
+            {
+              "lot": "Exp. 05/2027",
+              "datePeremption": "2027-05-01",
+              "quantite": 120
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "soir": 1,
+            "jours": 120,
+            "consigne": "le soir, ne jamais arrêter brutalement"
+          }
+        }
+      ],
+      "mission": "Mission 8",
+      "createdAt": "2026-06-22T02:17:00.000Z",
+      "id": 8
+    },
+    {
+      "date": "2026-06-22",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Lefèvre",
+      "medecin2": "",
+      "nom": "VILAY",
+      "prenom": "Tou",
+      "age": 61,
+      "tranche": "+60 ans",
+      "genre": "Masculin",
+      "notes": "Arrêt du tabac conseillé.",
+      "habitation": "Chomphou",
+      "examen": "Sibilants diffus. Dyspnée d'effort.",
+      "constantes": {
+        "pouls": 92,
+        "spo2": 93
+      },
+      "allergies": "",
+      "antecedents": "Tabagisme 40 PA, BPCO",
+      "traitements": "",
+      "patientId": "VILA-TOU-1965-LSCF",
+      "pathologies": [
+        {
+          "specialite": "PNEUMOLOGIE",
+          "pathologie": "BPCO / IRC"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "SALBUTAMOL — 100 µg / dose — spray inhal",
+          "quantite": 1,
+          "lot": "Exp. 05/2027 (1)",
+          "lots": [
+            {
+              "lot": "Exp. 05/2027",
+              "datePeremption": "2027-05-01",
+              "quantite": 1
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "consigne": "2 bouffées si gêne respiratoire"
+          }
+        }
+      ],
+      "mission": "Mission 8",
+      "createdAt": "2026-06-22T02:34:00.000Z",
+      "id": 9
+    },
+    {
+      "date": "2026-06-24",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Martin",
+      "medecin2": "",
+      "nom": "NOY",
+      "prenom": "Phet",
+      "age": 45,
+      "tranche": "16-60 ans",
+      "genre": "Féminin",
+      "notes": "",
+      "habitation": "Chomlaeng-Yai",
+      "examen": "Pâleur conjonctivale, asthénie. Ménorragies.",
+      "constantes": {
+        "poids": 48,
+        "pouls": 98
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "aRevoir": {
+        "delai": "Prochaine mission",
+        "motif": "contrôle anémie",
+        "echeance": ""
+      },
+      "grossesse": {
+        "statut": "Non"
+      },
+      "patientId": "NOYX-PHE-1981-LT9Y",
+      "pathologies": [
+        {
+          "specialite": "HÉMATOLOGIE",
+          "pathologie": "Anémie"
+        },
+        {
+          "specialite": "GYNÉCOLOGIE",
+          "pathologie": "Ménorragies/Métrorragies"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "FER FUMARATE — 200 mg — cpr",
+          "quantite": 60,
+          "lot": "Exp. 02/2028 (60)",
+          "lots": [
+            {
+              "lot": "Exp. 02/2028",
+              "datePeremption": "2028-02-01",
+              "quantite": 60
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "soir": 1,
+            "jours": 30,
+            "consigne": "à distance du thé"
+          }
+        }
+      ],
+      "mission": "Mission 8",
+      "createdAt": "2026-06-24T02:17:00.000Z",
+      "id": 10
+    },
+    {
+      "date": "2026-06-24",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Lefèvre",
+      "medecin2": "",
+      "nom": "SENG",
+      "prenom": "Ali",
+      "age": 47,
+      "tranche": "16-60 ans",
+      "genre": "Masculin",
+      "notes": "Conseils diététiques.",
+      "habitation": "Chomxangdong",
+      "examen": "Soif, polyurie. Découverte de diabète.",
+      "constantes": {
+        "poids": 84,
+        "taille": 170,
+        "glyc": 2.6
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "patientId": "SENG-ALI-1979-LU60",
+      "pathologies": [
+        {
+          "specialite": "ENDOCRINOLOGIE/METABOLISME",
+          "pathologie": "Diabète Nouveau"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "METFORMINE — 500 mg — cpr",
+          "quantite": 120,
+          "lot": "Exp. 08/2028 (120)",
+          "lots": [
+            {
+              "lot": "Exp. 08/2028",
+              "datePeremption": "2028-08-01",
+              "quantite": 120
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "soir": 1,
+            "jours": 60,
+            "consigne": "au repas"
+          }
+        }
+      ],
+      "mission": "Mission 8",
+      "createdAt": "2026-06-24T02:34:00.000Z",
+      "id": 11
+    },
+    {
+      "date": "2026-06-25",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Martin",
+      "medecin2": "",
+      "nom": "PHOUT",
+      "prenom": "Sone",
+      "age": 33,
+      "tranche": "16-60 ans",
+      "genre": "Masculin",
+      "notes": "",
+      "habitation": "Chaeng",
+      "examen": "Fièvre depuis 6 jours, douleurs abdominales, eau non bouillie.",
+      "constantes": {
+        "pouls": 88,
+        "temp": 39.2
+      },
+      "allergies": "aucune connue",
+      "antecedents": "",
+      "traitements": "",
+      "patientId": "PHOU-SON-1993-LV28",
+      "pathologies": [
+        {
+          "specialite": "PARASITOLOGIE",
+          "pathologie": "Fièvre typhoïde"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "CIPROFLOXACINE — 500 mg — cpr",
+          "quantite": 14,
+          "lot": "Exp. 11/2026 (14)",
+          "lots": [
+            {
+              "lot": "Exp. 11/2026",
+              "datePeremption": "2026-11-30",
+              "quantite": 14
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "soir": 1,
+            "jours": 7
+          }
+        },
+        {
+          "molecule": "PARACETAMOL — 500 mg — cpr",
+          "quantite": 9,
+          "lot": "Exp. 01/2028 (9)",
+          "lots": [
+            {
+              "lot": "Exp. 01/2028",
+              "datePeremption": "2028-01-01",
+              "quantite": 9
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "midi": 1,
+            "soir": 1,
+            "jours": 3,
+            "consigne": "si fièvre"
+          }
+        }
+      ],
+      "mission": "Mission 8",
+      "createdAt": "2026-06-25T02:17:00.000Z",
+      "id": 12
+    },
+    {
+      "date": "2026-10-12",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Dupont",
+      "medecin2": "",
+      "nom": "THONG",
+      "prenom": "Dy",
+      "age": 29,
+      "tranche": "16-60 ans",
+      "genre": "Masculin",
+      "notes": "",
+      "habitation": "Chomxangdong",
+      "examen": "Plaie de l'avant-bras par machette, propre, suturée. Vaccin antitétanique à jour selon le patient.",
+      "constantes": {
+        "tas": 124,
+        "tad": 76
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "aRevoir": {
+        "delai": "1 semaine",
+        "motif": "pansement et ablation des fils",
+        "echeance": "2026-10-19"
+      },
+      "patientId": "THON-DYX-1997-LVYB",
+      "pathologies": [
+        {
+          "specialite": "DERMATOLOGIE",
+          "pathologie": "Brûlures/plaies"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "PARACETAMOL — 500 mg — cpr",
+          "quantite": 9,
+          "lot": "Exp. 01/2028 (9)",
+          "lots": [
+            {
+              "lot": "Exp. 01/2028",
+              "datePeremption": "2028-01-01",
+              "quantite": 9
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "midi": 1,
+            "soir": 1,
+            "jours": 3,
+            "consigne": "si douleur"
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-12T02:17:00.000Z",
+      "id": 13
+    },
+    {
+      "date": "2026-10-13",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Dupont",
+      "medecin2": "Dr. Bernard",
+      "nom": "SOUK",
+      "prenom": "Kham",
+      "age": 49,
+      "tranche": "16-60 ans",
+      "genre": "Masculin",
+      "notes": "Réduire le sel.",
+      "habitation": "Chomphou",
+      "examen": "Bonne tolérance. Pas d'œdème.",
+      "constantes": {
+        "poids": 68.5,
+        "taille": 168,
+        "tas": 142,
+        "tad": 88,
+        "pouls": 76
+      },
+      "allergies": "Pénicilline",
+      "antecedents": "HTA depuis 2019",
+      "traitements": "Amlodipine 5 mg 1/j",
+      "aRevoir": {
+        "delai": "Prochaine mission",
+        "motif": "contrôle tension",
+        "echeance": ""
+      },
+      "patientId": "SOUK-KHA-1977-LL5V",
+      "pathologies": [
+        {
+          "specialite": "CARDIO-VASCULAIRE",
+          "pathologie": "HTA"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "AMLODIPINE — 5 mg — cpr",
+          "quantite": 120,
+          "lot": "Exp. 02/2028 (120)",
+          "lots": [
+            {
+              "lot": "Exp. 02/2028",
+              "datePeremption": "2028-02-01",
+              "quantite": 120
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "jours": 120,
+            "consigne": "le matin"
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-13T02:17:00.000Z",
+      "id": 14
+    },
+    {
+      "date": "2026-10-13",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Bernard",
+      "medecin2": "",
+      "nom": "KHAMPHOUI",
+      "prenom": "Vanh",
+      "age": 38,
+      "tranche": "16-60 ans",
+      "genre": "Masculin",
+      "notes": "",
+      "habitation": "Chomphou",
+      "examen": "Une crise en août (rupture de traitement).",
+      "constantes": {
+        "poids": 61
+      },
+      "allergies": "",
+      "antecedents": "Épilepsie depuis l'enfance",
+      "traitements": "Phénobarbital 100 mg le soir",
+      "aRevoir": {
+        "delai": "Prochaine mission",
+        "motif": "renouvellement du traitement",
+        "echeance": ""
+      },
+      "patientId": "KHAM-VAN-1988-LRG6",
+      "pathologies": [
+        {
+          "specialite": "NEUROLOGIE",
+          "pathologie": "Épilepsie Connue / Suivie"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "PHENOBARBITAL — 100 mg — cpr",
+          "quantite": 120,
+          "lot": "Exp. 05/2027 (120)",
+          "lots": [
+            {
+              "lot": "Exp. 05/2027",
+              "datePeremption": "2027-05-01",
+              "quantite": 120
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "soir": 1,
+            "jours": 120,
+            "consigne": "le soir, ne jamais arrêter brutalement"
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-13T02:34:00.000Z",
+      "id": 15
+    },
+    {
+      "date": "2026-10-14",
+      "lieu": "Ban Hom Xai",
+      "medecin1": "Dr. Moreau",
+      "medecin2": "",
+      "nom": "PHET",
+      "prenom": "Mai",
+      "age": 27,
+      "tranche": "16-60 ans",
+      "genre": "Féminin",
+      "notes": "",
+      "habitation": "Ban Hom Xai",
+      "examen": "Grossesse évolutive, hauteur utérine 20 cm, BCF perçus.",
+      "constantes": {
+        "poids": 56,
+        "tas": 110,
+        "tad": 70
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "aRevoir": {
+        "delai": "1 mois",
+        "motif": "suivi de grossesse",
+        "echeance": "2026-11-13"
+      },
+      "grossesse": {
+        "statut": "Enceinte",
+        "semaines": 22
+      },
+      "patientId": "PHET-MAI-1999-LYMP",
+      "pathologies": [
+        {
+          "specialite": "SUIVI GROSSESSE & NAISSANCES",
+          "pathologie": "Consultation pré-natale"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "FER FUMARATE — 200 mg — cpr",
+          "quantite": 30,
+          "lot": "Exp. 02/2028 (30)",
+          "lots": [
+            {
+              "lot": "Exp. 02/2028",
+              "datePeremption": "2028-02-01",
+              "quantite": 30
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "jours": 30
+          }
+        },
+        {
+          "molecule": "AC FOLIQUE — 5 mg — cpr",
+          "quantite": 30,
+          "lot": "Exp. 02/2027 (30)",
+          "lots": [
+            {
+              "lot": "Exp. 02/2027",
+              "datePeremption": "2027-02-01",
+              "quantite": 30
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "jours": 30
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-14T02:17:00.000Z",
+      "id": 16
+    },
+    {
+      "date": "2026-10-14",
+      "lieu": "Ban Hom Xai",
+      "medecin1": "Dr. Moreau",
+      "medecin2": "",
+      "nom": "DOUANGSY",
+      "prenom": "Mone",
+      "age": 24,
+      "tranche": "16-60 ans",
+      "genre": "Féminin",
+      "notes": "",
+      "habitation": "Ban Hom Xai",
+      "examen": "",
+      "constantes": {
+        "tas": 112,
+        "tad": 72
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "grossesse": {
+        "statut": "Non"
+      },
+      "patientId": "DOUA-MON-2002-LZIW",
+      "pathologies": [
+        {
+          "specialite": "GYNÉCOLOGIE",
+          "pathologie": "Planification familiale / Contraception"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "LEVONORGESTREL / ETHINYLESTRADIOL (Leeloo) — 0,10 mg / 0,02 mg — plaquette",
+          "quantite": 3,
+          "lot": "Exp. 02/2027 (3)",
+          "lots": [
+            {
+              "lot": "Exp. 02/2027",
+              "datePeremption": "2027-02-01",
+              "quantite": 3
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "consigne": "1 comprimé par jour à heure fixe"
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-14T02:34:00.000Z",
+      "id": 17
+    },
+    {
+      "date": "2026-10-15",
+      "lieu": "Chom-Oi",
+      "medecin1": "Dr. Dupont",
+      "medecin2": "",
+      "nom": "BOUNMA",
+      "prenom": "Ting",
+      "age": 4,
+      "tranche": "0-5 ans",
+      "genre": "Masculin",
+      "notes": "",
+      "habitation": "Chom-Oi",
+      "examen": "Rhinorrhée, tympans normaux, gorge rouge.",
+      "constantes": {
+        "poids": 15,
+        "temp": 38.6
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "patientId": "BOUN-TIN-2022-M0F1",
+      "pathologies": [
+        {
+          "specialite": "ORL & BUCCO-DENTAIRE",
+          "pathologie": "Rhino-pharyngite"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "PARACETAMOL — 250 mg / 5 ml — susp buv",
+          "quantite": 1,
+          "lot": "Exp. 06/2027 (1)",
+          "lots": [
+            {
+              "lot": "Exp. 06/2027",
+              "datePeremption": "2027-06-01",
+              "quantite": 1
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "midi": 1,
+            "soir": 1,
+            "jours": 3,
+            "consigne": "7,5 ml (1 cuillère et demie) par prise"
+          }
+        },
+        {
+          "molecule": "SERUM PHYSIOLOGIQUE — 5 ml — sol nasale et ophtalmique",
+          "quantite": 10,
+          "lot": "Exp. 06/2027 (10)",
+          "lots": [
+            {
+              "lot": "Exp. 06/2027",
+              "datePeremption": "2027-06-01",
+              "quantite": 10
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "midi": 1,
+            "soir": 1,
+            "jours": 3,
+            "consigne": "lavage de nez"
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-15T02:17:00.000Z",
+      "id": 18
+    },
+    {
+      "date": "2026-10-15",
+      "lieu": "Chom-Oi",
+      "medecin1": "Dr. Dupont",
+      "medecin2": "",
+      "nom": "PHOMMA",
+      "prenom": "Lay",
+      "age": 7,
+      "tranche": "6-15 ans",
+      "genre": "Masculin",
+      "notes": "",
+      "habitation": "Chom-Oi",
+      "examen": "Douleurs abdominales, prurit anal.",
+      "constantes": {
+        "poids": 21
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "patientId": "PHOM-LAY-2019-M1B3",
+      "pathologies": [
+        {
+          "specialite": "PARASITOLOGIE",
+          "pathologie": "Parasitose digestive"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "ALBENDAZOLE — 200 mg — cpr",
+          "quantite": 2,
+          "lot": "Exp. 04/2027 (2)",
+          "lots": [
+            {
+              "lot": "Exp. 04/2027",
+              "datePeremption": "2027-04-01",
+              "quantite": 2
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 2,
+            "jours": 1,
+            "consigne": "en une prise"
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-15T02:34:00.000Z",
+      "id": 19
+    },
+    {
+      "date": "2026-10-16",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Bernard",
+      "medecin2": "",
+      "nom": "KHAM",
+      "prenom": "Noy",
+      "age": 55,
+      "tranche": "16-60 ans",
+      "genre": "Féminin",
+      "notes": "",
+      "habitation": "Chomphou",
+      "examen": "Récidive des épigastralgies à l'arrêt du traitement.",
+      "constantes": {
+        "poids": 53
+      },
+      "allergies": "Aspirine",
+      "antecedents": "",
+      "traitements": "",
+      "patientId": "KHAM-NOY-1971-LM25",
+      "pathologies": [
+        {
+          "specialite": "GASTRO-ENTÉROLOGIE",
+          "pathologie": "Gastralgies/RGO"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "OMEPRAZOLE — 20 mg — gélule",
+          "quantite": 56,
+          "lot": "Exp. 05/2027 (56)",
+          "lots": [
+            {
+              "lot": "Exp. 05/2027",
+              "datePeremption": "2027-05-01",
+              "quantite": 56
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "jours": 56,
+            "consigne": "avant le petit-déjeuner"
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-16T02:17:00.000Z",
+      "id": 20
+    },
+    {
+      "date": "2026-10-16",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Bernard",
+      "medecin2": "",
+      "nom": "LATH",
+      "prenom": "Noy",
+      "age": 31,
+      "tranche": "16-60 ans",
+      "genre": "Féminin",
+      "notes": "",
+      "habitation": "Chomlaeng-Noy",
+      "examen": "Brûlures mictionnelles depuis 2 jours. BU : leucocytes +, nitrites +.",
+      "constantes": {
+        "temp": 37.4
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "grossesse": {
+        "statut": "Enceinte",
+        "semaines": 30
+      },
+      "patientId": "LATH-NOY-1995-M33G",
+      "pathologies": [
+        {
+          "specialite": "UROLOGIE-NÉPHROLOGIE",
+          "pathologie": "Cystite"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "FOSFOMYCINE — 3 g — sol buvable en sachet",
+          "quantite": 1,
+          "lot": "Exp. 07/2028 (1)",
+          "lots": [
+            {
+              "lot": "Exp. 07/2028",
+              "datePeremption": "2028-07-01",
+              "quantite": 1
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "coucher": 1,
+            "jours": 1,
+            "consigne": "en une prise, vessie vide"
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-16T02:34:00.000Z",
+      "id": 21
+    },
+    {
+      "date": "2026-10-19",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Moreau",
+      "medecin2": "",
+      "nom": "INTHAVONG",
+      "prenom": "Souk",
+      "age": 45,
+      "tranche": "16-60 ans",
+      "genre": "Masculin",
+      "notes": "Départ en bateau organisé par la famille.",
+      "habitation": "Chomxangdong",
+      "examen": "Douleur fosse iliaque droite depuis 24 h, défense, Blumberg +.",
+      "constantes": {
+        "tas": 118,
+        "tad": 74,
+        "pouls": 104,
+        "temp": 38.4
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "orientation": {
+        "hopital": "Hôpital provincial d'Oudomxay",
+        "motif": "suspicion d'appendicite",
+        "accord": "Oui"
+      },
+      "patientId": "INTH-SOU-1981-M3ZQ",
+      "pathologies": [
+        {
+          "specialite": "GASTRO-ENTÉROLOGIE",
+          "pathologie": "Avis chirurgical (appendicite, cholécystite, occlusion…)"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "PARACETAMOL — 500 mg — cpr",
+          "quantite": 6,
+          "lot": "Exp. 01/2028 (6)",
+          "lots": [
+            {
+              "lot": "Exp. 01/2028",
+              "datePeremption": "2028-01-01",
+              "quantite": 6
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "midi": 1,
+            "soir": 1,
+            "jours": 2
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-19T02:17:00.000Z",
+      "id": 22
+    },
+    {
+      "date": "2026-10-19",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Moreau",
+      "medecin2": "",
+      "nom": "SENG",
+      "prenom": "Ali",
+      "age": 47,
+      "tranche": "16-60 ans",
+      "genre": "Masculin",
+      "notes": "",
+      "habitation": "Chomxangdong",
+      "examen": "Amélioration, perte de 4 kg.",
+      "constantes": {
+        "poids": 80,
+        "taille": 170,
+        "tas": 132,
+        "tad": 84,
+        "glyc": 1.4
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "aRevoir": {
+        "delai": "6 mois",
+        "motif": "glycémie et poids",
+        "echeance": "2027-04-19"
+      },
+      "patientId": "SENG-ALI-1979-LU60",
+      "pathologies": [
+        {
+          "specialite": "ENDOCRINOLOGIE/METABOLISME",
+          "pathologie": "Diabète Connu / Suivi"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "METFORMINE — 500 mg — cpr",
+          "quantite": 240,
+          "lot": "Exp. 08/2028 (240)",
+          "lots": [
+            {
+              "lot": "Exp. 08/2028",
+              "datePeremption": "2028-08-01",
+              "quantite": 240
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "soir": 1,
+            "jours": 120,
+            "consigne": "au repas"
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-19T02:34:00.000Z",
+      "id": 23
+    },
+    {
+      "date": "2026-10-20",
+      "lieu": "Chaeng",
+      "medecin1": "Dr. Dupont",
+      "medecin2": "",
+      "nom": "KEO",
+      "prenom": "Sing",
+      "age": 57,
+      "tranche": "16-60 ans",
+      "genre": "Masculin",
+      "notes": "",
+      "habitation": "Chaeng",
+      "examen": "",
+      "constantes": {
+        "poids": 76,
+        "taille": 165,
+        "tas": 146,
+        "tad": 90,
+        "glyc": 1.5
+      },
+      "allergies": "",
+      "antecedents": "HTA, diabète type 2",
+      "traitements": "Énalapril 20 mg, metformine",
+      "aRevoir": {
+        "delai": "Prochaine mission",
+        "motif": "tension et glycémie",
+        "echeance": ""
+      },
+      "patientId": "KEOX-SIN-1969-LNVP",
+      "pathologies": [
+        {
+          "specialite": "CARDIO-VASCULAIRE",
+          "pathologie": "HTA"
+        },
+        {
+          "specialite": "ENDOCRINOLOGIE/METABOLISME",
+          "pathologie": "Diabète Connu / Suivi"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "ENALAPRIL — 20 mg — cpr",
+          "quantite": 120,
+          "lot": "Exp. 03/2027 (120)",
+          "lots": [
+            {
+              "lot": "Exp. 03/2027",
+              "datePeremption": "2027-03-01",
+              "quantite": 120
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "jours": 120
+          }
+        },
+        {
+          "molecule": "METFORMINE — 500 mg — cpr",
+          "quantite": 240,
+          "lot": "Exp. 08/2028 (240)",
+          "lots": [
+            {
+              "lot": "Exp. 08/2028",
+              "datePeremption": "2028-08-01",
+              "quantite": 240
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "soir": 1,
+            "jours": 120,
+            "consigne": "au repas"
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-20T02:17:00.000Z",
+      "id": 24
+    },
+    {
+      "date": "2026-10-20",
+      "lieu": "Chaeng",
+      "medecin1": "Dr. Dupont",
+      "medecin2": "",
+      "nom": "KONG",
+      "prenom": "Pheng",
+      "age": 35,
+      "tranche": "16-60 ans",
+      "genre": "Féminin",
+      "notes": "",
+      "habitation": "Chaeng",
+      "examen": "Pollakiurie, brûlures. BU positive.",
+      "constantes": {},
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "grossesse": {
+        "statut": "Non"
+      },
+      "patientId": "KONG-PHE-1991-M6PD",
+      "pathologies": [
+        {
+          "specialite": "UROLOGIE-NÉPHROLOGIE",
+          "pathologie": "Cystite"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "CIPROFLOXACINE — 500 mg — cpr",
+          "quantite": 6,
+          "lot": "Exp. 11/2026 (6)",
+          "lots": [
+            {
+              "lot": "Exp. 11/2026",
+              "datePeremption": "2026-11-30",
+              "quantite": 6
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "soir": 1,
+            "jours": 3
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-20T02:34:00.000Z",
+      "id": 25
+    },
+    {
+      "date": "2026-10-21",
+      "lieu": "Chomlaeng-Yai",
+      "medecin1": "Dr. Bernard",
+      "medecin2": "",
+      "nom": "SENG",
+      "prenom": "Khamla",
+      "age": 2,
+      "tranche": "0-5 ans",
+      "genre": "Féminin",
+      "notes": "",
+      "habitation": "Chomlaeng-Yai",
+      "examen": "Otalgie droite, tympan bombé.",
+      "constantes": {
+        "poids": 12.5,
+        "temp": 38.9
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "patientId": "SENG-KHA-2024-LPNW",
+      "pathologies": [
+        {
+          "specialite": "ORL & BUCCO-DENTAIRE",
+          "pathologie": "Otite"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "AMOXICILLINE — 250 mg / 5 ml — susp buv",
+          "quantite": 1,
+          "lot": "Exp. 03/2027 (1)",
+          "lots": [
+            {
+              "lot": "Exp. 03/2027",
+              "datePeremption": "2027-03-01",
+              "quantite": 1
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "soir": 1,
+            "jours": 7,
+            "consigne": "5 ml matin et soir"
+          }
+        },
+        {
+          "molecule": "PARACETAMOL — 250 mg / 5 ml — susp buv",
+          "quantite": 1,
+          "lot": "Exp. 06/2027 (1)",
+          "lots": [
+            {
+              "lot": "Exp. 06/2027",
+              "datePeremption": "2027-06-01",
+              "quantite": 1
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "midi": 1,
+            "soir": 1,
+            "jours": 3,
+            "consigne": "5 ml si fièvre"
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-21T02:17:00.000Z",
+      "id": 26
+    },
+    {
+      "date": "2026-10-21",
+      "lieu": "Chom-Oi",
+      "medecin1": "Dr. Bernard",
+      "medecin2": "",
+      "nom": "BOUA",
+      "prenom": "Khay",
+      "age": 19,
+      "tranche": "16-60 ans",
+      "genre": "Féminin",
+      "notes": "",
+      "habitation": "Chom-Oi",
+      "examen": "Première grossesse, nausées.",
+      "constantes": {
+        "poids": 47,
+        "tas": 105,
+        "tad": 65
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "aRevoir": {
+        "delai": "Prochaine tournée dans le village",
+        "motif": "suivi de grossesse",
+        "echeance": ""
+      },
+      "grossesse": {
+        "statut": "Enceinte",
+        "semaines": 12
+      },
+      "patientId": "BOUA-KHA-2007-M8HO",
+      "pathologies": [
+        {
+          "specialite": "SUIVI GROSSESSE & NAISSANCES",
+          "pathologie": "Consultation pré-natale"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "AC FOLIQUE — 5 mg — cpr",
+          "quantite": 30,
+          "lot": "Exp. 02/2027 (30)",
+          "lots": [
+            {
+              "lot": "Exp. 02/2027",
+              "datePeremption": "2027-02-01",
+              "quantite": 30
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "jours": 30
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-21T02:34:00.000Z",
+      "id": 27
+    },
+    {
+      "date": "2026-10-22",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Moreau",
+      "medecin2": "",
+      "nom": "SIPHONE",
+      "prenom": "Nang",
+      "age": 52,
+      "tranche": "16-60 ans",
+      "genre": "Féminin",
+      "notes": "",
+      "habitation": "Chomlaeng-Noy",
+      "examen": "HTA découverte, contrôlée à deux reprises. Pas de signe neurologique.",
+      "constantes": {
+        "poids": 70,
+        "taille": 155,
+        "tas": 172,
+        "tad": 98
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "aRevoir": {
+        "delai": "1 mois",
+        "motif": "contrôle tension",
+        "echeance": "2026-11-21"
+      },
+      "patientId": "SIPH-NAN-1974-M9DR",
+      "pathologies": [
+        {
+          "specialite": "CARDIO-VASCULAIRE",
+          "pathologie": "HTA"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "AMLODIPINE — 5 mg — cpr",
+          "quantite": 30,
+          "lot": "Exp. 02/2028 (30)",
+          "lots": [
+            {
+              "lot": "Exp. 02/2028",
+              "datePeremption": "2028-02-01",
+              "quantite": 30
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "jours": 30,
+            "consigne": "le matin"
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-22T02:17:00.000Z",
+      "id": 28
+    },
+    {
+      "date": "2026-10-22",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Moreau",
+      "medecin2": "",
+      "nom": "SOMSAK",
+      "prenom": "Lee",
+      "age": 70,
+      "tranche": "+60 ans",
+      "genre": "Masculin",
+      "notes": "Famille informée, refuse le transfert pour raisons financières.",
+      "habitation": "Chomphou",
+      "examen": "Hémiparésie gauche apparue il y a 2 jours. Conscient.",
+      "constantes": {
+        "tas": 185,
+        "tad": 105,
+        "pouls": 84
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "orientation": {
+        "hopital": "Hôpital provincial de Luang Prabang",
+        "motif": "AVC récent, imagerie",
+        "accord": "Non"
+      },
+      "patientId": "SOMS-LEE-1956-MAB6",
+      "pathologies": [
+        {
+          "specialite": "NEUROLOGIE",
+          "pathologie": "AVC/AIT / Hémiparésie"
+        },
+        {
+          "specialite": "CARDIO-VASCULAIRE",
+          "pathologie": "HTA"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "AC ACETYLSALICYLIQUE — 75 mg — cpr",
+          "quantite": 30,
+          "lot": "Exp. 04/2027 (30)",
+          "lots": [
+            {
+              "lot": "Exp. 04/2027",
+              "datePeremption": "2027-04-01",
+              "quantite": 30
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "midi": 1,
+            "jours": 30,
+            "consigne": "au repas"
+          }
+        },
+        {
+          "molecule": "AMLODIPINE — 5 mg — cpr",
+          "quantite": 30,
+          "lot": "Exp. 02/2028 (30)",
+          "lots": [
+            {
+              "lot": "Exp. 02/2028",
+              "datePeremption": "2028-02-01",
+              "quantite": 30
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "jours": 30
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-22T02:34:00.000Z",
+      "id": 29
+    },
+    {
+      "date": "2026-10-23",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Dupont",
+      "medecin2": "",
+      "nom": "VILAY",
+      "prenom": "Tou",
+      "age": 61,
+      "tranche": "+60 ans",
+      "genre": "Masculin",
+      "notes": "",
+      "habitation": "Chomphou",
+      "examen": "Toux productive depuis 5 jours, crépitants base droite.",
+      "constantes": {
+        "pouls": 96,
+        "temp": 38.3,
+        "spo2": 92
+      },
+      "allergies": "",
+      "antecedents": "Tabagisme 40 PA, BPCO",
+      "traitements": "",
+      "aRevoir": {
+        "delai": "1 semaine",
+        "motif": "contrôle auscultation",
+        "echeance": "2026-10-30"
+      },
+      "patientId": "VILA-TOU-1965-LSCF",
+      "pathologies": [
+        {
+          "specialite": "PNEUMOLOGIE",
+          "pathologie": "Bronchites aiguës / Pneumopathies"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "AMOXICILLINE — 500 mg — gélule",
+          "quantite": 21,
+          "lot": "Exp. 01/2028 (12) + Exp. 10/2028 (9)",
+          "lots": [
+            {
+              "lot": "Exp. 01/2028",
+              "datePeremption": "2028-01-01",
+              "quantite": 12
+            },
+            {
+              "lot": "Exp. 10/2028",
+              "datePeremption": "2028-10-01",
+              "quantite": 9
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "midi": 1,
+            "soir": 1,
+            "jours": 7
+          }
+        },
+        {
+          "molecule": "PARACETAMOL — 500 mg — cpr",
+          "quantite": 9,
+          "lot": "Exp. 01/2028 (9)",
+          "lots": [
+            {
+              "lot": "Exp. 01/2028",
+              "datePeremption": "2028-01-01",
+              "quantite": 9
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "midi": 1,
+            "soir": 1,
+            "jours": 3,
+            "consigne": "si fièvre"
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-23T02:17:00.000Z",
+      "id": 30
+    },
+    {
+      "date": "2026-10-23",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Dupont",
+      "medecin2": "",
+      "nom": "DAO",
+      "prenom": "Mina",
+      "age": 0,
+      "tranche": "0-5 ans",
+      "genre": "Féminin",
+      "notes": "",
+      "habitation": "Ban Hom Xai",
+      "examen": "Nourrisson de 6 mois, bon développement, allaitement maternel.",
+      "constantes": {
+        "poids": 7.8,
+        "temp": 36.9
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "patientId": "DAOX-MIN-2026-MC3G",
+      "pathologies": [
+        {
+          "specialite": "SUIVI GROSSESSE & NAISSANCES",
+          "pathologie": "Examen nouveau-né et nourrisson"
+        }
+      ],
+      "prescription": [],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-23T02:34:00.000Z",
+      "id": 31
+    },
+    {
+      "date": "2026-10-23",
+      "lieu": "Dispensaire Pakbeng",
+      "medecin1": "Dr. Bernard",
+      "medecin2": "",
+      "nom": "KHOUN",
+      "prenom": "Bay",
+      "age": 26,
+      "tranche": "16-60 ans",
+      "genre": "Masculin",
+      "notes": "",
+      "habitation": "Chaeng",
+      "examen": "Odynophagie, amygdales érythémato-pultacées.",
+      "constantes": {
+        "temp": 38.7
+      },
+      "allergies": "",
+      "antecedents": "",
+      "traitements": "",
+      "patientId": "KHOU-BAY-2000-MCZO",
+      "pathologies": [
+        {
+          "specialite": "ORL & BUCCO-DENTAIRE",
+          "pathologie": "Angine"
+        }
+      ],
+      "prescription": [
+        {
+          "molecule": "AMOXICILLINE — 1 g — cpr dispersible",
+          "quantite": 12,
+          "lot": "Exp. 09/2027 (12)",
+          "lots": [
+            {
+              "lot": "Exp. 09/2027",
+              "datePeremption": "2027-09-01",
+              "quantite": 12
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "soir": 1,
+            "jours": 6
+          }
+        },
+        {
+          "molecule": "PARACETAMOL — 500 mg — cpr",
+          "quantite": 9,
+          "lot": "Exp. 01/2028 (9)",
+          "lots": [
+            {
+              "lot": "Exp. 01/2028",
+              "datePeremption": "2028-01-01",
+              "quantite": 9
+            }
+          ],
+          "lotForce": "",
+          "aRegulariser": 0,
+          "posologie": {
+            "matin": 1,
+            "midi": 1,
+            "soir": 1,
+            "jours": 3,
+            "consigne": "si fièvre"
+          }
+        }
+      ],
+      "mission": "Mission 9",
+      "createdAt": "2026-10-23T03:51:00.000Z",
+      "id": 32
+    }
+  ],
+  "receptions": [
+    {
+      "date": "2026-10-12",
+      "fournisseur": "Pharmacie Centrale Laos",
+      "molecule": "PARACETAMOL — 500 mg — cpr",
+      "datePeremption": "2028-03-01",
+      "quantite": 1000,
+      "nomCommercial": "Paracetamol",
+      "lot": "Exp. 03/2028",
+      "createdAt": "2026-10-12T07:10:00.000Z",
+      "id": 320
+    },
+    {
+      "date": "2026-10-12",
+      "fournisseur": "Pharmacie Centrale Laos",
+      "molecule": "SOLUTE DE REHYDRATATION ORALE (SRO) — sachet",
+      "datePeremption": "2027-12-01",
+      "quantite": 200,
+      "nomCommercial": "ORS",
+      "lot": "Exp. 12/2027",
+      "createdAt": "2026-10-12T07:11:00.000Z",
+      "id": 321
+    },
+    {
+      "date": "2026-10-12",
+      "fournisseur": "MSF Laos",
+      "molecule": "AMOXICILLINE — 250 mg / 5 ml — susp buv",
+      "datePeremption": "2027-09-01",
+      "quantite": 20,
+      "nomCommercial": "",
+      "lot": "Exp. 09/2027",
+      "createdAt": "2026-10-12T07:12:00.000Z",
+      "id": 322
+    },
+    {
+      "date": "2026-10-16",
+      "fournisseur": "Don privé",
+      "molecule": "FER FUMARATE — 200 mg — cpr",
+      "datePeremption": "2028-06-01",
+      "quantite": 500,
+      "nomCommercial": "",
+      "lot": "Exp. 06/2028",
+      "createdAt": "2026-10-16T07:13:00.000Z",
+      "id": 323
+    }
+  ],
+  "sorties": [
+    {
+      "date": "2026-10-12",
+      "motif": "Périmé",
+      "molecule": "AC ACETYLSALICYLIQUE — 75 mg — sachet",
+      "lot": "Exp. 06/2026",
+      "numLot": "",
+      "datePeremption": "2026-06-01",
+      "quantite": 7,
+      "createdAt": "2026-10-12T07:30:00.000Z",
+      "id": 1
+    },
+    {
+      "date": "2026-10-18",
+      "motif": "Casse",
+      "molecule": "POVIDONE IODEE — 10 % — solution externe",
+      "lot": "Exp. 09/2027",
+      "numLot": "",
+      "datePeremption": "2027-09-01",
+      "quantite": 1,
+      "createdAt": "2026-10-18T07:30:00.000Z",
+      "id": 2
+    }
+  ],
+  "stockConfig": [
+    {
+      "molecule": "ALBENDAZOLE — 200 mg — cpr",
+      "stockMinimal": 100,
+      "stockConfort": 400,
+      "unite": "unité",
+      "suivi": true,
+      "prixFR": 0.1,
+      "prixLAK": 2500
+    },
+    {
+      "molecule": "AMLODIPINE — 5 mg — cpr",
+      "stockMinimal": 500,
+      "stockConfort": 1500,
+      "unite": "unité",
+      "suivi": true,
+      "prixFR": 0.03,
+      "prixLAK": 700
+    },
+    {
+      "molecule": "AMOXICILLINE — 500 mg — gélule",
+      "stockMinimal": 300,
+      "stockConfort": 1000,
+      "unite": "unité",
+      "suivi": true,
+      "prixFR": 0.05,
+      "prixLAK": 1200
+    },
+    {
+      "molecule": "CIPROFLOXACINE — 500 mg — cpr",
+      "stockMinimal": 100,
+      "stockConfort": 300,
+      "unite": "unité",
+      "suivi": true,
+      "prixFR": 0.08,
+      "prixLAK": 2000
+    },
+    {
+      "molecule": "DESOGESTREL — 75 µg — plaquette cpr",
+      "stockMinimal": 5,
+      "stockConfort": 20,
+      "unite": "plaquette",
+      "suivi": true,
+      "prixFR": 3,
+      "prixLAK": 70000
+    },
+    {
+      "molecule": "ENALAPRIL — 20 mg — cpr",
+      "stockMinimal": 300,
+      "stockConfort": 1000,
+      "unite": "unité",
+      "suivi": true,
+      "prixFR": 0.04,
+      "prixLAK": 900
+    },
+    {
+      "molecule": "FER FUMARATE — 200 mg — cpr",
+      "stockMinimal": 500,
+      "stockConfort": 1500,
+      "unite": "unité",
+      "suivi": true,
+      "prixFR": 0.01,
+      "prixLAK": 300
+    },
+    {
+      "molecule": "IBUPROFENE — 400 mg — cpr",
+      "stockMinimal": 300,
+      "stockConfort": 1000,
+      "unite": "unité",
+      "suivi": true,
+      "prixFR": 0.03,
+      "prixLAK": 700
+    },
+    {
+      "molecule": "LEVONORGESTREL / ETHINYLESTRADIOL (Anna) — 0,15 / 0,03 — plaquette",
+      "stockMinimal": 10,
+      "stockConfort": 30,
+      "unite": "plaquette",
+      "suivi": true,
+      "prixFR": 2.2,
+      "prixLAK": 55000
+    },
+    {
+      "molecule": "LEVONORGESTREL / ETHINYLESTRADIOL (Leeloo) — 0,10 mg / 0,02 mg — plaquette",
+      "stockMinimal": 10,
+      "stockConfort": 30,
+      "unite": "plaquette",
+      "suivi": true,
+      "prixFR": 2.5,
+      "prixLAK": 60000
+    },
+    {
+      "molecule": "METFORMINE — 500 mg — cpr",
+      "stockMinimal": 500,
+      "stockConfort": 2000,
+      "unite": "unité",
+      "suivi": true,
+      "prixFR": 0.02,
+      "prixLAK": 500
+    },
+    {
+      "molecule": "MULTIBIANE ADULTE (Pilèje)",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "unite": "unité",
+      "suivi": false,
+      "prixFR": 0,
+      "prixLAK": 0
+    },
+    {
+      "molecule": "OMEPRAZOLE — 20 mg — gélule",
+      "stockMinimal": 300,
+      "stockConfort": 1000,
+      "unite": "unité",
+      "suivi": true,
+      "prixFR": 0.04,
+      "prixLAK": 900
+    },
+    {
+      "molecule": "PARACETAMOL — 500 mg — cpr",
+      "stockMinimal": 500,
+      "stockConfort": 2000,
+      "unite": "unité",
+      "suivi": true,
+      "prixFR": 0.02,
+      "prixLAK": 500
+    },
+    {
+      "molecule": "PHENOBARBITAL — 100 mg — cpr",
+      "stockMinimal": 300,
+      "stockConfort": 1000,
+      "unite": "unité",
+      "suivi": true,
+      "prixFR": 0.05,
+      "prixLAK": 1200
+    },
+    {
+      "molecule": "SOLUTE DE REHYDRATATION ORALE (SRO) — sachet",
+      "stockMinimal": 250,
+      "stockConfort": 500,
+      "unite": "unité",
+      "suivi": true,
+      "prixFR": 0.15,
+      "prixLAK": 3500
+    }
+  ],
+  "parametres": [
+    {
+      "cle": "hopitaux",
+      "valeur": [
+        "Hôpital de district de Pakbeng",
+        "Hôpital provincial d'Oudomxay",
+        "Hôpital provincial de Luang Prabang",
+        "Hôpital à Vientiane"
+      ]
+    },
+    {
+      "cle": "missions",
+      "valeur": [
+        {
+          "numero": "Mission 8",
+          "debut": "2026-06-15",
+          "fin": "2026-06-26",
+          "medecins": "Dr. Martin, Dr. Lefèvre",
+          "notes": "Mission de démonstration",
+          "createdAt": "2026-06-14T08:00:00.000Z"
+        },
+        {
+          "numero": "Mission 9",
+          "debut": "2026-10-12",
+          "fin": "2026-10-30",
+          "medecins": "Dr. Dupont, Dr. Bernard, Dr. Moreau",
+          "notes": "Mission de démonstration",
+          "createdAt": "2026-10-11T08:00:00.000Z"
+        }
+      ]
+    }
+  ]
+}
