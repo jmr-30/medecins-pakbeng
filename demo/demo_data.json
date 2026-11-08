@@ -1783,7 +1783,7 @@
       ],
       "prescription": [
         {
-          "molecule": "AC ACETYLSALICYLIQUE — 75 mg — cpr",
+          "molecule": "AC ACETYLSALICYLIQUE — 75 mg — sachet",
           "quantite": 30,
           "lot": "Exp. 04/2027 (30)",
           "lots": [
@@ -1969,7 +1969,7 @@
       ],
       "prescription": [
         {
-          "molecule": "AMOXICILLINE — 1 g — cpr dispersible",
+          "molecule": "AMOXICILLINE — 500 mg — gélule",
           "quantite": 12,
           "lot": "Exp. 09/2027 (12)",
           "lots": [
@@ -2086,148 +2086,1611 @@
   ],
   "stockConfig": [
     {
-      "molecule": "ALBENDAZOLE — 200 mg — cpr",
-      "stockMinimal": 100,
-      "stockConfort": 400,
-      "unite": "unité",
+      "molecule": "AC ACETYLSALICYLIQUE — 75 mg — sachet",
       "suivi": true,
-      "prixFR": 0.1,
-      "prixLAK": 2500
+      "unite": "unité",
+      "stockMinimal": 32,
+      "stockConfort": 64,
+      "prixFR": 0.08
+    },
+    {
+      "molecule": "AC ACETYLSALICYLIQUE — 81 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 28,
+      "stockConfort": 55,
+      "prixLAK": 500
+    },
+    {
+      "molecule": "AC FOLIQUE — 5 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 319,
+      "stockConfort": 829,
+      "prixLAK": 170
+    },
+    {
+      "molecule": "AC FUSIDIQUE — 2 % — crème",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 2,
+      "prixLAK": 100,
+      "princeps": "Fucidine"
+    },
+    {
+      "molecule": "AC TRANEXAMIQUE — 500 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 10,
+      "stockConfort": 45,
+      "prixFR": 0.19,
+      "princeps": "Exacyl"
+    },
+    {
+      "molecule": "AC TRANEXAMIQUE — 1 g / 10 ml — sol buv",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 1,
+      "prixFR": 0.63,
+      "princeps": "Exacyl"
+    },
+    {
+      "molecule": "ACETAZOLAMIDE — 250 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0.2,
+      "princeps": "Diamox"
+    },
+    {
+      "molecule": "ACICLOVIR — 200 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 13,
+      "stockConfort": 25,
+      "prixLAK": 1700
+    },
+    {
+      "molecule": "ADRENALINE — 1 mg / ml — injectable",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 1,
+      "prixLAK": 12000
+    },
+    {
+      "molecule": "ALBENDAZOLE — 200 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 89,
+      "stockConfort": 178,
+      "prixLAK": 3600,
+      "princeps": "Zentel"
+    },
+    {
+      "molecule": "AMIODARONE — 200 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 5,
+      "stockConfort": 5,
+      "prixFR": 0.28,
+      "princeps": "Cordarone"
     },
     {
       "molecule": "AMLODIPINE — 5 mg — cpr",
-      "stockMinimal": 500,
-      "stockConfort": 1500,
-      "unite": "unité",
       "suivi": true,
-      "prixFR": 0.03,
-      "prixLAK": 700
+      "unite": "unité",
+      "stockMinimal": 796,
+      "stockConfort": 2068,
+      "prixLAK": 1300,
+      "princeps": "Amlor"
+    },
+    {
+      "molecule": "AMLODIPINE — 10 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 689,
+      "stockConfort": 1790,
+      "prixLAK": 1700,
+      "princeps": "Amlor"
+    },
+    {
+      "molecule": "AMOXICILLINE — 250 mg / 5 ml — susp buv",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 20,
+      "stockConfort": 39,
+      "prixLAK": 30000
     },
     {
       "molecule": "AMOXICILLINE — 500 mg — gélule",
-      "stockMinimal": 300,
-      "stockConfort": 1000,
-      "unite": "unité",
       "suivi": true,
-      "prixFR": 0.05,
-      "prixLAK": 1200
+      "unite": "unité",
+      "stockMinimal": 477,
+      "stockConfort": 954,
+      "prixLAK": 800
     },
     {
-      "molecule": "CIPROFLOXACINE — 500 mg — cpr",
-      "stockMinimal": 100,
-      "stockConfort": 300,
-      "unite": "unité",
+      "molecule": "AMOXICILLINE / ACIDE CLAVULANIQUE — 125 mg / 31,25 mg — susp buv",
       "suivi": true,
-      "prixFR": 0.08,
-      "prixLAK": 2000
+      "unite": "unité",
+      "stockMinimal": 3,
+      "stockConfort": 5,
+      "prixFR": 5.43,
+      "prixLAK": 80000,
+      "princeps": "Augmentin"
     },
     {
-      "molecule": "DESOGESTREL — 75 µg — plaquette cpr",
-      "stockMinimal": 5,
-      "stockConfort": 20,
-      "unite": "plaquette",
+      "molecule": "AMOXICILLINE / ACIDE CLAVULANIQUE — 500 mg / 62,5 mg — cpr",
       "suivi": true,
-      "prixFR": 3,
+      "unite": "unité",
+      "stockMinimal": 58,
+      "stockConfort": 115,
+      "prixFR": 0.36,
+      "princeps": "Augmentin"
+    },
+    {
+      "molecule": "AMOXICILLINE / ACIDE CLAVULANIQUE — 500 mg / 125 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 27,
+      "stockConfort": 54,
+      "prixLAK": 9500,
+      "princeps": "Augmentin"
+    },
+    {
+      "molecule": "AMOXICILLINE / ACIDE CLAVULANIQUE — 1 g / 125 mg — sachet",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0.72,
+      "princeps": "Augmentin"
+    },
+    {
+      "molecule": "AMPHOTERICINE B — 10 % — susp buv",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 6,
+      "prixFR": 5.87,
+      "princeps": "Fungizone"
+    },
+    {
+      "molecule": "ANTAZOLINE / TETRAHYDROZOLINE — 0,05 % — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 5
+    },
+    {
+      "molecule": "ATROPINE — 1 % — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 2,
+      "prixFR": 2.73
+    },
+    {
+      "molecule": "AZEOL AF — capsule",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0
+    },
+    {
+      "molecule": "AZITHROMYCINE — 250 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 17,
+      "stockConfort": 34,
+      "prixLAK": 3500,
+      "princeps": "Zithromax"
+    },
+    {
+      "molecule": "AZITHROMYCINE — collyre — dose",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 7,
+      "stockConfort": 29,
+      "prixFR": 0.96,
+      "princeps": "Azyter"
+    },
+    {
+      "molecule": "BABYBIANE IMEDIA (Pilèje) — sachet",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0
+    },
+    {
+      "molecule": "BABYBIANE — sachet",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0
+    },
+    {
+      "molecule": "BANDELETTE GLYCEMIE — bandelette",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 64,
+      "stockConfort": 303,
+      "prixFR": 0.36,
+      "princeps": "Accu-Chek Guide"
+    },
+    {
+      "molecule": "BECLOMETHASONE — 250 µg / dose — spray inhal",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 3,
+      "stockConfort": 6,
+      "prixFR": 15.8,
+      "princeps": "Bécotide"
+    },
+    {
+      "molecule": "BENZOATE DE BENZYLE — 10 % / 125 ml — flacon",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 13.13,
+      "princeps": "Ascabiol"
+    },
+    {
+      "molecule": "BETAMETHASONE — 0,05 % — crème",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 3
+    },
+    {
+      "molecule": "BETAMETHASONE — 0,06 % — crème",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 3,
+      "stockConfort": 5,
       "prixLAK": 70000
     },
     {
-      "molecule": "ENALAPRIL — 20 mg — cpr",
-      "stockMinimal": 300,
-      "stockConfort": 1000,
-      "unite": "unité",
+      "molecule": "BETAMETHASONE — injectable",
       "suivi": true,
-      "prixFR": 0.04,
-      "prixLAK": 900
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 4,
+      "prixFR": 5.31,
+      "princeps": "Diprostène"
+    },
+    {
+      "molecule": "BISOPROLOL — 5 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 407,
+      "stockConfort": 1057,
+      "prixLAK": 6000
+    },
+    {
+      "molecule": "BISOPROLOL — 10 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "BORAX / AC BORIQUE — 12 mg / 18 mg — sol ophtalm",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 28,
+      "stockConfort": 81,
+      "prixFR": 0.29,
+      "princeps": "Dacryosérum"
+    },
+    {
+      "molecule": "C BIANE (Pilèje) — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0
+    },
+    {
+      "molecule": "CARBOMERE — gel ophtalmique",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 3,
+      "stockConfort": 5,
+      "prixFR": 0.11,
+      "princeps": "Lacrifluid / Gel-larmes / Lacrinorm"
+    },
+    {
+      "molecule": "CARTIMOTIL (Pilèje) — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0
+    },
+    {
+      "molecule": "CEFTRIAXONE — 1 g / 3,5 ml — injectable",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 2,
+      "prixLAK": 20000,
+      "princeps": "Rocéphine"
+    },
+    {
+      "molecule": "CEPHALEXINE — 500 mg — capsule",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "princeps": "Keforal"
+    },
+    {
+      "molecule": "CETHEXONIUM — 0,1 mg / 0,4 ml — collyre dose",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0.13,
+      "princeps": "Monosept"
+    },
+    {
+      "molecule": "CETIRIZINE — 10 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 209,
+      "stockConfort": 418,
+      "prixLAK": 800
+    },
+    {
+      "molecule": "CHOLECALCIFEROL — 50 000 UI — ampoule",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 17,
+      "stockConfort": 98,
+      "prixFR": 1.12
+    },
+    {
+      "molecule": "CHOLECALCIFEROL — 100 000 UI — amp buv",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 1,
+      "princeps": "Uvédose"
+    },
+    {
+      "molecule": "CIPROFLOXACINE — 250 mg — cpr",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0.63,
+      "princeps": "Ciflox"
+    },
+    {
+      "molecule": "CIPROFLOXACINE — 500 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 29,
+      "stockConfort": 34,
+      "prixLAK": 1300,
+      "princeps": "Ciflox"
+    },
+    {
+      "molecule": "CLOXACILLINE — 500 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 23,
+      "stockConfort": 45,
+      "prixFR": 0.28,
+      "prixLAK": 1500,
+      "princeps": "Orbénine"
+    },
+    {
+      "molecule": "CYANOCOBALAMINE — 0,2 mg / 0,4 ml — collyre",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "DESLORATADINE — 5 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 2,
+      "stockConfort": 5,
+      "prixFR": 0.19,
+      "princeps": "Aerius"
+    },
+    {
+      "molecule": "DESOGESTREL — 75 µg — plaquette cpr",
+      "suivi": true,
+      "unite": "plaquette",
+      "stockMinimal": 2,
+      "stockConfort": 2,
+      "prixFR": 2.02,
+      "princeps": "Cerazette"
+    },
+    {
+      "molecule": "DEXAMETHASONE — 1 mg / ml — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 4,
+      "stockConfort": 4,
+      "prixFR": 0.18,
+      "princeps": "Dexafree"
+    },
+    {
+      "molecule": "DEXAMETHASONE / NEOMYCINE — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "princeps": "Chibro-Cadron"
+    },
+    {
+      "molecule": "DEXAMETHASONE / OXYTETRACYCLINE — 0,267 mg / 1,335 — pommade ophtalmique",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 20,
+      "stockConfort": 93,
+      "prixFR": 0.46,
+      "princeps": "Sterdex"
+    },
+    {
+      "molecule": "DIAZEPAM — 10 mg / 2 ml — injectable",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 1,
+      "prixLAK": 19000
+    },
+    {
+      "molecule": "DICLOFENAC — 50 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 398,
+      "stockConfort": 795,
+      "prixLAK": 800
+    },
+    {
+      "molecule": "DICLOFENAC — 1 % — gel dermique",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 2,
+      "stockConfort": 3,
+      "prixFR": 3.51,
+      "prixLAK": 25000
+    },
+    {
+      "molecule": "DICLOXACILLINE — 500 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 5,
+      "stockConfort": 10
+    },
+    {
+      "molecule": "DIHYDROGENOPHOSPHATE DE SODIUM — lavement",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 2,
+      "prixFR": 2.57,
+      "princeps": "Normacol"
+    },
+    {
+      "molecule": "DIOSMECTITE — 3 g — sachet-dose",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 19,
+      "stockConfort": 38,
+      "prixFR": 0.12,
+      "prixLAK": 6000,
+      "princeps": "Smecta"
+    },
+    {
+      "molecule": "DOXYCYCLINE — 100 mg — gélule",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 24,
+      "stockConfort": 48,
+      "prixLAK": 1100,
+      "princeps": "Vibramycine"
+    },
+    {
+      "molecule": "DYDROGESTERONE — 10 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 8,
+      "stockConfort": 34,
+      "prixFR": 0.38,
+      "princeps": "Duphaston"
+    },
+    {
+      "molecule": "EBASTINE — 10 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 2,
+      "stockConfort": 9,
+      "prixFR": 0.17,
+      "princeps": "Kestin"
+    },
+    {
+      "molecule": "ECONAZOLE LP — 150 mg — ovule",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 14,
+      "stockConfort": 27,
+      "prixFR": 2.11,
+      "princeps": "Gyno-Pévaryl LP"
+    },
+    {
+      "molecule": "ECONAZOLE — 1 % — crème",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 1,
+      "prixFR": 2.74,
+      "princeps": "Pévaryl"
+    },
+    {
+      "molecule": "ENALAPRIL — 20 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1126,
+      "stockConfort": 2251,
+      "prixLAK": 650
+    },
+    {
+      "molecule": "ENOXAPARINE — 4000 UI / 0,4 ml — injectable",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "princeps": "Lovenox"
+    },
+    {
+      "molecule": "ERYTHROMYCINE — 250 mg — sachet",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 14,
+      "stockConfort": 28,
+      "prixLAK": 3400
+    },
+    {
+      "molecule": "FEMIBIANE CBU FLASH (Pilèje) — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0
+    },
+    {
+      "molecule": "FEMIBIANE INTIMA (Pilèje)",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0
+    },
+    {
+      "molecule": "FENTICONAZOLE — 600 mg — caps vaginale",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 2,
+      "princeps": "Lomexin"
+    },
+    {
+      "molecule": "FENTICONAZOLE — 2 % — crème",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 1,
+      "princeps": "Lomexin"
     },
     {
       "molecule": "FER FUMARATE — 200 mg — cpr",
-      "stockMinimal": 500,
-      "stockConfort": 1500,
-      "unite": "unité",
       "suivi": true,
-      "prixFR": 0.01,
-      "prixLAK": 300
+      "unite": "unité",
+      "stockMinimal": 805,
+      "stockConfort": 2091,
+      "prixLAK": 170
+    },
+    {
+      "molecule": "FLUORESCEINE — 0,5 % — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 1
+    },
+    {
+      "molecule": "FORMAG (Pilèje) — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0
+    },
+    {
+      "molecule": "FORZINC (Pilèje) — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0
+    },
+    {
+      "molecule": "FOSFOMYCINE — 3 g — sol buvable en sachet",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 3,
+      "stockConfort": 12,
+      "prixFR": 5.23,
+      "princeps": "Monuril"
+    },
+    {
+      "molecule": "FUROSEMIDE — 40 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 72,
+      "stockConfort": 143,
+      "prixFR": 0.1
+    },
+    {
+      "molecule": "FUROSEMIDE — 20 mg / 2 ml — injectable",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 1,
+      "prixLAK": 30000
+    },
+    {
+      "molecule": "GLIBENCLAMIDE — 5 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 571,
+      "stockConfort": 1484,
+      "prixLAK": 400,
+      "princeps": "Daonil"
+    },
+    {
+      "molecule": "GLUCOSE — 30 % — amp perfusion",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 1
+    },
+    {
+      "molecule": "GLYCERINE (bébé) — suppositoire",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 4,
+      "stockConfort": 10
+    },
+    {
+      "molecule": "GLYCEROL / VASELINE / PARAFFINE — crème",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 5,
+      "prixFR": 3.53,
+      "princeps": "Dexeryl"
+    },
+    {
+      "molecule": "HARPAGOPHYTUM (Pilèje) — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0
+    },
+    {
+      "molecule": "HYALURONATE DE SODIUM — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 10,
+      "stockConfort": 10,
+      "princeps": "Néovis Total"
+    },
+    {
+      "molecule": "HYALURONATE / CARBOMERE / GLYCEROL — 0,5 ml — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "princeps": "Nereya"
+    },
+    {
+      "molecule": "HYALURONATE DE SODIUM / LIDOCAINE — collyre unidose",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "princeps": "Vistéa"
+    },
+    {
+      "molecule": "HYDROCHLOROTHIAZIDE — 25 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 94,
+      "stockConfort": 187,
+      "prixFR": 0.08,
+      "princeps": "Esidrex"
+    },
+    {
+      "molecule": "HYDROCHLOROTHIAZIDE — 50 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 32,
+      "stockConfort": 63,
+      "prixLAK": 600,
+      "princeps": "Esidrex"
+    },
+    {
+      "molecule": "HYDROCORTISONE / OXYDE ZINC / BENZOCAINE — 5 mg / 200 mg / 10 mg — crème",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 2,
+      "prixLAK": 35000,
+      "princeps": "Doproct"
+    },
+    {
+      "molecule": "HYDROXYDE ALUMINIUM — sachet",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 110,
+      "stockConfort": 220,
+      "prixLAK": 1000
     },
     {
       "molecule": "IBUPROFENE — 400 mg — cpr",
-      "stockMinimal": 300,
-      "stockConfort": 1000,
-      "unite": "unité",
       "suivi": true,
-      "prixFR": 0.03,
-      "prixLAK": 700
+      "unite": "unité",
+      "stockMinimal": 577,
+      "stockConfort": 1500,
+      "prixLAK": 1000
     },
     {
-      "molecule": "LEVONORGESTREL / ETHINYLESTRADIOL (Anna) — 0,15 / 0,03 — plaquette",
-      "stockMinimal": 10,
-      "stockConfort": 30,
-      "unite": "plaquette",
+      "molecule": "IVERMECTINE — cpr",
       "suivi": true,
-      "prixFR": 2.2,
-      "prixLAK": 55000
+      "unite": "unité",
+      "stockMinimal": 166,
+      "stockConfort": 785,
+      "princeps": "Stromectol"
+    },
+    {
+      "molecule": "KETOPROFENE — 100 mg — injectable",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 2,
+      "prixFR": 0.81
+    },
+    {
+      "molecule": "KETOTIFENE — 0,25 mg / ml — collyre unidose",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0.2,
+      "princeps": "Monoketo"
+    },
+    {
+      "molecule": "LACTIBIANE IMEDIA (Pilèje)",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0
+    },
+    {
+      "molecule": "LACTIBIANE REFERENCE (Pilèje) — gélule",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0
+    },
+    {
+      "molecule": "LACTULOSE — 10 g / 15 ml — sachet",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 109,
+      "stockConfort": 217,
+      "prixLAK": 8000
+    },
+    {
+      "molecule": "LAMOTRIGINE — 25 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0.19,
+      "princeps": "Lamictal"
+    },
+    {
+      "molecule": "LAMOTRIGINE — 50 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 3,
+      "stockConfort": 11,
+      "prixFR": 0.28,
+      "princeps": "Lamictal"
+    },
+    {
+      "molecule": "LAMOTRIGINE — 100 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 6,
+      "stockConfort": 21,
+      "prixFR": 0.34,
+      "princeps": "Lamictal"
+    },
+    {
+      "molecule": "LATANOPROST — 50 µg / ml — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 7,
+      "stockConfort": 26,
+      "prixFR": 8.35,
+      "princeps": "Monoprost"
+    },
+    {
+      "molecule": "LEVONORGESTREL — 0,03 mg — cpr",
+      "suivi": true,
+      "unite": "plaquette",
+      "stockMinimal": 3,
+      "stockConfort": 8,
+      "prixFR": 3.96,
+      "princeps": "Microval"
     },
     {
       "molecule": "LEVONORGESTREL / ETHINYLESTRADIOL (Leeloo) — 0,10 mg / 0,02 mg — plaquette",
-      "stockMinimal": 10,
-      "stockConfort": 30,
-      "unite": "plaquette",
       "suivi": true,
-      "prixFR": 2.5,
-      "prixLAK": 60000
+      "unite": "plaquette",
+      "stockMinimal": 3,
+      "stockConfort": 12,
+      "prixFR": 4.78,
+      "princeps": "Leeloo"
+    },
+    {
+      "molecule": "LEVONORGESTREL / ETHINYLESTRADIOL (Anna) — 0,15 / 0,03 — plaquette",
+      "suivi": true,
+      "unite": "plaquette",
+      "stockMinimal": 16,
+      "stockConfort": 32,
+      "prixLAK": 22000,
+      "princeps": "Ludéal"
+    },
+    {
+      "molecule": "LIDOCAÏNE — 100 mg / 20 ml — injectable",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 2,
+      "prixFR": 2.64
+    },
+    {
+      "molecule": "LOPERAMIDE — 2 mg — cpr",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
     },
     {
       "molecule": "METFORMINE — 500 mg — cpr",
-      "stockMinimal": 500,
-      "stockConfort": 2000,
-      "unite": "unité",
       "suivi": true,
-      "prixFR": 0.02,
-      "prixLAK": 500
+      "unite": "unité",
+      "stockMinimal": 3332,
+      "stockConfort": 8663,
+      "prixLAK": 400
+    },
+    {
+      "molecule": "METFORMINE — 1000 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "METHYLPREDNISOLONE — 40 mg — injectable",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 2,
+      "prixLAK": 40000,
+      "princeps": "Solu-Médrol"
+    },
+    {
+      "molecule": "METHYLPREDNISOLONE — 120 mg / 2 ml — injectable",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 1,
+      "princeps": "Solu-Médrol"
+    },
+    {
+      "molecule": "METOCLOPRAMIDE — 10 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "princeps": "Primpéran"
+    },
+    {
+      "molecule": "METOCLOPRAMIDE — 10 mg / 2 ml — injectable",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 1,
+      "princeps": "Primpéran"
+    },
+    {
+      "molecule": "METOPIMAZINE — 7,5 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 12,
+      "stockConfort": 46,
+      "prixFR": 0.18,
+      "princeps": "Vogalène Lyoc"
+    },
+    {
+      "molecule": "METRONIDAZOLE — 250 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 55,
+      "stockConfort": 109,
+      "prixFR": 0.15,
+      "prixLAK": 600,
+      "princeps": "Flagyl"
+    },
+    {
+      "molecule": "METRONIDAZOLE — 500 mg — ovule",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 4,
+      "stockConfort": 8,
+      "prixFR": 0.34,
+      "princeps": "Flagyl"
+    },
+    {
+      "molecule": "MICONAZOLE — 2 % — crème",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 4,
+      "stockConfort": 7,
+      "prixLAK": 17000,
+      "princeps": "Daktarin"
+    },
+    {
+      "molecule": "MULTIBIANE ENFANT (Pilèje)",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0
     },
     {
       "molecule": "MULTIBIANE ADULTE (Pilèje)",
+      "suivi": true,
+      "unite": "unité",
       "stockMinimal": 0,
       "stockConfort": 0,
+      "prixFR": 0
+    },
+    {
+      "molecule": "MUPIROCINE — 2 % — crème",
+      "suivi": true,
       "unite": "unité",
-      "suivi": false,
-      "prixFR": 0,
-      "prixLAK": 0
+      "stockMinimal": 1,
+      "stockConfort": 1,
+      "prixFR": 4.11,
+      "princeps": "Mupiderm"
+    },
+    {
+      "molecule": "NEFOPAM — 20 mg / 2 ml — injectable",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 2,
+      "princeps": "Acupan"
+    },
+    {
+      "molecule": "NICARDIPINE — 20 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 22,
+      "stockConfort": 104,
+      "prixFR": 0.16,
+      "princeps": "Loxen"
+    },
+    {
+      "molecule": "NIFEDIPINE — 20 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 36,
+      "stockConfort": 72,
+      "prixLAK": 800,
+      "princeps": "Adalate"
+    },
+    {
+      "molecule": "NOMEGESTROL / ETHINYLESTRADIOL — 0,5 mg / 0,05 mg — cpr",
+      "suivi": true,
+      "unite": "plaquette",
+      "stockMinimal": 1,
+      "stockConfort": 2,
+      "prixLAK": 10000,
+      "princeps": "Marnon"
+    },
+    {
+      "molecule": "NORFLOXACINE — 0,3 % — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "princeps": "Chibroxine"
+    },
+    {
+      "molecule": "NYSTATINE / NEOMYCINE / POLYMYXINE — 35000 / 35000 / 100000 — ovule",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 14,
+      "stockConfort": 28,
+      "prixLAK": 14000,
+      "princeps": "Polygynax"
+    },
+    {
+      "molecule": "OFLOXACINE — 1,5 mg / 0,5 ml — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 4,
+      "stockConfort": 8,
+      "prixLAK": 9000
+    },
+    {
+      "molecule": "OFLOXACINE — 1,5 mg / 0,5 ml — dose orl",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 20,
+      "stockConfort": 39,
+      "prixFR": 0.24,
+      "prixLAK": 39000
+    },
+    {
+      "molecule": "OLIGOBIANE FER CUIVRE (Pilèje) — gélule",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0
     },
     {
       "molecule": "OMEPRAZOLE — 20 mg — gélule",
-      "stockMinimal": 300,
-      "stockConfort": 1000,
-      "unite": "unité",
       "suivi": true,
-      "prixFR": 0.04,
-      "prixLAK": 900
+      "unite": "unité",
+      "stockMinimal": 488,
+      "stockConfort": 1267,
+      "prixLAK": 800
+    },
+    {
+      "molecule": "OXYBUPROCAÎNE — 1,6 mg / 0,4 ml — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 2,
+      "stockConfort": 7
+    },
+    {
+      "molecule": "OXYTETRACYCLINE / POLYMYXINE B — collyre ou pommade ophtalmique",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 2,
+      "stockConfort": 2
+    },
+    {
+      "molecule": "PANTOPRAZOLE — 40 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 5,
+      "princeps": "Eupantol"
+    },
+    {
+      "molecule": "PARACETAMOL — 250 mg / 5 ml — susp buv",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 18,
+      "stockConfort": 35,
+      "prixLAK": 22000
     },
     {
       "molecule": "PARACETAMOL — 500 mg — cpr",
-      "stockMinimal": 500,
-      "stockConfort": 2000,
-      "unite": "unité",
       "suivi": true,
-      "prixFR": 0.02,
-      "prixLAK": 500
+      "unite": "unité",
+      "stockMinimal": 2138,
+      "stockConfort": 5559,
+      "prixLAK": 350
+    },
+    {
+      "molecule": "PARACETAMOL — 1 g — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
     },
     {
       "molecule": "PHENOBARBITAL — 100 mg — cpr",
-      "stockMinimal": 300,
-      "stockConfort": 1000,
-      "unite": "unité",
       "suivi": true,
-      "prixFR": 0.05,
-      "prixLAK": 1200
+      "unite": "unité",
+      "stockMinimal": 839,
+      "stockConfort": 2180,
+      "prixLAK": 6000
+    },
+    {
+      "molecule": "PHLOROGLUCINOL — 80 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 196,
+      "stockConfort": 391,
+      "prixLAK": 1800,
+      "princeps": "Spasfon"
+    },
+    {
+      "molecule": "PICLOXYDINE — 0,05 % — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 1,
+      "princeps": "Vitabact"
+    },
+    {
+      "molecule": "POMMADE SOUFREE — pommade",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 3,
+      "stockConfort": 5,
+      "prixLAK": 20000
+    },
+    {
+      "molecule": "POTASSIUM CHLORURE — 600 mg — gélule",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 3,
+      "stockConfort": 6,
+      "prixFR": 0.08
+    },
+    {
+      "molecule": "POVIDONE IODEE — 10 % — solution externe",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 7,
+      "stockConfort": 13,
+      "prixLAK": 10000
+    },
+    {
+      "molecule": "POVIDONE IODEE — 5 % — solution oculaire",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "PRAZIQUANTEL — 600 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 14,
+      "stockConfort": 28,
+      "prixLAK": 4500,
+      "princeps": "Biltricide"
+    },
+    {
+      "molecule": "PREDNISOLONE — 5 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 3,
+      "stockConfort": 6
+    },
+    {
+      "molecule": "PREDNISOLONE — 20 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 66,
+      "stockConfort": 132,
+      "prixFR": 0.16,
+      "prixLAK": 9000
+    },
+    {
+      "molecule": "PRISTINAMYCINE — 500 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 1,
+      "prixFR": 1.19,
+      "princeps": "Pyostacine"
+    },
+    {
+      "molecule": "PROGESTERONE — 200 mg — capsule orale ou vaginale",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 8,
+      "stockConfort": 15,
+      "prixLAK": 20000,
+      "princeps": "Utrogestan"
+    },
+    {
+      "molecule": "PYRANTEL — 125 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 4,
+      "stockConfort": 19,
+      "prixFR": 0.5,
+      "princeps": "Combantrin"
+    },
+    {
+      "molecule": "RACECADOTRIL — 100 mg — gélule",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 2,
+      "prixFR": 0.27,
+      "princeps": "Tiorfan"
+    },
+    {
+      "molecule": "RACECADOTRIL — 30 mg — sachet",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 2,
+      "prixFR": 0.24,
+      "princeps": "Tiorfan"
+    },
+    {
+      "molecule": "RACECADOTRIL — 175 mg — cpr",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0.47,
+      "princeps": "Tiorfan"
+    },
+    {
+      "molecule": "RACECADOTRIL — 10 mg — sachet",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0.47,
+      "princeps": "Tiorfan"
+    },
+    {
+      "molecule": "RIFAMYCINE — 1000000 UI — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 3.44
+    },
+    {
+      "molecule": "RINGER LACTATE — perfusion",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 1,
+      "prixLAK": 32000
+    },
+    {
+      "molecule": "SALBUTAMOL — 100 µg / dose — spray inhal",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 7,
+      "stockConfort": 13,
+      "prixLAK": 72000,
+      "princeps": "Ventoline"
+    },
+    {
+      "molecule": "SALBUTAMOL — 2,5 mg / 2,5 ml — nébulisation",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0.29
+    },
+    {
+      "molecule": "SERUM PHYSIOLOGIQUE — 5 ml — sol nasale et ophtalmique",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 243,
+      "stockConfort": 999
+    },
+    {
+      "molecule": "CHLORURE DE SODIUM — 0,9 % / 100 ml — injectable",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 1
     },
     {
       "molecule": "SOLUTE DE REHYDRATATION ORALE (SRO) — sachet",
-      "stockMinimal": 250,
-      "stockConfort": 500,
-      "unite": "unité",
       "suivi": true,
-      "prixFR": 0.15,
-      "prixLAK": 3500
+      "unite": "unité",
+      "stockMinimal": 8,
+      "stockConfort": 16,
+      "prixLAK": 4000
+    },
+    {
+      "molecule": "SULFADIAZINE ARGENTIQUE — crème",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 1,
+      "princeps": "Flammazine"
+    },
+    {
+      "molecule": "SULFAMETHOXAZOLE / TRIMETHOPRIME — 400 mg / 80 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 53,
+      "stockConfort": 106,
+      "prixLAK": 400,
+      "princeps": "Bactrim"
+    },
+    {
+      "molecule": "SULFAMETHOXAZOLE / TRIMETHOPRIME — 800 mg / 160 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "princeps": "Bactrim Forte"
+    },
+    {
+      "molecule": "TAMSULOSINE — 0,4 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 214,
+      "stockConfort": 883,
+      "prixFR": 0.18
+    },
+    {
+      "molecule": "TEST DE GROSSESSE",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 3,
+      "stockConfort": 5,
+      "prixLAK": 12000
+    },
+    {
+      "molecule": "TETRACAÎNE — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 5
+    },
+    {
+      "molecule": "THEALOSE — 15 ml — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "princeps": "Thealoz"
+    },
+    {
+      "molecule": "THIAMINE (VIT B1) — 2,5 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 75,
+      "stockConfort": 150,
+      "prixLAK": 180
+    },
+    {
+      "molecule": "TIMOLOL — 0,5 % — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 2,
+      "stockConfort": 2,
+      "prixFR": 5.44,
+      "princeps": "Timoptol LP"
+    },
+    {
+      "molecule": "TOBRAMYCINE — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "princeps": "Tobrex"
+    },
+    {
+      "molecule": "TRAMADOL — 50 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "TRAMADOL — 100 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "TRAMADOL / PARACETAMOL — 37,5 mg / 325 — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "TRANSITBIANE (Pilèje) — sachet",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 39,
+      "stockConfort": 78,
+      "prixFR": 0
+    },
+    {
+      "molecule": "TRINITRINE — 0,15 mg / dose — spray buccal",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 2,
+      "prixFR": 4.39,
+      "princeps": "Natispray"
+    },
+    {
+      "molecule": "TROLAMINE — 0,67 % — crème",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 2,
+      "princeps": "Biafine"
+    },
+    {
+      "molecule": "TROPICAMIDE — 2 mg / 0,4 ml — collyre",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "TULLE GRAS",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 12,
+      "stockConfort": 47
+    },
+    {
+      "molecule": "UNIBIANE IODE (Pilèje) — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0,
+      "prixFR": 0
+    },
+    {
+      "molecule": "VALPROATE DE SODIUM — 500 mg",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 15,
+      "stockConfort": 59,
+      "prixFR": 0.13,
+      "princeps": "Dépakine"
+    },
+    {
+      "molecule": "VASELINE — 50 ou 80 g",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 2,
+      "prixLAK": 80000
+    },
+    {
+      "molecule": "VASELINE — pot 1 kg",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "ACICLOVIR — 5 % — crème",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 1,
+      "stockConfort": 2
+    },
+    {
+      "molecule": "AMOXICILLINE / ACIDE CLAVULANIQUE — 100 mg / 12,5 mg — susp buv",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 2,
+      "stockConfort": 4
+    },
+    {
+      "molecule": "BILASTINE — 20 mg — cpr",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "CALCITONINE — 100 UI — injectable",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "CEFIXIME — 100 mg / 5 ml — susp buv",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "CHLORURE DE SODIUM — 15 g — voie rectale",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "DAKIN — solution externe",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "DEXAMETHASONE / TOBRAMYCINE — collyre",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "ERYTHROMYCINE — 500 mg — cpr",
+      "suivi": true,
+      "unite": "unité",
+      "stockMinimal": 5,
+      "stockConfort": 10
+    },
+    {
+      "molecule": "LEVOFLOXACINE — 500 mg — cpr",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "PHLOROGLUCINOL / TRIMETHYLPHLOROGLUCINOL — 160 mg — lyophilisat oral",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "PRAVASTATINE — 10 mg — cpr",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
+    },
+    {
+      "molecule": "THIOCOLCHICOSIDE — 4 mg — injectable",
+      "suivi": false,
+      "unite": "unité",
+      "stockMinimal": 0,
+      "stockConfort": 0
     }
   ],
   "parametres": [
