@@ -7161,7 +7161,7 @@ async function exporterCommande() {
 
   XLSX.utils.book_append_sheet(wb, ws, 'Commande');
   const nomFichier = `Commande_${(mission?.numero || 'stock').replace(/\s+/g, '_')}_${dateAujourdhui()}.xlsx`;
-  XLSX.writeFile(wb, nomFichier);
+  XLSX.writeFile(wb, nomFichier, OPT_XLSX);
   toast('✅ Liste de commande exportée', 'success');
 }
 
@@ -7976,7 +7976,7 @@ async function exporterMission() {
       'Patients à revoir', [11, 24, 20, 6, 20, 20, 22, 11, 35, 40]);
     ajouter(Object.entries(pathoCounts).sort((a, b) => b[1] - a[1]).map(([p, n]) => ({ 'Pathologie': p, 'Nb': n })), 'Pathologies', [50, 8]);
 
-    XLSX.writeFile(wb, `Rapport_fin_de_mission_${M.numero.replace(/[^a-zA-Z0-9]+/g, '_')}_${dateAujourdhui()}.xlsx`);
+    XLSX.writeFile(wb, `Rapport_fin_de_mission_${M.numero.replace(/[^a-zA-Z0-9]+/g, '_')}_${dateAujourdhui()}.xlsx`, OPT_XLSX);
     toast('✅ Rapport de fin de mission exporté', 'success');
   } catch(e) {
     console.error(e);
@@ -8585,6 +8585,17 @@ async function ecrireDansDossierDrive(nom, blob) {
   await wr.write(blob); await wr.close();
 }
 
+// Feuille Excel à partir de lignes { colonne: valeur } : mêmes colonnes dans le même ordre, mais les cases vides ne sont pas
+// écrites du tout (au lieu d'un texte vide dans chacune). Avec une soixantaine de colonnes le plus souvent vides, l'export
+// est bien plus rapide et le fichier bien plus petit ; à l'ouverture, les cases sont vides comme avant.
+function feuilleExcel(lignes) {
+  if (!lignes.length) return XLSX.utils.json_to_sheet([{}]);
+  const colonnes = Object.keys(lignes[0]);
+  const sansVides = lignes.map(l => { const o = {}; for (const c of colonnes) if (l[c] !== '' && l[c] != null) o[c] = l[c]; return o; });
+  return XLSX.utils.json_to_sheet(sansVides, { header: colonnes });
+}
+const OPT_XLSX = { compression: true };   // fichier compressé : environ dix fois plus léger à partager
+
 async function genererWorkbook() {
   if (!(await chargerXLSX())) throw new Error('XLSX indisponible');
 
@@ -8611,21 +8622,21 @@ async function genererWorkbook() {
     'ID Patient': c.patientId || '',
     'Mission': c.mission || '',
   }));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsC.length ? rowsC : [{}]), 'Consultations');
+  XLSX.utils.book_append_sheet(wb, feuilleExcel(rowsC), 'Consultations');
 
   const recs  = await dbGetAll('receptions');
   const rowsR = recs.map(r => ({
     'Date': r.date, 'Fournisseur': r.fournisseur, 'Molécule': r.molecule,
     'N° lot': r.lot, 'Date péremption': r.datePeremption, 'Quantité': r.quantite
   }));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsR.length ? rowsR : [{}]), 'Receptions');
+  XLSX.utils.book_append_sheet(wb, feuilleExcel(rowsR), 'Receptions');
 
   const sorts = await dbGetAll('sorties');
   const rowsS = sorts.map(s => ({
     'Date': s.date, 'Motif': s.motif, 'Molécule': s.molecule,
     'N° lot': s.lot, 'Date péremption': s.datePeremption, 'Quantité': s.quantite
   }));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsS.length ? rowsS : [{}]), 'Sorties');
+  XLSX.utils.book_append_sheet(wb, feuilleExcel(rowsS), 'Sorties');
 
   return wb;
 }
@@ -8683,7 +8694,7 @@ async function exporterExcel() {
   toast('⏳ Préparation de l\'export…', 'success');
   try {
     const wb = await genererWorkbook();
-    XLSX.writeFile(wb, nomFichierExport());
+    XLSX.writeFile(wb, nomFichierExport(), OPT_XLSX);
     marquerExport();
     toast('✅ Fichier téléchargé', 'success');
   } catch(e) {
@@ -8715,7 +8726,7 @@ async function exporterVersDrive() {
     if (await chargerXLSX()) {
       try {
         const wb = await genererWorkbook();
-        blobXLSX = new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })],
+        blobXLSX = new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array', ...OPT_XLSX })],
           { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       } catch(e) { console.warn('[Export Excel]', e); }
     }

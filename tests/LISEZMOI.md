@@ -85,9 +85,10 @@ Chaque scénario affiche ✓ (réussi) ou ✗ (échec) avec la raison. Compter e
 | 42 | Stock initial importé en cours de mission | dans le rapport, il reste le « Stock début de mission » ; seules les vraies réceptions comptent en entrées |
 | 43 | Mémoire des données | aucune relecture complète de la base pendant la prescription, en changeant d'écran, ni après une écriture simple ; après chaque sorte d'écriture (ajout, modification, suppression, groupée, directe, annulée) le stock servi est identique à un recalcul complet |
 | 44 | Sauvegarde par morceaux | fichier .json au contenu identique, plus léger, écrit par morceaux en rendant la main à l'écran ; copie interne d'avant reprise ni lue ni exportée ; restauration inchangée |
+| 45 | Export Excel allégé | mêmes feuilles, mêmes colonnes, mêmes valeurs case par case ; cases vides non écrites et fichier compressé ; export possible sur une base vide |
 
-Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 42 dans un vrai navigateur (Chromium).
-Les scénarios 18 à 35 et 37 à 42 vérifient les corrections de l'audit de novembre 2026 ; ceux du passage de relais partagent les outils de `scenarios/_relais.js`.
+Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 45 dans un vrai navigateur (Chromium).
+Les scénarios 18 à 35 et 37 à 45 vérifient les corrections de l'audit de novembre 2026 ; ceux du passage de relais partagent les outils de `scenarios/_relais.js`.
 
 Le scénario 36 joue une mission entière. Pour le lancer seul : `node lancer-tout.js 36` (une minute environ). Il tient sa propre comptabilité du stock et s'arrête en échec au moindre écart.
 
