@@ -3811,6 +3811,18 @@ function autosaverConsultation() {
   }, 3000); // sauvegarde 3s après la dernière frappe
 }
 
+// Une consultation identique est-elle déjà enregistrée ? (même patient, même date, même prescription)
+// Sert à éviter le doublon : brouillon repris alors que la consultation était déjà enregistrée, saisie refaite par erreur…
+async function consultationIdentique(nom, prenom, date, lignes, exclureId) {
+  const N = normNomPatient(nom), P = normNomPatient(prenom);
+  if (!N || !date) return null;
+  const signature = l => l.filter(x => x.mol).map(x => `${x.mol}×${parseInt(x.qty) || 0}`).sort().join('|');
+  const sig = signature(lignes || []);
+  return (await dbGetAll('consultations')).find(c => c.id !== exclureId && c.date === date && normNomPatient(c.nom) === N && normNomPatient(c.prenom) === P
+    && signature((c.prescription || []).map(p => ({ mol: p.molecule, qty: p.quantite }))) === sig) || null;
+}
+const heureSaisie = c => c.createdAt && !isNaN(new Date(c.createdAt)) ? ' à ' + new Date(c.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+
 async function restaurerBrouillon() {
   const raw = localStorage.getItem(AUTOSAVE_KEY);
   if (!raw) return false;
@@ -3819,7 +3831,9 @@ async function restaurerBrouillon() {
     const savedAt = new Date(b.savedAt);
     const ageMin  = Math.round((Date.now() - savedAt) / 60000);
     if (ageMin > 480) { localStorage.removeItem(AUTOSAVE_KEY); return false; } // ignorer si > 8h
-    if (!(await confirmer(`Une consultation en cours de saisie a été sauvegardée il y a ${ageMin < 1 ? 'moins d\'une minute' : ageMin + ' min'}.`, { titre: 'Reprendre le brouillon ?', ok: 'Reprendre', annuler: 'Effacer le brouillon' }))) {
+    const deja = await consultationIdentique(b.nom, b.prenom, b.date, b.presc);
+    const alerte = deja ? `\n\n⚠ Une consultation identique (${b.nom}${b.prenom ? ' ' + b.prenom : ''}, même date, même prescription) a DÉJÀ été enregistrée${heureSaisie(deja)}. Ce brouillon est sans doute celui de cette consultation : choisissez « Effacer le brouillon ».` : '';
+    if (!(await confirmer(`Une consultation en cours de saisie a été sauvegardée il y a ${ageMin < 1 ? 'moins d\'une minute' : ageMin + ' min'}.` + alerte, { titre: 'Reprendre le brouillon ?', ok: 'Reprendre', annuler: 'Effacer le brouillon' }))) {
       localStorage.removeItem(AUTOSAVE_KEY);
       return false;
     }
@@ -3892,6 +3906,14 @@ async function confirmerAvantEnregistrement() {
     else if (mis?.debut && mis?.fin && (!_editionConsultation || _editionConsultation.mission === mis.numero) && (date < mis.debut || date > mis.fin))
       alerte = `La date saisie (${lisible(date)}) est en dehors de la mission en cours (${mis.numero}, du ${lisible(mis.debut)} au ${lisible(mis.fin)}).`;
     if (alerte && !(await confirmer(alerte + '\n\nEst-ce bien la bonne date ?', { titre: '⚠ Vérifier la date', ok: 'Oui, garder cette date', annuler: 'Corriger' }))) return;
+  }
+
+  // Consultation identique déjà enregistrée : l'enregistrer encore retirerait les médicaments du stock une seconde fois
+  if (!_editionConsultation) {
+    const lignes = [1, 2, 3, 4, 5].map(i => ({ mol: COMBOS['presc_mol_' + i]?.getValue() || '', qty: document.getElementById('presc_qty_' + i)?.value || '' }));
+    const deja = await consultationIdentique(nom, prenom, date, lignes);
+    if (deja && !(await confirmer(`Une consultation identique est déjà enregistrée pour ${nom}${prenom ? ' ' + prenom : ''} à cette date${heureSaisie(deja)} : même patient, même prescription.\n\nL'enregistrer une seconde fois retirerait les médicaments du stock une seconde fois.`,
+        { titre: '⚠ Consultation déjà enregistrée ?', ok: 'Enregistrer quand même', annuler: 'Ne pas enregistrer', danger: true }))) return;
   }
 
   // Valeurs impossibles : refusées. Valeurs inhabituelles (faute de frappe probable) : confirmation demandée.
