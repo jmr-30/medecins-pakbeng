@@ -5619,15 +5619,35 @@ async function calculerAllocationsPrescription() {
   const map = await calculerStock(_editionConsultation?.id);
   const restantsParMol = {};
   const res = {};
+  const saisies = {};
   for (let i = 1; i <= 5; i++) {
     const mol = COMBOS['presc_mol_' + i]?.getValue() || '';
     const qty = parseInt(document.getElementById('presc_qty_' + i)?.value) || 0;
     if (!mol || qty <= 0) { res[i] = null; continue; }
-    const lotForce = document.getElementById('presc_lot_' + i)?.value || '';
+    saisies[i] = { mol, qty, lotForce: document.getElementById('presc_lot_' + i)?.value || '' };
     if (!restantsParMol[mol]) restantsParMol[mol] = {};
-    const lots = map[mol] || {};
-    res[i] = { molecule: mol, quantite: qty, lotForce, dispo: stockDisponible(lots),
-               ...allouerFEFO(lots, restantsParMol[mol], qty, lotForce) };
+  }
+  // Modification d'une consultation : une ligne inchangée (même médicament, même quantité, même lot imposé) garde les lots
+  // qui ont réellement été délivrés. Sans cela, corriger un nom des semaines plus tard redistribuait la délivrance
+  // sur les lots d'aujourd'hui (lot périmé entre-temps, lot épuisé…) et faussait le stock lot par lot.
+  const origines = (_editionConsultation?.prescription || []).filter(p => Array.isArray(p.lots) && p.lots.length
+    && p.lots.reduce((a, l) => a + (l.quantite || 0), 0) === p.quantite);
+  for (const [i, x] of Object.entries(saisies)) {
+    const k = origines.findIndex(p => p.molecule === x.mol && p.quantite === x.qty && (p.lotForce || '') === x.lotForce);
+    if (k < 0) continue;
+    const o = origines.splice(k, 1)[0];
+    const lots = map[x.mol] || {}, restants = restantsParMol[x.mol];
+    const prelevements = o.lots.filter(l => l.lot !== LOT_A_REGULARISER).map(l => ({ lot: l.lot, datePeremption: l.datePeremption || '', quantite: l.quantite || 0 }));
+    prelevements.forEach(l => { restants[l.lot] = (restants[l.lot] ?? lots[l.lot]?.restant ?? 0) - l.quantite; });
+    res[i] = { molecule: x.mol, quantite: x.qty, lotForce: x.lotForce, dispo: stockDisponible(lots), conserve: true,
+               prelevements, manque: o.lots.filter(l => l.lot === LOT_A_REGULARISER).reduce((a, l) => a + (l.quantite || 0), 0) };
+  }
+  // Les autres lignes (nouvelles ou modifiées) sont servies en FEFO sur ce qui reste
+  for (const [i, x] of Object.entries(saisies)) {
+    if (res[i]) continue;
+    const lots = map[x.mol] || {};
+    res[i] = { molecule: x.mol, quantite: x.qty, lotForce: x.lotForce, dispo: stockDisponible(lots),
+               ...allouerFEFO(lots, restantsParMol[x.mol], x.qty, x.lotForce) };
   }
   return res;
 }
