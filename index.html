@@ -1602,8 +1602,9 @@ button[onclick^="supprimerItem"], .btn-sortir-lot, #missionBadge button {
     🔁 Reprendre les données d'une sauvegarde
   </button>
   <input type="file" id="repriseJSONFile" accept=".json" style="display:none" onchange="reprendreSauvegarde(this)">
+  <button class="btn btn-secondary" id="btnAnnulerReprise" style="display:none;width:100%;margin-top:8px" onclick="annulerDerniereReprise()">↩ Annuler la dernière reprise</button>
   <div style="margin-top:8px;font-size:.72rem;color:var(--brun-clair);padding:8px 12px;background:var(--sable-fonce);border-radius:7px;line-height:1.5">
-    💡 <strong>Passage de relais</strong> (tablette ⇄ pharmacienne) : « Reprendre les données » <strong>remplace</strong> les données de cet appareil par celles de la sauvegarde, corrections et annulations comprises. Les saisies faites ici et absentes de la sauvegarde sont conservées.<br>
+    💡 <strong>Passage de relais</strong> (tablette ⇄ pharmacienne) : « Reprendre les données » <strong>remplace</strong> les données de cet appareil par celles de la sauvegarde, corrections et annulations comprises. Les saisies faites ici et absentes de la sauvegarde sont conservées. En cas d'erreur de fichier, « Annuler la dernière reprise » remet les données d'avant.<br>
     <strong>Restaurer .json</strong> ne fait qu'<strong>ajouter</strong> ce qui manque : à réserver à un appareil vide.
   </div>
   <div style="margin-top:10px;">
@@ -5111,9 +5112,11 @@ async function reprendreSauvegarde(input) {
   if (data.provenance?.role && data.provenance.role === roleAppareil()) msg += `\n\n⚠ Cette sauvegarde vient d'un appareil de même rôle que celui-ci (${libelleRole(roleAppareil())}). Vérifiez qu'il s'agit bien du bon fichier.`;
   if (!(await confirmer(msg, { titre: 'Reprendre les données de cette sauvegarde ?', ok: 'Remplacer', danger: true }))) return;
 
-  // Copie de sécurité des données actuelles (obligatoire)
+  // Copie de sécurité des données actuelles (obligatoire) : un fichier téléchargé ET une copie gardée dans l'appareil
+  let copieAvant;
   try {
     const blob = await genererBlobJSON(); const nom = `${prefixeFichier()}_avant_reprise_${horodatageFichier()}.json`;
+    copieAvant = { le: new Date().toISOString(), fichier: file.name, repere: localStorage.getItem('base_reprise'), donnees: JSON.parse(await blob.text()) };
     telechargerBlob(blob, nom);
     if (_driveDirectoryHandle && _dossierAutorise) { try { await ecrireDansDossierDrive(nom, blob); } catch(e) {} }
   } catch(e) { toast('❌ Copie de sécurité impossible : rien n\'a été modifié', 'error'); return; }
@@ -5148,7 +5151,7 @@ async function reprendreSauvegarde(input) {
     };
     const params = new Map();
     for (const p of data.parametres) {
-      if (p.cle === CLE_DOSSIER) continue;
+      if (p.cle === CLE_DOSSIER || p.cle === CLE_COPIE) continue;
       if (p.cle === 'journal_corrections') params.set(p.cle, fusionner(p.cle, p.valeur, 500));
       else if (p.cle === 'inventaires') params.set(p.cle, fusionner(p.cle, p.valeur, 50));
       else params.set(p.cle, p.valeur);
@@ -5161,6 +5164,7 @@ async function reprendreSauvegarde(input) {
     contenu.parametres = [...params].map(([cle, valeur]) => ({ cle, valeur }));
     const dossier = paramsLocaux.find(p => p.cle === CLE_DOSSIER);
     if (dossier) contenu.parametres.push(dossier);
+    contenu.parametres.push({ cle: CLE_COPIE, valeur: copieAvant });   // permet « Annuler la dernière reprise »
 
     // 2. Écriture en une seule fois : tout ou rien
     await remplacerBase(contenu);
@@ -5181,6 +5185,56 @@ async function reprendreSauvegarde(input) {
     localStorage.setItem('stock_initial_charge', localStorage.getItem('stock_initial_charge') || new Date().toISOString());
     localStorage.setItem('nbConsultationsConnu', String((await dbGetAll('consultations')).length));
     localStorage.setItem('message_apres_reprise', `✅ Données reprises — ${aGarder.length + modifsGardees.length} saisie(s) locale(s) conservée(s)`);
+  } catch(e) { console.warn('[Reprise] repères', e); }
+  location.reload();
+}
+
+// ── Annuler la dernière reprise : retour aux données d'avant, les saisies faites depuis sont conservées ──
+async function majBoutonAnnulerReprise() {
+  const btn = document.getElementById('btnAnnulerReprise'); if (!btn) return;
+  const copie = await getParam(CLE_COPIE, null);
+  btn.style.display = copie ? '' : 'none';
+  if (copie) btn.textContent = `↩ Annuler la dernière reprise (du ${new Date(copie.le).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })})`;
+}
+
+async function annulerDerniereReprise() {
+  const copie = await getParam(CLE_COPIE, null);
+  if (!copie || controlerSauvegarde(copie.donnees).length) { toast('❌ Aucune reprise à annuler', 'error'); return; }
+  const d = copie.donnees;
+  // Saisies faites depuis la reprise : elles sont conservées
+  const depuis = [];
+  for (const [store, type] of STORES_DONNEES)
+    for (const r of await dbGetAll(store)) if (String(r.createdAt || '') > copie.le) depuis.push({ store, type, r });
+  const quand = new Date(copie.le).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  if (!(await confirmer(`Les données de cet appareil reviendront à leur état du ${quand}, juste avant la reprise de « ${copie.fichier} ».\n\n` +
+      `Contenu retrouvé : ${d.consultations.length} consultation(s), ${d.receptions.length} réception(s), ${d.sorties.length} sortie(s).` +
+      (depuis.length ? `\n\n✅ Les ${depuis.length} saisie(s) faites depuis la reprise seront CONSERVÉES.` : ''),
+      { titre: 'Annuler la dernière reprise ?', ok: 'Annuler la reprise', danger: true }))) return;
+  try { telechargerBlob(await genererBlobJSON(), `${prefixeFichier()}_avant_annulation_reprise_${horodatageFichier()}.json`); } catch(e) {}
+  clearTimeout(_sauvegardeAutoTimer); clearTimeout(_autosaveTimer);
+  try {
+    const contenu = { stock_config: d.stockConfig };
+    for (const [store] of STORES_DONNEES)
+      contenu[store] = [...d[store], ...depuis.filter(x => x.store === store).map(x => { const c = { ...x.r }; delete c.id; return c; })];
+    const params = d.parametres.filter(p => p.cle !== CLE_DOSSIER && p.cle !== CLE_COPIE && p.cle !== 'journal_corrections');
+    const journal = [...(d.parametres.find(p => p.cle === 'journal_corrections')?.valeur || [])];
+    journal.unshift({ le: new Date().toISOString(), action: 'reprise', type: 'sauvegarde', resume: '', champs: [], avant: null, apres: null,
+      motif: `Reprise de « ${copie.fichier} » annulée — retour aux données du ${quand}, ${depuis.length} saisie(s) faites depuis conservées` });
+    params.push({ cle: 'journal_corrections', valeur: journal.slice(0, 500) });
+    const dossier = await dbGet('parametres', CLE_DOSSIER);
+    if (dossier) params.push(dossier);
+    contenu.parametres = params;
+    await remplacerBase(contenu);
+  } catch(e) {
+    console.error(e);
+    await confirmer('L\'annulation n\'a pas pu se faire. Rien n\'a été modifié.', { titre: '❌ Annulation impossible', ok: 'Compris', annuler: false });
+    return;
+  }
+  try {
+    if (d.mission) localStorage.setItem('mission_active', JSON.stringify(d.mission));
+    if (copie.repere) localStorage.setItem('base_reprise', copie.repere); else localStorage.removeItem('base_reprise');
+    localStorage.setItem('nbConsultationsConnu', String((await dbGetAll('consultations')).length));
+    localStorage.setItem('message_apres_reprise', `✅ Reprise annulée — ${depuis.length} saisie(s) faites depuis conservée(s)`);
   } catch(e) { console.warn('[Reprise] repères', e); }
   location.reload();
 }
@@ -5375,7 +5429,7 @@ async function afficherJournal() {
       <div class="form-section-body" style="padding:10px 14px">
         ${journal.length ? journal.slice(0, 50).map(j => `
           <div style="padding:7px 0;border-bottom:1px solid var(--sable-fonce);font-size:.8rem;color:var(--brun)">
-            <div><strong>${j.action === 'modification' ? '✏️ Modification' : j.action === 'renommage' ? '🔤 Renommage' : '✖ Annulation'}</strong> · ${types[j.type] || esc(j.type)}
+            <div><strong>${j.action === 'modification' ? '✏️ Modification' : j.action === 'renommage' ? '🔤 Renommage' : j.action === 'reprise' ? '🔁 Reprise' : '✖ Annulation'}</strong> · ${types[j.type] || esc(j.type)}
               <span style="color:var(--brun-clair)"> — ${new Date(j.le).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</span></div>
             <div style="color:var(--brun-doux)">${esc(j.resume)}${j.champs?.length ? ' · champs modifiés : ' + esc(j.champs.join(', ')) : ''}</div>
             ${j.motif ? `<div style="font-style:italic;color:var(--brun-doux)">Motif : ${esc(j.motif)}</div>` : ''}
@@ -7681,6 +7735,7 @@ function getMissionNumero() {
 // PROTECTION DES DONNÉES : stockage persistant, sauvegarde automatique, détection de perte
 // ═══════════════════════════════════════════════════════════════════
 const CLE_DOSSIER = 'dossier_sauvegarde';
+const CLE_COPIE = 'copie_avant_reprise';   // copie interne des données d'avant la dernière reprise (jamais exportée)
 let _etatStockage = 'inconnu';     // protege | non | indisponible
 let _dossierAutorise = false;
 let _sauvegardeAutoTimer = null;
@@ -7998,7 +8053,7 @@ async function importerJSON(input) {
     // Paramètres : les listes sont FUSIONNÉES (rien de ce qui existe sur cet appareil n'est perdu)
     const LISTES = ['lieux', 'medecins', 'fournisseurs', 'molecules'];
     for (const p of (data.parametres || [])) {
-      if (p.cle === CLE_DOSSIER) continue;
+      if (p.cle === CLE_DOSSIER || p.cle === CLE_COPIE) continue;
       if (LISTES.includes(p.cle) && Array.isArray(p.valeur)) {
         const local = await getParam(p.cle, REF[p.cle] || null);   // liste par défaut si jamais modifiée
         if (Array.isArray(local)) {
@@ -8179,7 +8234,7 @@ async function genererBlobJSON() {
     dernierMed2:  localStorage.getItem('dernier_med2')   || null,
     provenance:   { role: roleAppareil(), libelle: libelleRole(roleAppareil()) },
     base:         (() => { try { return JSON.parse(localStorage.getItem('base_reprise') || 'null'); } catch(e) { return null; } })(),
-    consultations, receptions, sorties, stockConfig, parametres: parametres.filter(p => p.cle !== CLE_DOSSIER),
+    consultations, receptions, sorties, stockConfig, parametres: parametres.filter(p => p.cle !== CLE_DOSSIER && p.cle !== CLE_COPIE),
   };
   return new Blob([JSON.stringify(sauvegarde, null, 2)], { type: 'application/json' });
 }
@@ -8885,6 +8940,7 @@ async function init() {
   demanderStockagePersistant();
   restaurerDossierSauvegarde();
   enregistrerServiceWorker();
+  majBoutonAnnulerReprise();
   const msgReprise = localStorage.getItem('message_apres_reprise');
   if (msgReprise) { localStorage.removeItem('message_apres_reprise'); setTimeout(() => toast(msgReprise, 'success'), 1200); }
   setTimeout(() => demanderRoleSiBesoin(), 2500);

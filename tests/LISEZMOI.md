@@ -60,6 +60,7 @@ Chaque scénario affiche ✓ (réussi) ou ✗ (échec) avec la raison. Compter e
 | 13 | Réinitialisation | sauvegarde préalable, mot de confirmation, effacement, restauration enchaînée, stock initial non doublé |
 | 18 | Reprise d'un fichier invalide | fichier tronqué, mal formé ou d'une ancienne version refusé avant toute écriture ; panne en cours d'écriture : rien n'est modifié (tout ou rien) |
 | 19 | Reprise : contrôle de la date | fichier plus ancien que celui déjà repris refusé, fichier déjà repris signalé, fichier sans date refusé, fichier plus récent accepté, retour en arrière avec la copie « avant_reprise » |
+| 20 | Annuler la dernière reprise | copie interne des données d'avant la reprise, jamais exportée ; annulation : données d'avant retrouvées, saisies faites depuis conservées, nouvelle reprise possible |
 
 Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 16 dans un vrai navigateur (Chromium).
 
