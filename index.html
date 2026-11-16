@@ -2859,14 +2859,24 @@ function ouvrirDB() {
   });
 }
 
-function dbAdd(store, obj) {
+// Toute écriture passe par ici : la promesse n'aboutit qu'une fois la transaction VALIDÉE, et écrite pour de bon sur la
+// mémoire de l'appareil (durabilité « stricte »). Le message « ✅ enregistré » n'apparaît donc que si la saisie survit
+// à une coupure de batterie ; si la transaction est annulée, l'écriture est signalée en erreur.
+const OPT_ECRITURE = { durability: 'strict' };
+function transactionEcriture(store, action) {
   return new Promise((res, rej) => {
-    if (!db || !db.objectStoreNames.contains(store)) { rej(new Error(`Store "${store}" introuvable`)); return; }
-    const tx = db.transaction(store, 'readwrite');
-    const req = tx.objectStore(store).add(obj);
-    req.onsuccess = () => res(req.result);
-    req.onerror   = () => rej(req.error);
+    let tx, resultat;
+    try { tx = db.transaction(store, 'readwrite', OPT_ECRITURE); } catch(e) { rej(e); return; }
+    tx.oncomplete = () => res(resultat);
+    tx.onabort = tx.onerror = () => rej(tx.error || new Error('Écriture annulée'));
+    try { const req = action(tx.objectStore(store)); req.onsuccess = () => { resultat = req.result; }; }
+    catch(e) { try { tx.abort(); } catch(_) {} rej(e); }
   });
+}
+
+function dbAdd(store, obj) {
+  if (!db || !db.objectStoreNames.contains(store)) return Promise.reject(new Error(`Store "${store}" introuvable`));
+  return transactionEcriture(store, st => st.add(obj));
 }
 
 function dbGetAll(store) {
@@ -2895,23 +2905,13 @@ function dbGet(store, key) {
 }
 
 function dbPut(store, obj) {
-  return new Promise((res, rej) => {
-    if (!db || !db.objectStoreNames.contains(store)) { rej(new Error(`Store "${store}" introuvable`)); return; }
-    const tx  = db.transaction(store, 'readwrite');
-    const req = tx.objectStore(store).put(obj);
-    req.onsuccess = () => res(req.result);
-    req.onerror   = () => rej(req.error);
-  });
+  if (!db || !db.objectStoreNames.contains(store)) return Promise.reject(new Error(`Store "${store}" introuvable`));
+  return transactionEcriture(store, st => st.put(obj));
 }
 
 function dbDelete(store, key) {
-  return new Promise((res, rej) => {
-    if (!db || !db.objectStoreNames.contains(store)) { res(); return; }
-    const tx  = db.transaction(store, 'readwrite');
-    const req = tx.objectStore(store).delete(key);
-    req.onsuccess = () => res();
-    req.onerror   = () => rej(req.error);
-  });
+  if (!db || !db.objectStoreNames.contains(store)) return Promise.resolve();
+  return transactionEcriture(store, st => st.delete(key)).then(() => undefined);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -5005,7 +5005,7 @@ function remplacerBase(contenu) {
     let tx;
     try {
       const noms = Object.keys(contenu);
-      tx = db.transaction(noms, 'readwrite');
+      tx = db.transaction(noms, 'readwrite', OPT_ECRITURE);
       tx.oncomplete = () => res();
       tx.onabort = tx.onerror = () => rej(tx.error || new Error('Écriture annulée'));
       for (const nom of noms) {
@@ -6456,7 +6456,7 @@ async function chargerStockInitialPrecharge() {
   if (localStorage.getItem('stock_initial_charge') || (await dbGetAll('receptions')).length) { await marquerStockInitialCharge(); return; }
   const quand = new Date().toISOString();
   await new Promise((res, rej) => {
-    const tx = db.transaction(['receptions', 'parametres'], 'readwrite');
+    const tx = db.transaction(['receptions', 'parametres'], 'readwrite', OPT_ECRITURE);
     tx.oncomplete = () => res();
     tx.onabort = tx.onerror = () => rej(tx.error || new Error('Chargement du stock initial annulé'));
     try {
