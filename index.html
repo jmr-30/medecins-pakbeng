@@ -5083,9 +5083,10 @@ function renommerDansEnregistrement(type, r, x) {
   return c;
 }
 
-async function reprendreSauvegarde(input) {
-  if (!input.files?.length) return;
-  const file = input.files[0]; input.value = '';
+async function reprendreSauvegarde(input, fichier) {
+  const file = fichier || input?.files?.[0];
+  if (!file) return;
+  if (input) input.value = '';
   let data;
   try { data = JSON.parse(await file.text()); } catch(e) { toast('❌ Fichier illisible ou incomplet : rien n\'a été modifié', 'error'); return; }
   const pbs = controlerSauvegarde(data);
@@ -8033,10 +8034,25 @@ async function exporterJSON() {
   }
 }
 
+// Un appareil est « vide » s'il ne contient aucune saisie : ni consultation, ni sortie, ni réception autre que le stock initial
+async function appareilVide() {
+  const [c, r, s] = await Promise.all([dbGetAll('consultations'), dbGetAll('receptions'), dbGetAll('sorties')]);
+  return !c.length && !s.length && r.every(x => String(x.fournisseur || '').startsWith('Stock initial'));
+}
+
 async function importerJSON(input) {
   if (!input.files?.length) return;
   const file = input.files[0];
   input.value = '';
+
+  // « Restaurer » ne fait qu'ajouter : sur un appareil qui contient déjà des données, il laisserait en place ce que
+  // l'autre appareil a corrigé ou annulé (stock compté deux fois). On passe alors par la reprise.
+  if (!(await appareilVide())) {
+    if (await confirmer('« Restaurer » sert à remplir un appareil VIDE (tablette neuve ou réinitialisée).\n\nCet appareil contient déjà des données : pour y faire entrer cette sauvegarde, il faut passer par « Reprendre les données d\'une sauvegarde », qui tient compte des corrections et des annulations et conserve les saisies faites ici.',
+        { titre: 'Cet appareil contient déjà des données', ok: 'Reprendre cette sauvegarde', annuler: 'Abandonner' }))
+      await reprendreSauvegarde(null, file);
+    return;
+  }
 
   try {
     const text = await file.text();

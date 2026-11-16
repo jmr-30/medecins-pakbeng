@@ -64,6 +64,7 @@ Chaque scénario affiche ✓ (réussi) ou ✗ (échec) avec la raison. Compter e
 | 21 | Reprise : annulations locales | une consultation et une réception annulées sur la tablette après l'envoi du fichier ne reviennent pas avec le fichier de la pharmacienne ; stock inchangé |
 | 22 | Reprise : noms corrigés | médicament renommé par la pharmacienne reporté sur la consultation saisie entre-temps (stock sous un seul nom) ; médecin renommé sur la tablette reporté sur les données reprises ; journal au format actuel et ancien |
 | 23 | Reprise : listes | village, médecin, hôpital et fournisseur utilisés par une saisie faite entre-temps gardés dans les listes ; mission créée sur la tablette gardée ; nom retiré par la pharmacienne non réintroduit |
+| 24 | Restaurer .json réservé à un appareil vide | appareil neuf : restauration directe ; appareil en service : renvoi vers la reprise, stock initial réimporté par la pharmacienne non compté deux fois |
 
 Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 16 dans un vrai navigateur (Chromium).
 
