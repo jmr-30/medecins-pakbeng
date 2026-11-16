@@ -5087,6 +5087,13 @@ async function reprendreSauvegarde(input) {
   const journalSauv = data.parametres.find(p => p.cle === 'journal_corrections')?.valeur || [];
   const annuleesSauv = new Set(journalSauv.filter(j => j.action === 'annulation' && j.avant?.createdAt).map(j => j.type + '|' + j.avant.createdAt));
   const dateRelais = data.base?.exportedAt || '';   // quand cet appareil a transmis ses données (si connu)
+  // Saisies annulées sur CET appareil (selon son journal) : si la sauvegarde les contient encore, elles ne reviennent pas
+  const annuleesIci = new Set((await getParam('journal_corrections', [])).filter(j => j.action === 'annulation' && j.avant?.createdAt).map(j => j.type + '|' + j.avant.createdAt));
+  const donnees = {}; let nbAnnuleesIci = 0;
+  for (const [store, type] of STORES_DONNEES) {
+    donnees[store] = data[store].filter(r => !annuleesIci.has(type + '|' + r.createdAt));
+    nbAnnuleesIci += data[store].length - donnees[store].length;
+  }
 
   // Saisies de cet appareil absentes de la sauvegarde (à conserver) et modifications plus récentes (à garder)
   const aGarder = [], modifsGardees = [];
@@ -5108,6 +5115,7 @@ async function reprendreSauvegarde(input) {
   msg += `\n\nLes données de cet appareil seront REMPLACÉES par celles de la sauvegarde (corrections et annulations comprises). Les réglages de l'appareil sont conservés.`;
   if (aGarder.length) msg += `\n\n✅ Saisies faites ici et absentes de la sauvegarde, qui seront CONSERVÉES (${aGarder.length}) :\n${liste(aGarder)}`;
   if (modifsGardees.length) msg += `\n\n✅ Corrections faites ici plus récentes que la sauvegarde, qui seront CONSERVÉES (${modifsGardees.length}) :\n${liste(modifsGardees)}`;
+  if (nbAnnuleesIci) msg += `\n\n✅ ${nbAnnuleesIci} saisie(s) annulée(s) sur cet appareil figurent encore dans la sauvegarde : elles ne seront PAS réintroduites.`;
   if (dejaRepris) msg += `\n\nℹ Ce fichier a DÉJÀ été repris sur cet appareil${derniere.le ? ' le ' + f(derniere.le) : ''}. Le reprendre une seconde fois ne change rien.`;
   if (data.provenance?.role && data.provenance.role === roleAppareil()) msg += `\n\n⚠ Cette sauvegarde vient d'un appareil de même rôle que celui-ci (${libelleRole(roleAppareil())}). Vérifiez qu'il s'agit bien du bon fichier.`;
   if (!(await confirmer(msg, { titre: 'Reprendre les données de cette sauvegarde ?', ok: 'Remplacer', danger: true }))) return;
@@ -5130,7 +5138,7 @@ async function reprendreSauvegarde(input) {
       // Données de la sauvegarde (identifiants conservés), avec les corrections locales plus récentes…
       const modifs = new Map(modifsGardees.filter(x => x.store === store).map(x => [x.r.createdAt, x.r]));
       const vus = new Set();
-      contenu[store] = data[store].map(r => {
+      contenu[store] = donnees[store].map(r => {
         const m = modifs.get(r.createdAt);
         if (!m || vus.has(r.createdAt)) return r;
         vus.add(r.createdAt);
