@@ -5205,6 +5205,36 @@ async function reprendreSauvegarde(input) {
       }
       else params.set(p.cle, p.valeur);
     }
+    // Réglages propres à cet appareil, absents de la sauvegarde : gardés tels quels
+    for (const p of paramsLocaux) if (!params.has(p.cle) && p.cle !== CLE_DOSSIER && p.cle !== CLE_COPIE) params.set(p.cle, p.valeur);
+    // Listes : les noms utilisés par les saisies conservées (village ou médecin ajouté ici entre-temps…) y restent
+    const utilises = { lieux: [], medecins: [], fournisseurs: [], molecules: [], hopitaux: [] };
+    for (const x of [...aGarder, ...modifsGardees]) {
+      if (x.type === 'consultation') {
+        utilises.lieux.push(x.r.lieu, x.r.habitation); utilises.medecins.push(x.r.medecin1, x.r.medecin2); utilises.hopitaux.push(x.r.orientation?.hopital);
+        (x.r.prescription || []).forEach(l => utilises.molecules.push(l.molecule));
+      } else {
+        utilises.molecules.push(x.r.molecule);
+        if (x.type === 'reception' && x.r.fournisseur !== 'Inventaire') utilises.fournisseurs.push(x.r.fournisseur);
+      }
+    }
+    for (const [cle, noms] of Object.entries(utilises)) {
+      const liste = params.get(cle);
+      if (!Array.isArray(liste)) continue;   // liste jamais modifiée : la liste par défaut de l'application s'applique
+      const present = new Set(liste.map(v => String(v).toLowerCase()));
+      const ajouts = [...new Set(noms.map(n => String(n || '').trim()).filter(Boolean))].filter(n => !present.has(n.toLowerCase()));
+      if (!ajouts.length) continue;
+      const tri = (a, b) => a.localeCompare(b, 'fr');
+      const tout = [...liste, ...ajouts];
+      params.set(cle, cle === 'molecules' ? tout.sort(tri)
+        : cle === 'lieux' ? [...tout.filter(l => l.startsWith('Dispensaire')), ...tout.filter(l => !l.startsWith('Dispensaire')).sort(tri)] : tout);
+    }
+    // Missions : celles créées ici et inconnues de la sauvegarde sont gardées
+    const missionsLocales = local('missions');
+    if (Array.isArray(missionsLocales) && Array.isArray(params.get('missions'))) {
+      const nums = new Set(params.get('missions').map(m => m.numero));
+      params.set('missions', [...params.get('missions'), ...missionsLocales.filter(m => !nums.has(m.numero))]);
+    }
     // La reprise elle-même est tracée dans le journal
     const journal = params.get('journal_corrections') || fusionner('journal_corrections', [], 500);
     journal.unshift({ le: new Date().toISOString(), action: 'reprise', type: 'sauvegarde', resume: '', champs: [], avant: null, apres: null,
