@@ -24,7 +24,7 @@ async function page(b, tz, heure) {
       const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'C');
       const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
       const row = XLSX.utils.sheet_to_json(XLSX.read(buf, { type: 'array', cellDates: true }).Sheets.C)[0];
-      return { auj: dateAujourdhui(), finMission: missionEstTerminee({ fin: dateAujourdhui() }), imp: formatDateImport(row['Date']), impSerial: formatDateImport(46310),
+      return { auj: dateAujourdhui(), finMission: missionEstTerminee({ fin: dateAujourdhui() }),
         aff: resumeSaisie('consultation', { nom: 'X', date: '2026-10-15' }), per: formatDateAffichage('2027-04-01'), fichier: nomFichierJSON() };
     });
     console.log(tz, JSON.stringify(r));
@@ -62,9 +62,12 @@ async function page(b, tz, heure) {
   await p.evaluate(async () => { const a = (await dbGetAll('consultations')).find(c => c.nom === 'ALPHA'); await annulerConsultation(a.id, ''); });
   await p.evaluate(() => { window.__autoValider = false; });
   await (await p.$('#importJSONFile')).setInputFiles(require('os').tmpdir() + '/vieux.json'); await p.waitForTimeout(800);
-  console.log('Avertissement :', (await p.textContent('#dlgMsg')).slice(0, 140).replace(/\n/g, ' '));
-  await p.click('#dlgOk'); await p.waitForTimeout(2500);
-  console.log('Après import :', JSON.stringify(await p.evaluate(async () => (await dbGetAll('consultations')).map(c => c.nom))), '|', await p.textContent('#toast'));
+  // L'appareil contient déjà des données : « Restaurer » renvoie vers la reprise, qui n'y réintroduit pas la saisie annulée
+  console.log('Restaurer sur un appareil non vide :', (await p.textContent('#dlgTitre')).trim(), '|', await p.textContent('#dlgOk'));
+  await p.click('#dlgOk'); await p.waitForTimeout(900);
+  console.log('Avertissement :', ((await p.textContent('#dlgMsg')).split('\n').find(l => /annulée\(s\) sur cet appareil/.test(l)) || 'absent').trim());
+  await p.click('#dlgOk'); await p.waitForEvent('load', { timeout: 20000 }); await p.waitForTimeout(3000);
+  console.log('Après import :', JSON.stringify(await p.evaluate(async () => (await dbGetAll('consultations')).map(c => c.nom))));
   // Perte : base vidée mais compteur connu
   await p.evaluate(async () => { for (const c of await dbGetAll('consultations')) await dbDelete('consultations', c.id); });
   await p.reload(); await p.waitForTimeout(3500);

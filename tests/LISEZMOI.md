@@ -52,14 +52,45 @@ Chaque scénario affiche ✓ (réussi) ou ✗ (échec) avec la raison. Compter e
 | 08 | Suivi, grossesse, fiche patient | patients à revoir, orientation, alertes grossesse, médicaments habituels, rapport, recherche par patient, fiche complète |
 | 09 | Posologie et consigne | calcul des quantités, fractions, reprise de prescription, consigne et « Montrer au patient » |
 | 10 | Fenêtres de dialogue | fenêtres intégrées, Échap, motif d'annulation, brouillon (aucune boîte du navigateur) |
-| 11 | Dates, sauvegarde, restauration | heure du Laos et d'ailleurs, import Excel, sauvegarde automatique, sauvegarde ancienne, détection de perte |
+| 11 | Dates, sauvegarde, restauration | heure du Laos et d'ailleurs, sauvegarde automatique, sauvegarde ancienne, détection de perte |
 | 12 | Données de démonstration | import complet du fichier de démo |
 | 14 | Application installable | (dossier `site/`) installation, fonctionnement hors ligne, Excel hors ligne, partage de la sauvegarde, arrivée d'une nouvelle version |
 | 15 | Passage de relais | rôle de l'appareil demandé au premier lancement, noms de fichiers `Pakbeng_tablette_…` / `Pakbeng_pharmacie_…`, reprise tablette → pharmacienne → tablette : annulation et correction de la pharmacienne reportées, consultation saisie entre-temps conservée, copie de sécurité |
 | 16 | Suggestions de patients | liste des patients déjà vus dès 2 lettres, variantes de transcription (« Kampou » → KHAMPHOUI), prénom tapé dans le champ nom, choix et annulation, recherche tolérante |
 | 13 | Réinitialisation | sauvegarde préalable, mot de confirmation, effacement, restauration enchaînée, stock initial non doublé |
+| 18 | Reprise d'un fichier invalide | fichier tronqué, mal formé ou d'une ancienne version refusé avant toute écriture ; panne en cours d'écriture : rien n'est modifié (tout ou rien) |
+| 19 | Reprise : contrôle de la date | fichier plus ancien que celui déjà repris refusé, fichier déjà repris signalé, fichier sans date refusé, fichier plus récent accepté, retour en arrière avec la copie « avant_reprise » |
+| 20 | Annuler la dernière reprise | copie interne des données d'avant la reprise, jamais exportée ; annulation : données d'avant retrouvées, saisies faites depuis conservées, nouvelle reprise possible |
+| 21 | Reprise : annulations locales | une consultation et une réception annulées sur la tablette après l'envoi du fichier ne reviennent pas avec le fichier de la pharmacienne ; stock inchangé |
+| 22 | Reprise : noms corrigés | médicament renommé par la pharmacienne reporté sur la consultation saisie entre-temps (stock sous un seul nom) ; médecin renommé sur la tablette reporté sur les données reprises ; journal au format actuel et ancien |
+| 23 | Reprise : listes | village, médecin, hôpital et fournisseur utilisés par une saisie faite entre-temps gardés dans les listes ; mission créée sur la tablette gardée ; nom retiré par la pharmacienne non réintroduit |
+| 24 | Restaurer .json réservé à un appareil vide | appareil neuf : restauration directe ; appareil en service : renvoi vers la reprise, stock initial réimporté par la pharmacienne non compté deux fois |
+| 25 | Plus d'import Excel des données | bouton, fenêtre et code d'import retirés ; export Excel et import du stock initial conservés |
+| 26 | Stock initial chargé une seule fois | premier lancement interrompu : rien d'enregistré, puis chargement complet ; repère gardé dans la base : pas de second chargement si les préférences du navigateur sont perdues |
+| 27 | Écriture confirmée après validation | ajout, modification, réglage et suppression confirmés seulement une fois la transaction validée, en durabilité stricte ; transaction annulée signalée en erreur |
+| 28 | Base incomplète jamais effacée | une partie de la base manque : rien n'est supprimé, message clair au démarrage, sauvegarde de secours de ce qui est lisible |
+| 29 | Inventaire : solde des « à régulariser » | quantités délivrées au-delà du stock connu soldées quand tous les lots du médicament sont comptés, pas avant ; entrée « Inventaire » traçable ; stock juste après une réception |
+| 30 | Sortie sur un lot existant | le lot se choisit dans la liste des lots du médicament ; quantité supérieure au lot refusée ; médicament sans stock refusé ; aucun lot fantôme, la délivrance suivante voit le vrai stock |
+| 31 | Prescription sans quantité | le médicament prescrit sans quantité est enregistré au dossier, annoncé à la confirmation, sans effet sur le stock ; conservé après modification |
+| 32 | Modification : lots conservés | corriger le nom d'un patient ne redistribue pas la délivrance (lot périmé depuis conservé) ; une quantité modifiée est resservie en FEFO |
+| 33 | Import du stock initial et renommage : tout ou rien | import interrompu : l'ancien stock initial reste entier ; renommage interrompu : aucun enregistrement renommé ; puis opérations complètes |
+| 34 | Anomalies de stock | l'écran Stock liste les quantités à régulariser, lots jamais reçus ou négatifs, dates illisibles et noms hors liste ; rien d'affiché sur un stock sain ; l'inventaire fait disparaître l'anomalie |
+| 35 | Points mineurs | périmés annoncés dans le stock et couleur selon le stock utilisable ; plaquettes dans les libellés ; historique des inventaires par sorte ; consultation de plus de 5 médicaments jamais tronquée |
+| 36 | **Mission fictive complète** | paramétrage par la pharmacienne, deux semaines de saisies à cheval sur deux mois, FEFO, réception, casse, corrections, annulations, relais vendredi/lundi, inventaire, export Excel, rapport de fin de mission, restauration sur un appareil neuf ; le stock de l'application est comparé à chaque étape à un registre tenu par le test |
+| 37 | Double appui | un double appui sur « Enregistrer » (réception, sortie, consultation) n'écrit qu'une fois, sans message d'erreur ; la saisie suivante reste possible |
+| 38 | Date hors mission | date future ou hors de la mission : confirmation demandée (corriger ou garder) ; le rapport compte dans la mission toute consultation qui lui est rattachée, stock de fin égal au stock réel |
+| 39 | Valeurs inhabituelles | âge ou quantité impossibles refusés ; âge, quantité, constantes, réception périmée, future ou énorme : confirmation demandée (corriger ou enregistrer) |
+| 40 | Reprise sans les préférences du navigateur | préférences perdues au rechargement : mission et repère de reprise relus dans la base, contrôle de date intact, stock initial non rechargé ; de même pour l'annulation de la reprise |
+| 41 | Consultation en double | même patient, même date, même prescription déjà enregistrés : avertissement à l'enregistrement et à la reprise d'un brouillon ; une seconde visite différente passe sans question |
+| 42 | Stock initial importé en cours de mission | dans le rapport, il reste le « Stock début de mission » ; seules les vraies réceptions comptent en entrées |
+| 43 | Mémoire des données | aucune relecture complète de la base pendant la prescription, en changeant d'écran, ni après une écriture simple ; après chaque sorte d'écriture (ajout, modification, suppression, groupée, directe, annulée) le stock servi est identique à un recalcul complet |
+| 44 | Sauvegarde par morceaux | fichier .json au contenu identique, plus léger, écrit par morceaux en rendant la main à l'écran ; copie interne d'avant reprise ni lue ni exportée ; restauration inchangée |
+| 45 | Export Excel allégé | mêmes feuilles, mêmes colonnes, mêmes valeurs case par case ; cases vides non écrites et fichier compressé ; export possible sur une base vide |
 
-Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 16 dans un vrai navigateur (Chromium).
+Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 45 dans un vrai navigateur (Chromium).
+Les scénarios 18 à 35 et 37 à 45 vérifient les corrections de l'audit de novembre 2026 ; ceux du passage de relais partagent les outils de `scenarios/_relais.js`.
+
+Le scénario 36 joue une mission entière. Pour le lancer seul : `node lancer-tout.js 36` (une minute environ). Il tient sa propre comptabilité du stock et s'arrête en échec au moindre écart.
 
 ## Contrôle visuel (facultatif, pour les retouches d'apparence)
 

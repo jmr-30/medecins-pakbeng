@@ -1584,10 +1584,6 @@ button[onclick^="supprimerItem"], .btn-sortir-lot, #missionBadge button {
     <button class="btn btn-export" style="flex:1;min-width:160px" onclick="exporterExcel()">
       📥 Télécharger (.xlsx)
     </button>
-    <button class="btn btn-secondary" style="flex:1;min-width:160px" onclick="document.getElementById('importFile').click()">
-      📂 Importer .xlsx
-    </button>
-    <input type="file" id="importFile" accept=".xlsx" style="display:none" onchange="importerExcel(this)">
   </div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
     <button class="btn btn-secondary" style="flex:1;min-width:160px;border-color:var(--vert);color:var(--vert)" onclick="exporterJSON()">
@@ -1602,8 +1598,9 @@ button[onclick^="supprimerItem"], .btn-sortir-lot, #missionBadge button {
     🔁 Reprendre les données d'une sauvegarde
   </button>
   <input type="file" id="repriseJSONFile" accept=".json" style="display:none" onchange="reprendreSauvegarde(this)">
+  <button class="btn btn-secondary" id="btnAnnulerReprise" style="display:none;width:100%;margin-top:8px" onclick="annulerDerniereReprise()">↩ Annuler la dernière reprise</button>
   <div style="margin-top:8px;font-size:.72rem;color:var(--brun-clair);padding:8px 12px;background:var(--sable-fonce);border-radius:7px;line-height:1.5">
-    💡 <strong>Passage de relais</strong> (tablette ⇄ pharmacienne) : « Reprendre les données » <strong>remplace</strong> les données de cet appareil par celles de la sauvegarde, corrections et annulations comprises. Les saisies faites ici et absentes de la sauvegarde sont conservées.<br>
+    💡 <strong>Passage de relais</strong> (tablette ⇄ pharmacienne) : « Reprendre les données » <strong>remplace</strong> les données de cet appareil par celles de la sauvegarde, corrections et annulations comprises. Les saisies faites ici et absentes de la sauvegarde sont conservées. En cas d'erreur de fichier, « Annuler la dernière reprise » remet les données d'avant.<br>
     <strong>Restaurer .json</strong> ne fait qu'<strong>ajouter</strong> ce qui manque : à réserver à un appareil vide.
   </div>
   <div style="margin-top:10px;">
@@ -1629,35 +1626,6 @@ button[onclick^="supprimerItem"], .btn-sortir-lot, #missionBadge button {
       <button class="btn btn-secondary" style="flex:1" onclick="fermerConfirmModal()">✏️ Corriger</button>
       <button class="btn btn-secondary" style="flex:1" onclick="afficherConsignePatient();montrerConsigne(0)">📱 Consigne</button>
       <button class="btn btn-primary"   style="flex:1" onclick="enregistrerConsultation()">✅ Confirmer</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── MODAL IMPORT ─────────────────────────────────────────────── -->
-<div id="importModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:var(--blanc);border-radius:var(--radius-lg);max-width:460px;width:100%;box-shadow:var(--ombre-lg);overflow:hidden;">
-    <div style="background:var(--bleu);color:var(--blanc);padding:16px 20px;font-weight:700;font-size:1rem;">
-      📂 Importer une sauvegarde
-    </div>
-    <div style="padding:20px;">
-      <div id="importResume" style="background:var(--sable-fonce);border-radius:8px;padding:14px;margin-bottom:16px;font-size:.88rem;line-height:1.7;"></div>
-      <div style="font-size:.82rem;color:var(--texte-doux);margin-bottom:16px;" id="importModeDesc"></div>
-      <div style="display:flex;gap:10px;margin-bottom:10px;">
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:2px solid var(--sable-fonce);border-radius:8px;cursor:pointer;font-size:.85rem;" id="labelFusion">
-          <input type="radio" name="importMode" value="fusion" checked onchange="majImportMode(this.value)">
-          <div><strong>Fusionner</strong><br><span style="color:var(--texte-doux);font-size:.78rem">Ajoute les nouvelles entrées sans supprimer les existantes</span></div>
-        </label>
-      </div>
-      <div style="display:flex;gap:10px;">
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:2px solid var(--sable-fonce);border-radius:8px;cursor:pointer;font-size:.85rem;" id="labelEcraser">
-          <input type="radio" name="importMode" value="ecraser" onchange="majImportMode(this.value)">
-          <div><strong>Remplacer</strong><br><span style="color:var(--rouge);font-size:.78rem">⚠ Efface toutes les données locales et les remplace</span></div>
-        </label>
-      </div>
-    </div>
-    <div style="padding:0 20px 20px;display:flex;gap:10px;">
-      <button class="btn btn-secondary" style="flex:1" onclick="fermerImportModal()">Annuler</button>
-      <button class="btn btn-export" style="flex:1" id="btnConfirmImport" onclick="confirmerImport()">✅ Confirmer l'import</button>
     </div>
   </div>
 </div>
@@ -2056,8 +2024,8 @@ button[onclick^="supprimerItem"], .btn-sortir-lot, #missionBadge button {
           <input type="text" id="s_lot" placeholder="Optionnel">
         </div>
         <div class="field">
-          <div class="field-label">Date de péremption</div>
-          <input type="date" id="s_perdate">
+          <div class="field-label">Lot à sortir <span class="req">*</span></div>
+          <select id="s_lotsel" disabled><option value="">— Choisir d'abord le médicament —</option></select>
         </div>
       </div>
       <div class="field-row single">
@@ -2090,6 +2058,13 @@ button[onclick^="supprimerItem"], .btn-sortir-lot, #missionBadge button {
     <div class="form-title-icon" style="background:var(--vert-clair)">💊</div>
     Stock médicaments
   </div>
+
+  <!-- Anomalies de stock (affiché seulement s'il y en a) -->
+  <details id="stockAnomalies" style="display:none;margin-bottom:12px;background:var(--orange-clair);border:1.5px solid var(--orange);border-radius:8px;padding:10px 14px;">
+    <summary id="stockAnomaliesTitre" style="font-weight:800;font-size:.9rem;color:var(--brun);cursor:pointer"></summary>
+    <div style="font-size:.8rem;color:var(--brun);margin:8px 0 6px">Le stock calculé de ces médicaments ne correspond sans doute pas à l'étagère. Pour corriger : faire l'<strong>inventaire</strong> du médicament (Autres fonctions → Inventaire), ou prévenir la pharmacienne.</div>
+    <div id="stockAnomaliesListe" style="font-size:.82rem;line-height:1.7"></div>
+  </details>
 
   <!-- Filtres -->
   <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:stretch;">
@@ -2786,7 +2761,6 @@ button[onclick^="supprimerItem"], .btn-sortir-lot, #missionBadge button {
  *     – BIBLIOTHÈQUE EXCEL — chargée depuis internet uniquement quand on en a besoin
  *     – EXPORT LOCAL (.xlsx téléchargement classique)
  *     – EXPORT GOOGLE DRIVE (via File System Access API)
- *     – IMPORT EXCEL
  *     – RAPPEL EXPORT
  *  6. PARAMÈTRES
  *     – PARAMÈTRES – listes dynamiques
@@ -2851,33 +2825,15 @@ function ouvrirDB() {
 
     req.onsuccess = e => {
       db = e.target.result;
+      surveillerEcritures(db);
 
-      // Vérification défensive : stores manquants ?
+      // Vérification défensive : une partie de la base manque ? On n'efface JAMAIS rien : l'ouverture est refusée
+      // et un message s'affiche (voir init). Les données présentes restent lisibles pour une sauvegarde.
       const storeNames = ['consultations', 'receptions', 'sorties', 'parametres', 'stock_config'];
       const missing    = storeNames.filter(s => !db.objectStoreNames.contains(s));
-
       if (missing.length > 0) {
-        console.warn('[DB] Stores manquants après upgrade :', missing, '— réinitialisation');
-        db.close();
-        const delReq = indexedDB.deleteDatabase(DB_NAME);
-        delReq.onsuccess = () => {
-          localStorage.removeItem('stock_initial_charge');
-          // Réouvrir proprement
-          const req2 = indexedDB.open(DB_NAME, DB_VER);
-          req2.onupgradeneeded = e2 => {
-            const d2 = e2.target.result;
-            storeNames.forEach(s => {
-              if (!d2.objectStoreNames.contains(s)) {
-                if (s === 'parametres')  d2.createObjectStore(s, { keyPath: 'cle' });
-                else if (s === 'stock_config') d2.createObjectStore(s, { keyPath: 'molecule' });
-                else d2.createObjectStore(s, { keyPath: 'id', autoIncrement: true });
-              }
-            });
-          };
-          req2.onsuccess = e2 => { db = e2.target.result; resolve(db); };
-          req2.onerror   = e2 => reject(e2.target.error);
-        };
-        delReq.onerror = () => resolve(db); // continuer quand même
+        console.error('[DB] Parties manquantes dans la base :', missing);
+        reject(new Error('Base incomplète (parties manquantes : ' + missing.join(', ') + ')'));
         return;
       }
 
@@ -2892,31 +2848,160 @@ function ouvrirDB() {
   });
 }
 
-function dbAdd(store, obj) {
+// Toute écriture passe par ici : la promesse n'aboutit qu'une fois la transaction VALIDÉE, et écrite pour de bon sur la
+// mémoire de l'appareil (durabilité « stricte »). Le message « ✅ enregistré » n'apparaît donc que si la saisie survit
+// à une coupure de batterie ; si la transaction est annulée, l'écriture est signalée en erreur.
+const OPT_ECRITURE = { durability: 'strict' };
+// majMemoire(lignes, resultat) : si le contenu du store était gardé en mémoire, il est mis à jour avec ce seul changement
+// au lieu d'être oublié — enregistrer une consultation n'oblige plus à relire ensuite toutes les autres.
+function transactionEcriture(store, action, majMemoire) {
   return new Promise((res, rej) => {
-    if (!db || !db.objectStoreNames.contains(store)) { rej(new Error(`Store "${store}" introuvable`)); return; }
-    const tx = db.transaction(store, 'readwrite');
-    const req = tx.objectStore(store).add(obj);
-    req.onsuccess = () => res(req.result);
-    req.onerror   = () => rej(req.error);
+    let tx, resultat;
+    const garde = _memoireStores[store], versionAvant = versionStore(store);
+    try { tx = db.transaction(store, 'readwrite', OPT_ECRITURE); } catch(e) { rej(e); return; }
+    tx.oncomplete = () => {
+      // Seulement si cette écriture est la seule survenue depuis (début + fin de transaction = deux versions de plus)
+      if (garde && majMemoire && garde.version === versionAvant && versionStore(store) === versionAvant + 2) {
+        try { _memoireStores[store] = { version: versionStore(store), lignes: majMemoire(garde.lignes.slice(), resultat) }; }
+        catch(e) { delete _memoireStores[store]; }
+      }
+      res(resultat);
+    };
+    tx.onabort = tx.onerror = () => rej(tx.error || new Error('Écriture annulée'));
+    try { const req = action(tx.objectStore(store)); req.onsuccess = () => { resultat = req.result; }; }
+    catch(e) { try { tx.abort(); } catch(_) {} rej(e); }
   });
 }
 
-function dbGetAll(store) {
+// Un second appui sur « Enregistrer » ne doit jamais écrire deux fois (double appui sur la tablette).
+// – pendant que la première écriture est en cours, les appuis suivants sont ignorés ;
+// – juste après une écriture réussie, le formulaire est vide : un appui en retard est ignoré sans message d'erreur.
+// La fonction protégée renvoie true quand elle a enregistré.
+const _enregistrementEnCours = {}, _enregistrementFini = {};
+function unSeulEnregistrement(nom, formulaireVide, f) {
+  return async function (...args) {
+    if (_enregistrementEnCours[nom]) return false;
+    if (formulaireVide && Date.now() - (_enregistrementFini[nom] || 0) < 1500 && formulaireVide()) return false;
+    _enregistrementEnCours[nom] = true;
+    try { const fait = await f.apply(this, args); if (fait === true) _enregistrementFini[nom] = Date.now(); return fait; }
+    finally { _enregistrementEnCours[nom] = false; }
+  };
+}
+
+// Plusieurs écritures liées en UNE SEULE transaction : tout est enregistré, ou rien (interruption, erreur…).
+// ops = [{ store, type: 'add' | 'put' | 'delete', valeur }]
+function ecrireEnBloc(ops) {
+  if (!ops.length) return Promise.resolve();
   return new Promise((res, rej) => {
-    if (!db) { res([]); return; }
-    if (!db.objectStoreNames.contains(store)) {
-      console.warn(`[DB] Store "${store}" introuvable — retour tableau vide`);
-      res([]);
-      return;
+    let tx;
+    try {
+      tx = db.transaction([...new Set(ops.map(o => o.store))], 'readwrite', OPT_ECRITURE);
+      tx.oncomplete = () => { try { planifierSauvegardeAuto(); } catch(e) {} res(); };
+      tx.onabort = tx.onerror = () => rej(tx.error || new Error('Écriture annulée'));
+      for (const o of ops) tx.objectStore(o.store)[o.type](o.valeur);
+    } catch(e) { try { tx && tx.abort(); } catch(_) {} rej(e); }
+  });
+}
+
+const CLE_PRIMAIRE = { consultations: 'id', receptions: 'id', sorties: 'id', stock_config: 'molecule' };
+const copieProfonde = o => typeof structuredClone === 'function' ? structuredClone(o) : JSON.parse(JSON.stringify(o));
+// Place un enregistrement (copie de ce qui vient d'être écrit) dans la liste gardée, à la place que lui donne la base
+function poserDansMemoire(lignes, store, obj, cle) {
+  const k = CLE_PRIMAIRE[store], copie = copieProfonde(obj);
+  copie[k] = cle;
+  const i = lignes.findIndex(x => x[k] === cle);
+  if (i >= 0) lignes[i] = copie;
+  else {
+    const enFin = !lignes.length || lignes[lignes.length - 1][k] < cle;
+    lignes.push(copie);
+    if (!enFin) lignes.sort((a, b) => a[k] < b[k] ? -1 : a[k] > b[k] ? 1 : 0);
+  }
+  return lignes;
+}
+
+function dbAdd(store, obj) {
+  if (!db || !db.objectStoreNames.contains(store)) return Promise.reject(new Error(`Store "${store}" introuvable`));
+  return transactionEcriture(store, st => st.add(obj), CLE_PRIMAIRE[store] && ((lignes, cle) => poserDansMemoire(lignes, store, obj, cle)));
+}
+
+// ── Mémoire des données lues ──────────────────────────────────────
+// Relire toutes les consultations dans la base à chaque affichage et à chaque frappe devenait lent avec plusieurs
+// missions cumulées. Le contenu des stores de données est donc gardé en mémoire et réutilisé tant que rien n'a été écrit.
+// TOUTE transaction d'écriture, d'où qu'elle vienne, passe par db.transaction : elle augmente le numéro de version des
+// stores concernés (au début et à la fin), ce qui oublie leur contenu gardé et tout ce qui en a été calculé.
+const STORES_EN_MEMOIRE = ['consultations', 'receptions', 'sorties', 'stock_config'];   // pas « parametres » (copie interne volumineuse)
+const _versionsStores = {}, _memoireStores = {};
+const versionStore = store => _versionsStores[store] || 0;
+const versionDonnees = () => STORES_EN_MEMOIRE.map(versionStore).join('.');
+function noterEcriture(stores) {
+  for (const st of stores) { _versionsStores[st] = versionStore(st) + 1; delete _memoireStores[st]; }
+}
+function surveillerEcritures(base) {
+  base.transaction = function (noms, mode, options) {
+    const tx = Object.getPrototypeOf(base).transaction.call(base, noms, mode, options);
+    if (mode === 'readwrite') {
+      const stores = typeof noms === 'string' ? [noms] : [...noms];
+      noterEcriture(stores);
+      const fin = () => noterEcriture(stores);
+      tx.addEventListener('complete', fin); tx.addEventListener('abort', fin);
     }
+    return tx;
+  };
+}
+function lireStore(store) {
+  return new Promise((res, rej) => {
     const tx  = db.transaction(store, 'readonly');
     const req = tx.objectStore(store).getAll();
     req.onsuccess = () => res(req.result);
     req.onerror   = () => rej(req.error);
   });
 }
-
+// Renvoie tous les enregistrements d'un store. Le tableau renvoyé est une copie (on peut le trier ou le filtrer),
+// mais les enregistrements sont partagés : NE PAS les modifier sans les réécrire aussitôt dans la base.
+async function dbGetAll(store) {
+  if (!db) return [];
+  if (!db.objectStoreNames.contains(store)) {
+    console.warn(`[DB] Store "${store}" introuvable — retour tableau vide`);
+    return [];
+  }
+  if (!STORES_EN_MEMOIRE.includes(store)) return lireStore(store);
+  const garde = _memoireStores[store];
+  if (garde && garde.version === versionStore(store)) {
+    if (window.__verifierMemoire) await verifierMemoire(store, garde);
+    return garde.lignes.slice();
+  }
+  const version = versionStore(store);
+  const lignes = await lireStore(store);
+  if (version === versionStore(store)) _memoireStores[store] = { version, lignes };   // rien n'a été écrit pendant la lecture
+  return lignes.slice();
+}
+// Contrôle utilisé par les tests (window.__verifierMemoire = true) : le contenu gardé doit être identique à la base
+async function verifierMemoire(store, garde) {
+  const reel = await lireStore(store);
+  if (garde.version !== versionStore(store)) return;
+  if (JSON.stringify(reel) !== JSON.stringify(garde.lignes)) {
+    window.__memoireIncoherente = (window.__memoireIncoherente || 0) + 1;
+    console.error(`[Mémoire] contenu gardé différent de la base pour « ${store} »`);
+    delete _memoireStores[store];
+    throw new Error(`Mémoire incohérente : ${store}`);
+  }
+}
+// Lit un store sans certaines clés (évite de charger la copie interne d'avant reprise, aussi grosse que la base)
+function dbGetAllSauf(store, clesExclues) {
+  return new Promise((res, rej) => {
+    if (!db || !db.objectStoreNames.contains(store)) { res([]); return; }
+    const st = db.transaction(store, 'readonly').objectStore(store);
+    const cles = st.getAllKeys();
+    cles.onerror = () => rej(cles.error);
+    cles.onsuccess = () => {
+      const voulues = cles.result.filter(k => !clesExclues.includes(k)), lignes = [];
+      if (!voulues.length) { res(lignes); return; }
+      let restant = voulues.length;
+      voulues.forEach((k, i) => { const r = st.get(k); r.onerror = () => rej(r.error);
+        r.onsuccess = () => { lignes[i] = r.result; if (--restant === 0) res(lignes.filter(Boolean)); }; });
+    };
+  });
+}
 function dbGet(store, key) {
   return new Promise((res, rej) => {
     if (!db || !db.objectStoreNames.contains(store)) { res(null); return; }
@@ -2928,23 +3013,13 @@ function dbGet(store, key) {
 }
 
 function dbPut(store, obj) {
-  return new Promise((res, rej) => {
-    if (!db || !db.objectStoreNames.contains(store)) { rej(new Error(`Store "${store}" introuvable`)); return; }
-    const tx  = db.transaction(store, 'readwrite');
-    const req = tx.objectStore(store).put(obj);
-    req.onsuccess = () => res(req.result);
-    req.onerror   = () => rej(req.error);
-  });
+  if (!db || !db.objectStoreNames.contains(store)) return Promise.reject(new Error(`Store "${store}" introuvable`));
+  return transactionEcriture(store, st => st.put(obj), CLE_PRIMAIRE[store] && ((lignes, cle) => poserDansMemoire(lignes, store, obj, cle)));
 }
 
 function dbDelete(store, key) {
-  return new Promise((res, rej) => {
-    if (!db || !db.objectStoreNames.contains(store)) { res(); return; }
-    const tx  = db.transaction(store, 'readwrite');
-    const req = tx.objectStore(store).delete(key);
-    req.onsuccess = () => res();
-    req.onerror   = () => rej(req.error);
-  });
+  if (!db || !db.objectStoreNames.contains(store)) return Promise.resolve();
+  return transactionEcriture(store, st => st.delete(key), CLE_PRIMAIRE[store] && (lignes => lignes.filter(x => x[CLE_PRIMAIRE[store]] !== key))).then(() => undefined);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -3000,7 +3075,7 @@ function goScreen(name) {
     if (name === 'inventaire')   chargerInventaire();
     if (name === 'consommables') chargerConsommables();
     if (name === 'reception')    chargerMouvements('receptions');
-    if (name === 'sortie')       chargerMouvements('sorties');
+    if (name === 'sortie')     { chargerMouvements('sorties'); majLotsSortie(); }
   }
   window.scrollTo(0, 0);
 }
@@ -3242,7 +3317,7 @@ async function initFormsListes() {
   // Molécules — charger depuis paramètres (liste éditable)
   const molecules = await getParam('molecules', REF.molecules);
   COMBOS.r_mol = new Combo('r_mol', molecules, { placeholder: 'Taper le nom…', alias: princepsDe });
-  COMBOS.s_mol = new Combo('s_mol', molecules, { placeholder: 'Taper le nom…', alias: princepsDe });
+  COMBOS.s_mol = new Combo('s_mol', molecules, { placeholder: 'Taper le nom…', alias: princepsDe, onChange: () => majLotsSortie() });
   // Fournisseurs – select simple (liste courte)
   remplirSelect('r_fourn', fournisseurs);
 }
@@ -3665,7 +3740,10 @@ function cleSonore(s) {
     .replace(/(.)\1+/g, '$1');
 }
 let _indexPatients = [], _suggListe = [], _suggChoisi = null, _suggTimer = null, _suggFermeture = null;
+let _indexPatientsVersion = null;   // l'index n'est reconstruit que si des consultations ont été écrites depuis
 async function chargerIndexPatients() {
+  const version = versionStore('consultations');
+  if (_indexPatientsVersion === version && _indexPatients.length) return;
   const groupes = {};
   for (const c of await dbGetAll('consultations')) {
     if (!c.nom && !c.prenom) continue;
@@ -3676,6 +3754,7 @@ async function chargerIndexPatients() {
   }
   _indexPatients = Object.values(groupes).map(g => ({ ...g,
     nNom: normNomPatient(g.c.nom), nPre: normNomPatient(g.c.prenom), sNom: cleSonore(g.c.nom), sPre: cleSonore(g.c.prenom) }));
+  _indexPatientsVersion = versionStore('consultations') === version ? version : null;
 }
 // 3 : début identique · 2 : début « sonore » identique · 1 : correspond à l'autre champ (nom et prénom inversés) · 0 : non
 function scoreChamp(q, n, s, nAutre, sAutre) {
@@ -3776,6 +3855,8 @@ function majPatientIdBadge() {
 // ═══════════════════════════════════════════════════════════════════
 // AUTOSAVE BROUILLON (localStorage)
 // ═══════════════════════════════════════════════════════════════════
+// Seuils au-delà desquels une valeur est jugée inhabituelle (confirmation demandée, jamais de blocage)
+const AGE_INHABITUEL = 110, QTE_INHABITUELLE = 200, QTE_INHABITUELLE_PLAQUETTES = 12, RECEPTION_INHABITUELLE = 10000;
 const AUTOSAVE_KEY = 'brouillon_consultation';
 let _autosaveTimer = null;
 
@@ -3824,6 +3905,18 @@ function autosaverConsultation() {
   }, 3000); // sauvegarde 3s après la dernière frappe
 }
 
+// Une consultation identique est-elle déjà enregistrée ? (même patient, même date, même prescription)
+// Sert à éviter le doublon : brouillon repris alors que la consultation était déjà enregistrée, saisie refaite par erreur…
+async function consultationIdentique(nom, prenom, date, lignes, exclureId) {
+  const N = normNomPatient(nom), P = normNomPatient(prenom);
+  if (!N || !date) return null;
+  const signature = l => l.filter(x => x.mol).map(x => `${x.mol}×${parseInt(x.qty) || 0}`).sort().join('|');
+  const sig = signature(lignes || []);
+  return (await dbGetAll('consultations')).find(c => c.id !== exclureId && c.date === date && normNomPatient(c.nom) === N && normNomPatient(c.prenom) === P
+    && signature((c.prescription || []).map(p => ({ mol: p.molecule, qty: p.quantite }))) === sig) || null;
+}
+const heureSaisie = c => c.createdAt && !isNaN(new Date(c.createdAt)) ? ' à ' + new Date(c.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+
 async function restaurerBrouillon() {
   const raw = localStorage.getItem(AUTOSAVE_KEY);
   if (!raw) return false;
@@ -3832,7 +3925,9 @@ async function restaurerBrouillon() {
     const savedAt = new Date(b.savedAt);
     const ageMin  = Math.round((Date.now() - savedAt) / 60000);
     if (ageMin > 480) { localStorage.removeItem(AUTOSAVE_KEY); return false; } // ignorer si > 8h
-    if (!(await confirmer(`Une consultation en cours de saisie a été sauvegardée il y a ${ageMin < 1 ? 'moins d\'une minute' : ageMin + ' min'}.`, { titre: 'Reprendre le brouillon ?', ok: 'Reprendre', annuler: 'Effacer le brouillon' }))) {
+    const deja = await consultationIdentique(b.nom, b.prenom, b.date, b.presc);
+    const alerte = deja ? `\n\n⚠ Une consultation identique (${b.nom}${b.prenom ? ' ' + b.prenom : ''}, même date, même prescription) a DÉJÀ été enregistrée${heureSaisie(deja)}. Ce brouillon est sans doute celui de cette consultation : choisissez « Effacer le brouillon ».` : '';
+    if (!(await confirmer(`Une consultation en cours de saisie a été sauvegardée il y a ${ageMin < 1 ? 'moins d\'une minute' : ageMin + ' min'}.` + alerte, { titre: 'Reprendre le brouillon ?', ok: 'Reprendre', annuler: 'Effacer le brouillon' }))) {
       localStorage.removeItem(AUTOSAVE_KEY);
       return false;
     }
@@ -3894,6 +3989,47 @@ async function confirmerAvantEnregistrement() {
   if (!med1) { toast('❌ Médecin requis', 'error'); return; }
   if (!nom)  { toast('❌ Nom du patient requis', 'error'); return; }
 
+  // Date inhabituelle : on demande confirmation (sans bloquer : l'horloge de la tablette peut être fausse).
+  // Une date hors de la mission fausse la lecture du rapport de fin de mission.
+  const dateModifiee = !_editionConsultation || _editionConsultation.date !== date;
+  if (dateModifiee) {
+    const lisible = d => jourLocal(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const mis = getMissionActive();
+    let alerte = '';
+    if (date > dateAujourdhui()) alerte = `La date saisie (${lisible(date)}) est dans le FUTUR : nous sommes le ${lisible(dateAujourdhui())}.`;
+    else if (mis?.debut && mis?.fin && (!_editionConsultation || _editionConsultation.mission === mis.numero) && (date < mis.debut || date > mis.fin))
+      alerte = `La date saisie (${lisible(date)}) est en dehors de la mission en cours (${mis.numero}, du ${lisible(mis.debut)} au ${lisible(mis.fin)}).`;
+    if (alerte && !(await confirmer(alerte + '\n\nEst-ce bien la bonne date ?', { titre: '⚠ Vérifier la date', ok: 'Oui, garder cette date', annuler: 'Corriger' }))) return;
+  }
+
+  // Consultation identique déjà enregistrée : l'enregistrer encore retirerait les médicaments du stock une seconde fois
+  if (!_editionConsultation) {
+    const lignes = [1, 2, 3, 4, 5].map(i => ({ mol: COMBOS['presc_mol_' + i]?.getValue() || '', qty: document.getElementById('presc_qty_' + i)?.value || '' }));
+    const deja = await consultationIdentique(nom, prenom, date, lignes);
+    if (deja && !(await confirmer(`Une consultation identique est déjà enregistrée pour ${nom}${prenom ? ' ' + prenom : ''} à cette date${heureSaisie(deja)} : même patient, même prescription.\n\nL'enregistrer une seconde fois retirerait les médicaments du stock une seconde fois.`,
+        { titre: '⚠ Consultation déjà enregistrée ?', ok: 'Enregistrer quand même', annuler: 'Ne pas enregistrer', danger: true }))) return;
+  }
+
+  // Valeurs impossibles : refusées. Valeurs inhabituelles (faute de frappe probable) : confirmation demandée.
+  const inhabituel = [];
+  if (age !== '') {
+    const a = Number(String(age).replace(',', '.'));
+    if (!Number.isInteger(a) || a < 0) { toast('❌ Âge invalide : nombre entier d\'années attendu', 'error'); return; }
+    if (a > AGE_INHABITUEL) inhabituel.push(`Âge : ${a} ans`);
+  }
+  for (let i = 1; i <= 5; i++) {
+    const mol = COMBOS['presc_mol_' + i]?.getValue() || '';
+    const brut = String(document.getElementById('presc_qty_' + i)?.value || '').trim();
+    if (!mol || brut === '') continue;
+    const q = Number(brut.replace(',', '.'));
+    if (!Number.isInteger(q) || q < 0) { toast(`❌ Quantité invalide pour ${mol} : nombre entier attendu`, 'error'); return; }
+    if (q > (uniteDe(mol) === 'plaquette' ? QTE_INHABITUELLE_PLAQUETTES : QTE_INHABITUELLE)) inhabituel.push(`Quantité : ${q} ${libUnite(mol, q)} de ${mol}`);
+  }
+  const k = lireConstantes();
+  CONSTANTES.forEach(c => { if (k[c.k] != null && (k[c.k] < c.min || k[c.k] > c.max)) inhabituel.push(`${c.lib} : ${k[c.k]} ${c.u} (valeurs habituelles : ${c.min} à ${c.max})`); });
+  if (inhabituel.length && !(await confirmer(inhabituel.map(x => '• ' + x).join('\n') + '\n\nEst-ce bien ce que vous voulez enregistrer ?',
+      { titre: '⚠ Valeurs inhabituelles', ok: 'Oui, enregistrer', annuler: 'Corriger' }))) return;
+
   const pathos = [];
   for (let i = 1; i <= 4; i++) {
     const p = COMBOS['patho_' + i]?.getValue() || '';
@@ -3912,7 +4048,8 @@ async function confirmerAvantEnregistrement() {
     if (allergieConcernee(mol, document.getElementById('c_allergies')?.value)) alertesAllergie.push(mol);
     const ag = alerteGrossesse(mol); if (ag) alertesGrossesse.push(`${mol} — ${ag}`);
     presc.push(`${esc(mol)}${qty ? ' ×' + qty + (uniteDe(mol) === 'plaquette' ? ' plaq.' : '') : ''}${lirePoso(i) ? ' <span style="font-weight:500;color:var(--brun-doux)">(' + esc(resumePoso(lirePoso(i))) + ')</span>' : ''}` +
-      (a ? `<br><span style="font-size:.75rem;font-weight:500;color:${a.manque > 0 ? 'var(--orange)' : 'var(--brun-clair)'}">↳ ${esc(resumePrelevements(a.prelevements, a.manque))}</span>` : ''));
+      (a ? `<br><span style="font-size:.75rem;font-weight:500;color:${a.manque > 0 ? 'var(--orange)' : 'var(--brun-clair)'}">↳ ${esc(resumePrelevements(a.prelevements, a.manque))}</span>`
+         : `<br><span style="font-size:.75rem;font-weight:500;color:var(--brun-clair)">↳ sans quantité : noté au dossier, rien n'est retiré du stock</span>`));
   }
 
   const dateStr = jourLocal(date).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
@@ -3947,7 +4084,9 @@ function fermerConfirmModal() {
   document.getElementById('confirmModal').style.display = 'none';
 }
 
-async function enregistrerConsultation() {
+function enregistrerConsultation() { return _enregistrerConsultationProtege(); }
+const _enregistrerConsultationProtege = unSeulEnregistrement('consultation', () => !document.getElementById('c_nom').value.trim(), _enregistrerConsultation);
+async function _enregistrerConsultation() {
   fermerConfirmModal();
 
   const date  = document.getElementById('c_date').value;
@@ -3967,7 +4106,13 @@ async function enregistrerConsultation() {
   const alloc = await calculerAllocationsPrescription();
   for (let i = 1; i <= 5; i++) {
     const a = alloc[i];
-    if (!a) continue;
+    if (!a) {
+      // Médicament prescrit sans quantité (à acheter ailleurs, quantité inconnue…) : il fait partie du dossier du patient.
+      // La ligne est enregistrée telle quelle ; rien n'est retiré du stock.
+      const molSeule = COMBOS['presc_mol_' + i]?.getValue() || '';
+      if (molSeule) prescription.push({ molecule: molSeule, quantite: 0, lot: '', lots: [], lotForce: '', aRegulariser: 0, ...(lirePoso(i) ? { posologie: lirePoso(i) } : {}) });
+      continue;
+    }
     const lots = a.prelevements.map(p => ({ lot: p.lot, datePeremption: p.datePeremption, quantite: p.quantite }));
     if (a.manque > 0) lots.push({ lot: LOT_A_REGULARISER, datePeremption: '', quantite: a.manque });
     prescription.push({
@@ -4021,11 +4166,13 @@ async function enregistrerConsultation() {
       toast('✅ Consultation modifiée', 'success');
       goScreen(retour);
       await rafraichirContexte(retour);
+      return true;
     } catch(e) { console.error(e); toast('❌ Erreur de modification', 'error'); }
     return;
   }
 
-  dbAdd('consultations', record).then(() => {
+  try {
+    await dbAdd('consultations', record);
     localStorage.removeItem(AUTOSAVE_KEY);
     // Mémoriser lieu et médecins pour la prochaine consultation
     if (lieu) localStorage.setItem('dernier_lieu', lieu);
@@ -4038,7 +4185,8 @@ async function enregistrerConsultation() {
     effacerConsultation();
     memoriserDerniereConsigne(record);
     chargerStatsPathoMol();
-  }).catch(() => toast('❌ Erreur d\'enregistrement', 'error'));
+    return true;
+  } catch(e) { console.error(e); toast('❌ Erreur d\'enregistrement', 'error'); }
 }
 
 function effacerConsultation() {
@@ -4157,16 +4305,39 @@ async function compterUsages(cle, ancien) {
                                    + cfg.filter(x => x.molecule === ancien).length;
   return 0;
 }
+// Renommer un nom de liste dans toutes les données : les changements sont préparés puis écrits en une seule transaction
 async function renommerDansDonnees(cle, ancien, nouveau) {
   if (cle === 'lieux') return renommerLieuDansConsultations(ancien, nouveau);
-  let n = 0;
+  const ops = [];
   if (cle === 'medecins') {
     for (const c of await dbGetAll('consultations')) {
       let m = false;
       if (c.medecin1 === ancien) { c.medecin1 = nouveau; m = true; }
       if (c.medecin2 === ancien) { c.medecin2 = nouveau; m = true; }
-      if (m) { await dbPut('consultations', c); n++; }
+      if (m) ops.push({ store: 'consultations', type: 'put', valeur: c });
     }
+  }
+  if (cle === 'fournisseurs') {
+    for (const r of await dbGetAll('receptions')) if (r.fournisseur === ancien) { r.fournisseur = nouveau; ops.push({ store: 'receptions', type: 'put', valeur: r }); }
+  }
+  if (cle === 'molecules') {
+    for (const c of await dbGetAll('consultations')) {
+      let m = false;
+      (c.prescription || []).forEach(p => { if (p.molecule === ancien) { p.molecule = nouveau; m = true; } });
+      if (m) ops.push({ store: 'consultations', type: 'put', valeur: c });
+    }
+    for (const t of ['receptions', 'sorties'])
+      for (const r of await dbGetAll(t)) if (r.molecule === ancien) { r.molecule = nouveau; ops.push({ store: t, type: 'put', valeur: r }); }
+    // Seuils de stock : la clé est le nom de la molécule
+    const cfgA = await dbGet('stock_config', ancien);
+    if (cfgA) {
+      const cfgN = await dbGet('stock_config', nouveau);
+      if (!cfgN) ops.push({ store: 'stock_config', type: 'put', valeur: { ...cfgA, molecule: nouveau } });
+      ops.push({ store: 'stock_config', type: 'delete', valeur: ancien });
+    }
+  }
+  await ecrireEnBloc(ops);
+  if (cle === 'medecins') {
     const mis = getMissionActive();
     if (mis?.medecins) {
       const liste = mis.medecins.split(',').map(x => x.trim()).map(x => x === ancien ? nouveau : x);
@@ -4176,41 +4347,19 @@ async function renommerDansDonnees(cle, ancien, nouveau) {
     if (localStorage.getItem('dernier_med1') === ancien) localStorage.setItem('dernier_med1', nouveau);
     if (localStorage.getItem('dernier_med2') === ancien) localStorage.setItem('dernier_med2', nouveau);
   }
-  if (cle === 'fournisseurs') {
-    for (const r of await dbGetAll('receptions')) if (r.fournisseur === ancien) { r.fournisseur = nouveau; await dbPut('receptions', r); n++; }
-  }
-  if (cle === 'molecules') {
-    for (const c of await dbGetAll('consultations')) {
-      let m = false;
-      (c.prescription || []).forEach(p => { if (p.molecule === ancien) { p.molecule = nouveau; m = true; } });
-      if (m) { await dbPut('consultations', c); n++; }
-    }
-    for (const t of ['receptions', 'sorties'])
-      for (const r of await dbGetAll(t)) if (r.molecule === ancien) { r.molecule = nouveau; await dbPut(t, r); n++; }
-    // Seuils de stock : la clé est le nom de la molécule
-    const cfgA = await dbGet('stock_config', ancien);
-    if (cfgA) {
-      const cfgN = await dbGet('stock_config', nouveau);
-      if (!cfgN) await dbPut('stock_config', { ...cfgA, molecule: nouveau });
-      await dbDelete('stock_config', ancien);
-      n++;
-    }
-  }
-  return n;
+  return ops.length;
 }
-
-// Renommer un lieu : répercuter sur les consultations existantes
 async function renommerLieuDansConsultations(ancien, nouveau) {
   if (!ancien || !nouveau || ancien === nouveau) return 0;
-  const consults = await dbGetAll('consultations');
-  let n = 0;
-  for (const c of consults) {
+  const ops = [];
+  for (const c of await dbGetAll('consultations')) {
     let modif = false;
     if (c.lieu === ancien)       { c.lieu = nouveau; modif = true; }
     if (c.habitation === ancien) { c.habitation = nouveau; modif = true; }
-    if (modif) { await dbPut('consultations', c); n++; }
+    if (modif) ops.push({ store: 'consultations', type: 'put', valeur: c });
   }
-  return n;
+  await ecrireEnBloc(ops);
+  return ops.length;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -4988,101 +5137,348 @@ function demanderRoleSiBesoin() { if (!roleAppareil()) choisirRoleAppareil(true)
 
 // Date de la dernière modification connue d'un enregistrement
 const dateModif = r => r ? (r.modifieLe || r.createdAt || '') : '';
+const LISTES_NOMS = ['lieux', 'medecins', 'fournisseurs', 'molecules'];
 const STORES_DONNEES = [['consultations', 'consultation'], ['receptions', 'reception'], ['sorties', 'sortie']];
 
-function viderStore(store) {
+// Contrôle complet d'un fichier de sauvegarde AVANT toute écriture.
+// Renvoie la liste des problèmes trouvés (liste vide = fichier utilisable).
+function controlerSauvegarde(data) {
+  const pbs = [];
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return ['le fichier ne contient pas une sauvegarde'];
+  if (data.appName !== 'MedecinsPakbeng' || !data.version) return ['ce fichier ne vient pas de l\'application'];
+  if (typeof data.exportedAt !== 'string' || isNaN(new Date(data.exportedAt))) pbs.push('la date de la sauvegarde est absente');
+  const objet = r => r && typeof r === 'object' && !Array.isArray(r);
+  for (const [store, type] of STORES_DONNEES) {
+    const l = data[store];
+    if (!Array.isArray(l)) { pbs.push(`la partie « ${store} » est absente ou illisible`); continue; }
+    const ids = new Set();
+    l.forEach((r, i) => {
+      const ou = `${type === 'reception' ? 'réception' : type} n° ${i + 1}`;
+      if (!objet(r)) { pbs.push(`${ou} : illisible`); return; }
+      if (typeof r.createdAt !== 'string' || !r.createdAt) pbs.push(`${ou} : date d'enregistrement absente`);
+      if (r.id != null) {
+        if (!Number.isInteger(r.id) || r.id < 1) pbs.push(`${ou} : numéro interne invalide`);
+        else if (ids.has(r.id)) pbs.push(`${ou} : numéro interne en double`);
+        ids.add(r.id);
+      }
+      if (type === 'consultation') {
+        if (r.prescription != null && !Array.isArray(r.prescription)) pbs.push(`${ou} : prescription illisible`);
+      } else {
+        if (typeof r.molecule !== 'string' || !r.molecule) pbs.push(`${ou} : médicament absent`);
+        if (typeof r.quantite !== 'number' || !isFinite(r.quantite) || r.quantite < 0) pbs.push(`${ou} : quantité invalide`);
+      }
+    });
+  }
+  if (!Array.isArray(data.stockConfig)) pbs.push('la fiche médicaments est absente (fichier d\'une ancienne version ?)');
+  else data.stockConfig.forEach((f, i) => { if (!objet(f) || typeof f.molecule !== 'string' || !f.molecule) pbs.push(`fiche médicament n° ${i + 1} : nom absent`); });
+  if (!Array.isArray(data.parametres)) pbs.push('les listes et réglages sont absents (fichier d\'une ancienne version ?)');
+  else data.parametres.forEach((p, i) => {
+    if (!objet(p) || typeof p.cle !== 'string' || !p.cle) pbs.push(`réglage n° ${i + 1} : illisible`);
+    else if ((p.cle === 'journal_corrections' || p.cle === 'inventaires') && !Array.isArray(p.valeur)) pbs.push(`réglage « ${p.cle} » : illisible`);
+  });
+  return pbs;
+}
+
+// Remplace tout le contenu de la base en UNE SEULE transaction : soit tout est écrit, soit rien ne change
+// (fichier invalide, batterie vide, application fermée en cours de route…).
+// contenu = { consultations: [], receptions: [], sorties: [], stock_config: [], parametres: [] }
+function remplacerBase(contenu) {
   return new Promise((res, rej) => {
-    const tx = db.transaction(store, 'readwrite'); tx.objectStore(store).clear();
-    tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
+    let tx;
+    try {
+      const noms = Object.keys(contenu);
+      tx = db.transaction(noms, 'readwrite', OPT_ECRITURE);
+      tx.oncomplete = () => res();
+      tx.onabort = tx.onerror = () => rej(tx.error || new Error('Écriture annulée'));
+      for (const nom of noms) {
+        const st = tx.objectStore(nom);
+        st.clear();
+        // Les enregistrements qui ont déjà un numéro d'abord : les nouveaux reçoivent ensuite un numéro libre
+        const l = contenu[nom];
+        [...l.filter(r => r.id != null), ...l.filter(r => r.id == null)].forEach(r => st.put(r));
+      }
+    } catch(e) { try { tx && tx.abort(); } catch(_) {} rej(e); }
   });
 }
 
-async function reprendreSauvegarde(input) {
-  if (!input.files?.length) return;
-  const file = input.files[0]; input.value = '';
+// Renommages de liste notés dans un journal et absents de l'autre, du plus ancien au plus récent
+const cleJournal = x => (x.le || '') + '|' + (x.resume || x.type || '');
+function renommagesAAppliquer(journal, journalAutre) {
+  const connus = new Set(journalAutre.map(cleJournal));
+  return journal.filter(j => j.action === 'renommage' && !connus.has(cleJournal(j))).map(j => {
+    const i = String(j.motif || '').indexOf(' → ');   // anciennes entrées : seul le texte « ancien → nouveau » est connu
+    return { le: j.le || '', liste: j.liste || '', ancien: j.ancien ?? (i > 0 ? j.motif.slice(0, i) : ''), nouveau: j.nouveau ?? (i > 0 ? j.motif.slice(i + 3) : '') };
+  }).filter(x => x.ancien && x.nouveau && x.ancien !== x.nouveau).sort((a, b) => a.le.localeCompare(b.le));
+}
+// Applique un renommage à un enregistrement : renvoie une copie corrigée s'il est concerné, sinon l'enregistrement tel quel
+function renommerDansEnregistrement(type, r, x) {
+  const tout = !x.liste; let c = r;
+  const champ = n => { if (r[n] === x.ancien) { if (c === r) c = { ...r }; c[n] = x.nouveau; } };
+  if (tout || x.liste === 'molecules') {
+    if (type !== 'consultation') champ('molecule');
+    else if ((r.prescription || []).some(p => p.molecule === x.ancien)) { c = { ...c, prescription: r.prescription.map(p => p.molecule === x.ancien ? { ...p, molecule: x.nouveau } : p) }; }
+  }
+  if (type === 'consultation' && (tout || x.liste === 'medecins')) { champ('medecin1'); champ('medecin2'); }
+  if (type === 'consultation' && (tout || x.liste === 'lieux')) { champ('lieu'); champ('habitation'); }
+  if (type === 'reception' && (tout || x.liste === 'fournisseurs')) champ('fournisseur');
+  return c;
+}
+
+async function reprendreSauvegarde(input, fichier) {
+  const file = fichier || input?.files?.[0];
+  if (!file) return;
+  if (input) input.value = '';
   let data;
-  try { data = JSON.parse(await file.text()); } catch(e) { toast('❌ Fichier illisible', 'error'); return; }
-  if (data.appName !== 'MedecinsPakbeng' || !data.version) { toast('❌ Fichier JSON invalide ou incompatible', 'error'); return; }
+  try { data = JSON.parse(await file.text()); } catch(e) { toast('❌ Fichier illisible ou incomplet : rien n\'a été modifié', 'error'); return; }
+  const pbs = controlerSauvegarde(data);
+  if (pbs.length) {
+    await confirmer(`Ce fichier ne peut pas être repris :\n\n${pbs.slice(0, 5).map(p => '• ' + p).join('\n')}${pbs.length > 5 ? `\n• … et ${pbs.length - 5} autre(s) problème(s)` : ''}\n\nRien n'a été modifié sur cet appareil. Demandez un nouveau fichier.`,
+      { titre: '❌ Sauvegarde refusée', ok: 'Compris', annuler: false });
+    return;
+  }
   const f = iso => iso ? new Date(iso).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '?';
 
+  // Ce fichier est-il plus ancien que celui déjà repris sur cet appareil ? (ou le même ?)
+  let derniere = null;
+  try { derniere = JSON.parse(localStorage.getItem('base_reprise') || 'null'); } catch(e) {}
+  const dejaRepris = !!(derniere?.exportedAt && data.exportedAt === derniere.exportedAt);
+  if (derniere?.exportedAt && data.exportedAt < derniere.exportedAt) {
+    await confirmer(`Ce fichier date du ${f(data.exportedAt)}.\n\nIl est plus ANCIEN que la sauvegarde déjà reprise sur cet appareil (${libelleRole(derniere.role)} — ${f(derniere.exportedAt)}).\n\n` +
+      `Le reprendre ferait revenir d'anciennes données. Rien n'a été modifié.\n\nVérifiez que vous avez choisi le dernier fichier reçu.`,
+      { titre: '⛔ Fichier trop ancien', ok: 'Compris', annuler: false, danger: true });
+    return;
+  }
+
   // Saisies annulées volontairement (selon le journal de la sauvegarde) : à ne pas réintégrer
-  const journalSauv = (data.parametres || []).find(p => p.cle === 'journal_corrections')?.valeur || [];
+  const journalSauv = data.parametres.find(p => p.cle === 'journal_corrections')?.valeur || [];
   const annuleesSauv = new Set(journalSauv.filter(j => j.action === 'annulation' && j.avant?.createdAt).map(j => j.type + '|' + j.avant.createdAt));
   const dateRelais = data.base?.exportedAt || '';   // quand cet appareil a transmis ses données (si connu)
+  // Saisies annulées sur CET appareil (selon son journal) : si la sauvegarde les contient encore, elles ne reviennent pas
+  const journalLocal = await getParam('journal_corrections', []);
+  const annuleesIci = new Set(journalLocal.filter(j => j.action === 'annulation' && j.avant?.createdAt).map(j => j.type + '|' + j.avant.createdAt));
+  const donnees = {}; let nbAnnuleesIci = 0;
+  for (const [store, type] of STORES_DONNEES) {
+    donnees[store] = data[store].filter(r => !annuleesIci.has(type + '|' + r.createdAt));
+    nbAnnuleesIci += data[store].length - donnees[store].length;
+  }
+  // Noms corrigés dans une liste (médicament, médecin, lieu, fournisseur) d'un seul côté depuis le dernier échange :
+  // – corrigés ailleurs : à reporter sur les saisies de cet appareil qui seront conservées ;
+  // – corrigés ici : à reporter sur les données de la sauvegarde.
+  const renomAilleurs = renommagesAAppliquer(journalSauv, journalLocal), renomIci = renommagesAAppliquer(journalLocal, journalSauv);
+  let fiches = data.stockConfig;
+  for (const x of renomIci) {
+    for (const [store, type] of STORES_DONNEES) donnees[store] = donnees[store].map(r => renommerDansEnregistrement(type, r, x));
+    if ((!x.liste || x.liste === 'molecules') && fiches.some(f => f.molecule === x.ancien))
+      fiches = fiches.some(f => f.molecule === x.nouveau) ? fiches.filter(f => f.molecule !== x.ancien) : fiches.map(f => f.molecule === x.ancien ? { ...f, molecule: x.nouveau } : f);
+  }
 
   // Saisies de cet appareil absentes de la sauvegarde (à conserver) et modifications plus récentes (à garder)
   const aGarder = [], modifsGardees = [];
   for (const [store, type] of STORES_DONNEES) {
-    const sauv = new Map((data[store] || []).map(r => [r.createdAt, r]));
+    const sauv = new Map(data[store].map(r => [r.createdAt, r]));
     for (const r of await dbGetAll(store)) {
       const s = sauv.get(r.createdAt);
       if (!s) { if (!annuleesSauv.has(type + '|' + r.createdAt) && !String(r.fournisseur || '').startsWith('Stock initial')) aGarder.push({ store, type, r }); }
       else if (r.modifieLe && r.modifieLe > dateModif(s) && (!dateRelais || r.modifieLe > dateRelais)) modifsGardees.push({ store, type, r });
     }
   }
+  for (const x of [...aGarder, ...modifsGardees]) x.r = renomAilleurs.reduce((r, ren) => renommerDansEnregistrement(x.type, r, ren), x.r);
   const resume = x => x.type === 'consultation' ? `• Consultation ${x.r.nom || ''} ${x.r.prenom || ''} du ${x.r.date ? jourLocal(x.r.date).toLocaleDateString('fr-FR') : '?'}`
     : `• ${x.type === 'reception' ? 'Réception' : 'Sortie'} ${x.r.molecule || ''} × ${x.r.quantite || 0}`;
   const liste = l => l.slice(0, 6).map(resume).join('\n') + (l.length > 6 ? `\n• … et ${l.length - 6} autre(s)` : '');
 
   let msg = `Sauvegarde de : ${data.provenance ? data.provenance.libelle : 'appareil non précisé'} — ${f(data.exportedAt)}`;
   if (data.base?.exportedAt) msg += `\nConstruite à partir de : ${libelleRole(data.base.role)} — ${f(data.base.exportedAt)}`;
-  msg += `\n\nContenu : ${(data.consultations || []).length} consultation(s), ${(data.receptions || []).length} réception(s), ${(data.sorties || []).length} sortie(s).`;
+  msg += `\n\nContenu : ${data.consultations.length} consultation(s), ${data.receptions.length} réception(s), ${data.sorties.length} sortie(s).`;
   msg += `\n\nLes données de cet appareil seront REMPLACÉES par celles de la sauvegarde (corrections et annulations comprises). Les réglages de l'appareil sont conservés.`;
   if (aGarder.length) msg += `\n\n✅ Saisies faites ici et absentes de la sauvegarde, qui seront CONSERVÉES (${aGarder.length}) :\n${liste(aGarder)}`;
   if (modifsGardees.length) msg += `\n\n✅ Corrections faites ici plus récentes que la sauvegarde, qui seront CONSERVÉES (${modifsGardees.length}) :\n${liste(modifsGardees)}`;
+  if (nbAnnuleesIci) msg += `\n\n✅ ${nbAnnuleesIci} saisie(s) annulée(s) sur cet appareil figurent encore dans la sauvegarde : elles ne seront PAS réintroduites.`;
+  if (dejaRepris) msg += `\n\nℹ Ce fichier a DÉJÀ été repris sur cet appareil${derniere.le ? ' le ' + f(derniere.le) : ''}. Le reprendre une seconde fois ne change rien.`;
   if (data.provenance?.role && data.provenance.role === roleAppareil()) msg += `\n\n⚠ Cette sauvegarde vient d'un appareil de même rôle que celui-ci (${libelleRole(roleAppareil())}). Vérifiez qu'il s'agit bien du bon fichier.`;
   if (!(await confirmer(msg, { titre: 'Reprendre les données de cette sauvegarde ?', ok: 'Remplacer', danger: true }))) return;
 
-  // Copie de sécurité des données actuelles (obligatoire)
+  // Copie de sécurité des données actuelles (obligatoire) : un fichier téléchargé ET une copie gardée dans l'appareil
+  let copieAvant;
   try {
     const blob = await genererBlobJSON(); const nom = `${prefixeFichier()}_avant_reprise_${horodatageFichier()}.json`;
+    copieAvant = { le: new Date().toISOString(), fichier: file.name, repere: localStorage.getItem('base_reprise'), donnees: JSON.parse(await blob.text()) };
     telechargerBlob(blob, nom);
     if (_driveDirectoryHandle && _dossierAutorise) { try { await ecrireDansDossierDrive(nom, blob); } catch(e) {} }
   } catch(e) { toast('❌ Copie de sécurité impossible : rien n\'a été modifié', 'error'); return; }
 
+  // Mission et repère de la dernière reprise. Si c'est une sauvegarde de CET appareil qui est restaurée (retour en arrière),
+  // on revient au repère qu'elle portait : le fichier reçu ensuite pourra être repris de nouveau.
+  // Ces repères vivent dans les préférences du navigateur ; ils sont AUSSI écrits dans la base, dans la même transaction
+  // que les données, et remis en place au redémarrage : la reprise ne dépend plus de ces préférences.
+  const propreSauvegarde = !!data.provenance?.role && data.provenance.role === roleAppareil();
+  let missionReprise = null;
+  try { missionReprise = data.mission ? (typeof data.mission === 'string' ? JSON.parse(data.mission) : data.mission) : null; } catch(e) {}
+  const reperes = {
+    mission: missionReprise,
+    base: propreSauvegarde ? (data.base?.exportedAt ? data.base : null) : { role: data.provenance?.role || '', exportedAt: data.exportedAt, le: new Date().toISOString() },
+    message: `✅ Données reprises — ${aGarder.length + modifsGardees.length} saisie(s) locale(s) conservée(s)`,
+  };
+
   toast('⏳ Reprise des données…', 'success');
   clearTimeout(_sauvegardeAutoTimer); clearTimeout(_autosaveTimer);
   try {
-    // 1. Remplacement des données (les identifiants de la sauvegarde sont conservés)
+    // 1. Tout le nouveau contenu est préparé en mémoire, sans rien écrire
+    const contenu = { stock_config: fiches };
     for (const [store] of STORES_DONNEES) {
-      await viderStore(store);
-      for (const r of (data[store] || [])) await dbPut(store, r);
+      // Données de la sauvegarde (identifiants conservés), avec les corrections locales plus récentes…
+      const modifs = new Map(modifsGardees.filter(x => x.store === store).map(x => [x.r.createdAt, x.r]));
+      const vus = new Set();
+      contenu[store] = donnees[store].map(r => {
+        const m = modifs.get(r.createdAt);
+        if (!m || vus.has(r.createdAt)) return r;
+        vus.add(r.createdAt);
+        const c = { ...m }; if (r.id != null) c.id = r.id; else delete c.id;
+        return c;
+      });
+      // … puis les saisies propres à cet appareil (elles reçoivent un nouveau numéro)
+      for (const x of aGarder.filter(x => x.store === store)) { const c = { ...x.r }; delete c.id; contenu[store].push(c); }
     }
-    await viderStore('stock_config');
-    for (const sc of (data.stockConfig || [])) await dbPut('stock_config', sc);
     // Paramètres : ceux de la sauvegarde ; le journal et les inventaires sont fusionnés ; le dossier de sauvegarde de l'appareil est gardé
     const paramsLocaux = await dbGetAll('parametres');
     const local = cle => paramsLocaux.find(p => p.cle === cle)?.valeur;
-    for (const p of paramsLocaux) if (p.cle !== CLE_DOSSIER) await dbDelete('parametres', p.cle);
-    for (const p of (data.parametres || [])) {
-      if (p.cle === CLE_DOSSIER) continue;
-      if (p.cle === 'journal_corrections' || p.cle === 'inventaires') {
-        const l = Array.isArray(local(p.cle)) ? local(p.cle) : [];
-        const k = x => (x.le || '') + '|' + (x.resume || x.type || '');
-        const vus = new Set(p.valeur.map(k));
-        await dbPut('parametres', { cle: p.cle, valeur: [...p.valeur, ...l.filter(x => !vus.has(k(x)))].sort((a, b) => String(b.le).localeCompare(String(a.le))).slice(0, p.cle === 'journal_corrections' ? 500 : 50) });
-      } else await dbPut('parametres', p);
+    const k = x => (x.le || '') + '|' + (x.resume || x.type || '');
+    const fusionner = (cle, deLaSauvegarde, max) => {
+      const l = Array.isArray(local(cle)) ? local(cle) : [];
+      const vus = new Set(deLaSauvegarde.map(k));
+      return [...deLaSauvegarde, ...l.filter(x => !vus.has(k(x)))].sort((a, b) => String(b.le).localeCompare(String(a.le))).slice(0, max);
+    };
+    const params = new Map();
+    for (const p of data.parametres) {
+      if (p.cle === CLE_DOSSIER || p.cle === CLE_COPIE || p.cle === CLE_REPERES) continue;
+      if (p.cle === 'journal_corrections') params.set(p.cle, fusionner(p.cle, p.valeur, 500));
+      else if (p.cle === 'inventaires') params.set(p.cle, limiterInventaires(fusionner(p.cle, p.valeur, Infinity)));
+      else if (LISTES_NOMS.includes(p.cle) && Array.isArray(p.valeur)) {
+        // Listes : les noms corrigés ici restent corrigés
+        const noms = p.valeur.map(v => renomIci.filter(x => !x.liste || x.liste === p.cle).reduce((n, x) => n === x.ancien ? x.nouveau : n, v));
+        params.set(p.cle, [...new Set(noms)]);
+      }
+      else params.set(p.cle, p.valeur);
     }
-    // 2. Réintégration des saisies et corrections propres à cet appareil
-    for (const x of aGarder) { const c = { ...x.r }; delete c.id; await dbAdd(x.store, c); }
-    for (const x of modifsGardees) {
-      const cible = (await dbGetAll(x.store)).find(r => r.createdAt === x.r.createdAt);
-      await dbPut(x.store, { ...x.r, id: cible ? cible.id : x.r.id });
+    // Réglages propres à cet appareil, absents de la sauvegarde : gardés tels quels
+    for (const p of paramsLocaux) if (!params.has(p.cle) && p.cle !== CLE_DOSSIER && p.cle !== CLE_COPIE && p.cle !== CLE_REPERES) params.set(p.cle, p.valeur);
+    // Listes : les noms utilisés par les saisies conservées (village ou médecin ajouté ici entre-temps…) y restent
+    const utilises = { lieux: [], medecins: [], fournisseurs: [], molecules: [], hopitaux: [] };
+    for (const x of [...aGarder, ...modifsGardees]) {
+      if (x.type === 'consultation') {
+        utilises.lieux.push(x.r.lieu, x.r.habitation); utilises.medecins.push(x.r.medecin1, x.r.medecin2); utilises.hopitaux.push(x.r.orientation?.hopital);
+        (x.r.prescription || []).forEach(l => utilises.molecules.push(l.molecule));
+      } else {
+        utilises.molecules.push(x.r.molecule);
+        if (x.type === 'reception' && x.r.fournisseur !== 'Inventaire') utilises.fournisseurs.push(x.r.fournisseur);
+      }
     }
-    await journaliser('reprise', 'sauvegarde', null, null,
-      `Reprise de « ${file.name} » (${data.provenance ? data.provenance.libelle : '?'}, ${f(data.exportedAt)}) — ${aGarder.length} saisie(s) et ${modifsGardees.length} correction(s) locales conservées`);
-    // 3. Mission et repères de la reprise
-    if (data.mission) localStorage.setItem('mission_active', JSON.stringify(typeof data.mission === 'string' ? JSON.parse(data.mission) : data.mission));
-    localStorage.setItem('base_reprise', JSON.stringify({ role: data.provenance?.role || '', exportedAt: data.exportedAt }));
-    localStorage.setItem('stock_initial_charge', localStorage.getItem('stock_initial_charge') || new Date().toISOString());
-    localStorage.setItem('nbConsultationsConnu', String((await dbGetAll('consultations')).length));
-    localStorage.setItem('message_apres_reprise', `✅ Données reprises — ${aGarder.length + modifsGardees.length} saisie(s) locale(s) conservée(s)`);
+    for (const [cle, noms] of Object.entries(utilises)) {
+      const liste = params.get(cle);
+      if (!Array.isArray(liste)) continue;   // liste jamais modifiée : la liste par défaut de l'application s'applique
+      const present = new Set(liste.map(v => String(v).toLowerCase()));
+      const ajouts = [...new Set(noms.map(n => String(n || '').trim()).filter(Boolean))].filter(n => !present.has(n.toLowerCase()));
+      if (!ajouts.length) continue;
+      const tri = (a, b) => a.localeCompare(b, 'fr');
+      const tout = [...liste, ...ajouts];
+      params.set(cle, cle === 'molecules' ? tout.sort(tri)
+        : cle === 'lieux' ? [...tout.filter(l => l.startsWith('Dispensaire')), ...tout.filter(l => !l.startsWith('Dispensaire')).sort(tri)] : tout);
+    }
+    // Missions : celles créées ici et inconnues de la sauvegarde sont gardées
+    const missionsLocales = local('missions');
+    if (Array.isArray(missionsLocales) && Array.isArray(params.get('missions'))) {
+      const nums = new Set(params.get('missions').map(m => m.numero));
+      params.set('missions', [...params.get('missions'), ...missionsLocales.filter(m => !nums.has(m.numero))]);
+    }
+    // Après une reprise, le stock initial pré-chargé de l'application ne doit plus jamais être rechargé
+    if (!params.get(CLE_STOCK_INITIAL)) params.set(CLE_STOCK_INITIAL, local(CLE_STOCK_INITIAL) || new Date().toISOString());
+    // La reprise elle-même est tracée dans le journal
+    const journal = params.get('journal_corrections') || fusionner('journal_corrections', [], 500);
+    journal.unshift({ le: new Date().toISOString(), action: 'reprise', type: 'sauvegarde', resume: '', champs: [], avant: null, apres: null,
+      motif: `Reprise de « ${file.name} » (${data.provenance ? data.provenance.libelle : '?'}, ${f(data.exportedAt)}) — ${aGarder.length} saisie(s) et ${modifsGardees.length} correction(s) locales conservées` });
+    params.set('journal_corrections', journal.slice(0, 500));
+    contenu.parametres = [...params].map(([cle, valeur]) => ({ cle, valeur }));
+    const dossier = paramsLocaux.find(p => p.cle === CLE_DOSSIER);
+    if (dossier) contenu.parametres.push(dossier);
+    contenu.parametres.push({ cle: CLE_COPIE, valeur: copieAvant });   // permet « Annuler la dernière reprise »
+    contenu.parametres.push({ cle: CLE_REPERES, valeur: reperes });    // mission et repère de reprise, remis en place au redémarrage
+
+    // 2. Écriture en une seule fois : tout ou rien
+    await remplacerBase(contenu);
   } catch(e) {
     console.error(e);
-    await confirmer('La reprise a échoué en cours de route. Restaurez la copie de sécurité qui vient d\'être téléchargée (« avant_reprise ») avec « Reprendre les données d\'une sauvegarde ».',
-      { titre: '❌ Erreur pendant la reprise', ok: 'Compris', annuler: false });
+    await confirmer('La reprise n\'a pas pu se faire. Rien n\'a été modifié : les données de cet appareil sont intactes.\n\nVérifiez le fichier, puis recommencez.',
+      { titre: '❌ Reprise annulée', ok: 'Compris', annuler: false });
     return;
   }
+  // 3. Repères posés tout de suite (ils le seront de nouveau au redémarrage, depuis la base)
+  poserReperes(reperes);
+  location.reload();
+}
+
+// Remet en place la mission et le repère de reprise dans les préférences du navigateur
+function poserReperes(r) {
+  try {
+    if (r.mission) localStorage.setItem(MISSION_KEY, JSON.stringify(r.mission)); else if (r.sansMission) localStorage.removeItem(MISSION_KEY);
+    if (r.base) localStorage.setItem('base_reprise', JSON.stringify(r.base)); else localStorage.removeItem('base_reprise');
+    if (r.message) localStorage.setItem('message_apres_reprise', r.message);
+    localStorage.removeItem('nbConsultationsConnu');   // recompté au démarrage
+  } catch(e) { console.warn('[Reprise] repères', e); }
+}
+// Au démarrage : si une reprise (ou son annulation) vient d'avoir lieu, ses repères sont relus dans la base, puis retirés
+async function appliquerReperesApresReprise() {
+  const r = await getParam(CLE_REPERES, null);
+  if (!r) return;
+  poserReperes(r);
+  await dbDelete('parametres', CLE_REPERES);
+}
+
+// ── Annuler la dernière reprise : retour aux données d'avant, les saisies faites depuis sont conservées ──
+async function majBoutonAnnulerReprise() {
+  const btn = document.getElementById('btnAnnulerReprise'); if (!btn) return;
+  const copie = await getParam(CLE_COPIE, null);
+  btn.style.display = copie ? '' : 'none';
+  if (copie) btn.textContent = `↩ Annuler la dernière reprise (du ${new Date(copie.le).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })})`;
+}
+
+async function annulerDerniereReprise() {
+  const copie = await getParam(CLE_COPIE, null);
+  if (!copie || controlerSauvegarde(copie.donnees).length) { toast('❌ Aucune reprise à annuler', 'error'); return; }
+  const d = copie.donnees;
+  // Saisies faites depuis la reprise : elles sont conservées
+  const depuis = [];
+  for (const [store, type] of STORES_DONNEES)
+    for (const r of await dbGetAll(store)) if (String(r.createdAt || '') > copie.le) depuis.push({ store, type, r });
+  const quand = new Date(copie.le).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  if (!(await confirmer(`Les données de cet appareil reviendront à leur état du ${quand}, juste avant la reprise de « ${copie.fichier} ».\n\n` +
+      `Contenu retrouvé : ${d.consultations.length} consultation(s), ${d.receptions.length} réception(s), ${d.sorties.length} sortie(s).` +
+      (depuis.length ? `\n\n✅ Les ${depuis.length} saisie(s) faites depuis la reprise seront CONSERVÉES.` : ''),
+      { titre: 'Annuler la dernière reprise ?', ok: 'Annuler la reprise', danger: true }))) return;
+  try { telechargerBlob(await genererBlobJSON(), `${prefixeFichier()}_avant_annulation_reprise_${horodatageFichier()}.json`); } catch(e) {}
+  let baseAvant = null; try { baseAvant = copie.repere ? JSON.parse(copie.repere) : null; } catch(e) {}
+  const reperesAnnulation = { mission: d.mission || null, sansMission: !d.mission, base: baseAvant, message: `✅ Reprise annulée — ${depuis.length} saisie(s) faites depuis conservée(s)` };
+  clearTimeout(_sauvegardeAutoTimer); clearTimeout(_autosaveTimer);
+  try {
+    const contenu = { stock_config: d.stockConfig };
+    for (const [store] of STORES_DONNEES)
+      contenu[store] = [...d[store], ...depuis.filter(x => x.store === store).map(x => { const c = { ...x.r }; delete c.id; return c; })];
+    const params = d.parametres.filter(p => p.cle !== CLE_DOSSIER && p.cle !== CLE_COPIE && p.cle !== CLE_REPERES && p.cle !== 'journal_corrections');
+    const journal = [...(d.parametres.find(p => p.cle === 'journal_corrections')?.valeur || [])];
+    journal.unshift({ le: new Date().toISOString(), action: 'reprise', type: 'sauvegarde', resume: '', champs: [], avant: null, apres: null,
+      motif: `Reprise de « ${copie.fichier} » annulée — retour aux données du ${quand}, ${depuis.length} saisie(s) faites depuis conservées` });
+    params.push({ cle: 'journal_corrections', valeur: journal.slice(0, 500) });
+    if (!params.some(p => p.cle === CLE_STOCK_INITIAL)) params.push({ cle: CLE_STOCK_INITIAL, valeur: new Date().toISOString() });
+    const dossier = await dbGet('parametres', CLE_DOSSIER);
+    if (dossier) params.push(dossier);
+    params.push({ cle: CLE_REPERES, valeur: reperesAnnulation });
+    contenu.parametres = params;
+    await remplacerBase(contenu);
+  } catch(e) {
+    console.error(e);
+    await confirmer('L\'annulation n\'a pas pu se faire. Rien n\'a été modifié.', { titre: '❌ Annulation impossible', ok: 'Compris', annuler: false });
+    return;
+  }
+  poserReperes(reperesAnnulation);
   location.reload();
 }
 
@@ -5100,7 +5496,7 @@ function resumeSaisie(type, r) {
   return `${r.molecule || '—'} · ${r.lot || '—'} · ${r.quantite || 0} u. (${r.date ? jourLocal(r.date).toLocaleDateString('fr-FR') : ''})`;
 }
 
-async function journaliser(action, type, avant, apres, motif) {
+async function journaliser(action, type, avant, apres, motif, plus) {
   const journal = await getParam('journal_corrections', []);
   const libelles = { date:'Date', lieu:'Lieu', medecin1:'Médecin 1', medecin2:'Médecin 2', nom:'Nom', prenom:'Prénom',
     age:'Âge', genre:'Genre', habitation:"Lieu d'habitation", allergies:'Allergies', antecedents:'Antécédents',
@@ -5110,7 +5506,7 @@ async function journaliser(action, type, avant, apres, motif) {
     ? Object.keys(libelles).filter(k => JSON.stringify(avant[k] ?? '') !== JSON.stringify(apres[k] ?? '')).map(k => libelles[k])
     : [];
   journal.unshift({ le: new Date().toISOString(), action, type, resume: resumeSaisie(type, avant || apres),
-                    champs, motif: motif || '', avant: avant || null, apres: apres || null });
+                    champs, motif: motif || '', avant: avant || null, apres: apres || null, ...(plus || {}) });
   await setParam('journal_corrections', journal.slice(0, 500));
 }
 
@@ -5157,6 +5553,13 @@ async function modifierConsultation(id, contexte) {
   const enCours = document.getElementById('c_nom')?.value.trim();
   if (enCours && !_editionConsultation &&
       !(await confirmer('La consultation en cours de saisie sera effacée pour ouvrir la modification.', { titre: 'Modifier cette consultation ?', ok: 'Continuer', danger: true }))) return;
+
+  // Le formulaire a 5 lignes de prescription et 4 pathologies : une consultation qui en a davantage (données importées)
+  // serait tronquée à l'enregistrement. On refuse la modification plutôt que de perdre des lignes.
+  if ((c.prescription || []).length > 5 || (c.pathologies || []).length > 4) {
+    await confirmer('Cette consultation contient plus de 5 médicaments ou plus de 4 pathologies : la modifier ici ferait perdre les lignes en trop.\n\nElle n\'a pas été modifiée.', { titre: 'Modification impossible', ok: 'Compris', annuler: false });
+    return;
+  }
 
   _editionRetour = contexte || 'recherche';
   goScreen('consultation');
@@ -5233,7 +5636,7 @@ async function chargerMouvements(type) {
       <div style="min-width:0">
         <div style="font-size:.84rem;font-weight:700;color:var(--brun)">${esc(m.molecule)}</div>
         <div style="font-size:.74rem;color:var(--brun-doux)">
-          ${m.date ? jourLocal(m.date).toLocaleDateString('fr-FR') : '—'} · ${esc(m.lot || '—')} · <strong>${m.quantite || 0} u.</strong>
+          ${m.date ? jourLocal(m.date).toLocaleDateString('fr-FR') : '—'} · ${esc(m.lot || '—')} · <strong>${m.quantite || 0} ${libUnite(m.molecule, m.quantite || 0)}</strong>
           ${type === 'receptions' ? ' · ' + esc(m.fournisseur || '') : ' · ' + esc(m.motif || '')}
         </div>
       </div>
@@ -5276,7 +5679,7 @@ async function afficherJournal() {
       <div class="form-section-body" style="padding:10px 14px">
         ${journal.length ? journal.slice(0, 50).map(j => `
           <div style="padding:7px 0;border-bottom:1px solid var(--sable-fonce);font-size:.8rem;color:var(--brun)">
-            <div><strong>${j.action === 'modification' ? '✏️ Modification' : j.action === 'renommage' ? '🔤 Renommage' : '✖ Annulation'}</strong> · ${types[j.type] || esc(j.type)}
+            <div><strong>${j.action === 'modification' ? '✏️ Modification' : j.action === 'renommage' ? '🔤 Renommage' : j.action === 'reprise' ? '🔁 Reprise' : '✖ Annulation'}</strong> · ${types[j.type] || esc(j.type)}
               <span style="color:var(--brun-clair)"> — ${new Date(j.le).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</span></div>
             <div style="color:var(--brun-doux)">${esc(j.resume)}${j.champs?.length ? ' · champs modifiés : ' + esc(j.champs.join(', ')) : ''}</div>
             ${j.motif ? `<div style="font-style:italic;color:var(--brun-doux)">Motif : ${esc(j.motif)}</div>` : ''}
@@ -5326,8 +5729,67 @@ function statutLot(datePeremption, lot) {
   return 'ok';
 }
 
+// Historique des inventaires (du plus récent au plus ancien) : on garde les 50 derniers de CHAQUE sorte.
+// Médicaments et consommables partageaient la même limite : beaucoup d'inventaires de l'un effaçaient ceux de l'autre.
+function limiterInventaires(invs) {
+  const n = {};
+  return invs.filter(x => { const t = x.type || 'medicaments'; n[t] = (n[t] || 0) + 1; return n[t] <= 50; });
+}
+
+// Anomalies de stock : situations où le stock calculé ne peut pas correspondre à l'étagère.
+// Renvoie [{ molecule, lot, type, texte }], triées par médicament.
+function anomaliesStock(moteur, listeMolecules) {
+  const res = [];
+  const connus = new Set(listeMolecules || []);
+  Object.entries(moteur).forEach(([mol, lots]) => {
+    const u = n => `${n} ${libUnite(mol, n)}`;
+    const tous = Object.values(lots);
+    tous.forEach(l => {
+      if (l.lot === LOT_A_REGULARISER) {
+        if (l.restant < 0) res.push({ molecule: mol, lot: l.lot, type: 'regulariser', texte: `${u(-l.restant)} délivrée(s) au-delà du stock connu (« à régulariser »)` });
+      } else if (l.restant < 0 && l.recu === 0) {
+        res.push({ molecule: mol, lot: l.lot, type: 'jamais_recu', texte: `lot « ${l.lot} » : ${u(-l.restant)} sortie(s) ou délivrée(s) sur un lot qui n'a jamais été reçu` });
+      } else if (l.restant < 0) {
+        res.push({ molecule: mol, lot: l.lot, type: 'negatif', texte: `lot « ${l.lot} » : stock négatif (${l.restant}) — plus de sorties que d'entrées` });
+      } else if (l.statut === 'averifier' && l.restant > 0) {
+        res.push({ molecule: mol, lot: l.lot, type: 'date', texte: `lot « ${l.lot} » : date de péremption illisible (« ${l.datePeremption} ») — ${u(l.restant)} jamais délivrée(s) automatiquement` });
+      }
+    });
+    if (listeMolecules && !connus.has(mol) && tous.some(l => l.restant !== 0))
+      res.push({ molecule: mol, lot: '', type: 'hors_liste', texte: 'ce nom ne figure pas dans la liste des médicaments (nom modifié ?) : son stock n\'est pas proposé à la prescription' });
+  });
+  return res.sort((a, b) => a.molecule.localeCompare(b.molecule, 'fr'));
+}
+async function afficherAnomaliesStock(moteur) {
+  const bloc = document.getElementById('stockAnomalies'); if (!bloc) return;
+  const l = anomaliesStock(moteur, await getParam('molecules', REF.molecules));
+  bloc.style.display = l.length ? '' : 'none';
+  if (!l.length) return;
+  const nbMol = new Set(l.map(a => a.molecule)).size;
+  document.getElementById('stockAnomaliesTitre').textContent = `⚠ ${l.length} anomalie(s) de stock sur ${nbMol} médicament(s) — toucher pour voir`;
+  document.getElementById('stockAnomaliesListe').innerHTML = l.map(a => `<div>• <strong>${esc(a.molecule)}</strong> — ${esc(a.texte)}</div>`).join('');
+}
+
 // Calcul complet : { molecule: { lotKey: {lot, datePeremption, recu, delivre, detruit, restant, statut} } }
+// Le résultat est gardé tant qu'aucune donnée n'a été écrite et que le jour n'a pas changé (les statuts de péremption
+// dépendent de la date). Chaque appel reçoit sa propre copie : la modifier ne touche pas le résultat gardé.
+let _stockGarde = { cle: '', resultats: new Map() };
 async function calculerStock(exclureConsultationId) {
+  const cle = versionDonnees() + '|' + dateAujourdhui();
+  if (_stockGarde.cle !== cle) _stockGarde = { cle, resultats: new Map() };
+  const copier = map => { const c = {}; for (const mol in map) { c[mol] = {}; for (const lot in map[mol]) c[mol][lot] = { ...map[mol][lot] }; } return c; };
+  const id = exclureConsultationId ?? '';
+  if (_stockGarde.resultats.has(id) && !window.__verifierMemoire) return copier(_stockGarde.resultats.get(id));
+  const map = await calculerStockComplet(exclureConsultationId);
+  if (window.__verifierMemoire && _stockGarde.resultats.has(id) && versionDonnees() + '|' + dateAujourdhui() === cle
+      && JSON.stringify(map) !== JSON.stringify(_stockGarde.resultats.get(id))) {
+    window.__memoireIncoherente = (window.__memoireIncoherente || 0) + 1;
+    throw new Error('Mémoire incohérente : stock calculé');
+  }
+  if (versionDonnees() + '|' + dateAujourdhui() === cle) _stockGarde.resultats.set(id, map);   // rien n'a été écrit pendant le calcul
+  return copier(map);
+}
+async function calculerStockComplet(exclureConsultationId) {
   const [recs, sorts, consults] = await Promise.all([
     dbGetAll('receptions'), dbGetAll('sorties'), dbGetAll('consultations')
   ]);
@@ -5347,10 +5809,10 @@ async function calculerStock(exclureConsultationId) {
     if (!p.molecule) return;
     if (Array.isArray(p.lots) && p.lots.length) {
       p.lots.forEach(a => { lotDe(p.molecule, a.lot, a.datePeremption).delivre += (a.quantite || 0); });
-    } else {
+    } else if (p.quantite > 0) {
       // Anciennes consultations : un seul lot saisi à la main
       lotDe(p.molecule, p.lot || '(sans lot)', '').delivre += (p.quantite || 0);
-    }
+    }   // ligne sans quantité : notée au dossier, sans effet sur le stock
   }));
   sorts.forEach(s => {
     if (!s.molecule) return;
@@ -5436,15 +5898,35 @@ async function calculerAllocationsPrescription() {
   const map = await calculerStock(_editionConsultation?.id);
   const restantsParMol = {};
   const res = {};
+  const saisies = {};
   for (let i = 1; i <= 5; i++) {
     const mol = COMBOS['presc_mol_' + i]?.getValue() || '';
     const qty = parseInt(document.getElementById('presc_qty_' + i)?.value) || 0;
     if (!mol || qty <= 0) { res[i] = null; continue; }
-    const lotForce = document.getElementById('presc_lot_' + i)?.value || '';
+    saisies[i] = { mol, qty, lotForce: document.getElementById('presc_lot_' + i)?.value || '' };
     if (!restantsParMol[mol]) restantsParMol[mol] = {};
-    const lots = map[mol] || {};
-    res[i] = { molecule: mol, quantite: qty, lotForce, dispo: stockDisponible(lots),
-               ...allouerFEFO(lots, restantsParMol[mol], qty, lotForce) };
+  }
+  // Modification d'une consultation : une ligne inchangée (même médicament, même quantité, même lot imposé) garde les lots
+  // qui ont réellement été délivrés. Sans cela, corriger un nom des semaines plus tard redistribuait la délivrance
+  // sur les lots d'aujourd'hui (lot périmé entre-temps, lot épuisé…) et faussait le stock lot par lot.
+  const origines = (_editionConsultation?.prescription || []).filter(p => Array.isArray(p.lots) && p.lots.length
+    && p.lots.reduce((a, l) => a + (l.quantite || 0), 0) === p.quantite);
+  for (const [i, x] of Object.entries(saisies)) {
+    const k = origines.findIndex(p => p.molecule === x.mol && p.quantite === x.qty && (p.lotForce || '') === x.lotForce);
+    if (k < 0) continue;
+    const o = origines.splice(k, 1)[0];
+    const lots = map[x.mol] || {}, restants = restantsParMol[x.mol];
+    const prelevements = o.lots.filter(l => l.lot !== LOT_A_REGULARISER).map(l => ({ lot: l.lot, datePeremption: l.datePeremption || '', quantite: l.quantite || 0 }));
+    prelevements.forEach(l => { restants[l.lot] = (restants[l.lot] ?? lots[l.lot]?.restant ?? 0) - l.quantite; });
+    res[i] = { molecule: x.mol, quantite: x.qty, lotForce: x.lotForce, dispo: stockDisponible(lots), conserve: true,
+               prelevements, manque: o.lots.filter(l => l.lot === LOT_A_REGULARISER).reduce((a, l) => a + (l.quantite || 0), 0) };
+  }
+  // Les autres lignes (nouvelles ou modifiées) sont servies en FEFO sur ce qui reste
+  for (const [i, x] of Object.entries(saisies)) {
+    if (res[i]) continue;
+    const lots = map[x.mol] || {};
+    res[i] = { molecule: x.mol, quantite: x.qty, lotForce: x.lotForce, dispo: stockDisponible(lots),
+               ...allouerFEFO(lots, restantsParMol[x.mol], x.qty, x.lotForce) };
   }
   return res;
 }
@@ -5553,7 +6035,8 @@ function afficherInventaire() {
       .filter(l => l.lot !== LOT_A_REGULARISER && (vides || l.restant !== 0 || b.comptes[invCle(mol, l.lot)] != null))
       .sort((x, y) => String(x.datePeremption).localeCompare(String(y.datePeremption)));
     if (!lots.length) return;
-    rows.push(`<tr style="background:var(--sable)"><td colspan="4" style="font-weight:700;font-size:.84rem">${esc(mol)}${uniteDe(mol) === 'plaquette' ? ' <span class="badge" style="font-size:.62rem">plaquettes</span>' : ''}</td></tr>`);
+    const dette = -(_invMoteur[mol][LOT_A_REGULARISER]?.restant || 0);   // délivré au-delà du stock connu
+    rows.push(`<tr style="background:var(--sable)"><td colspan="4" style="font-weight:700;font-size:.84rem">${esc(mol)}${uniteDe(mol) === 'plaquette' ? ' <span class="badge" style="font-size:.62rem">plaquettes</span>' : ''}${dette > 0 ? ` <span class="badge badge-warn" style="font-size:.62rem;font-weight:600" title="Quantité délivrée au-delà du stock connu">⚠ ${dette} à régulariser — soldé à la validation si tous les lots sont comptés</span>` : ''}</td></tr>`);
     lots.forEach(l => {
       nbLots++;
       const k = invCle(mol, l.lot);
@@ -5641,10 +6124,32 @@ async function validerInventaire() {
   (b.nouveaux || []).forEach(n => lignes.push({ molecule: n.molecule, lot: libelleLot(n.datePeremption), datePeremption: n.datePeremption,
     theorique: 0, compte: n.quantite, ecart: n.quantite, nouveau: true }));
   if (!lignes.length) { toast('Aucun comptage saisi', 'error'); return; }
+  // Quantités « à régulariser » (délivrées au-delà du stock connu) : une fois TOUS les lots d'un médicament comptés,
+  // le comptage fait foi et cette dette est soldée par une entrée « Inventaire ». Sinon elle fausserait le stock pour toujours.
+  const comptes = {};
+  lignes.forEach(l => (comptes[l.molecule] = comptes[l.molecule] || new Set()).add(l.lot));
+  const soldes = [];
+  Object.entries(comptes).forEach(([mol, lotsComptes]) => {
+    const reg = _invMoteur[mol]?.[LOT_A_REGULARISER];
+    if (!reg || reg.restant >= 0) return;
+    const tousComptes = Object.values(_invMoteur[mol]).every(l => l.lot === LOT_A_REGULARISER || l.restant === 0 || lotsComptes.has(l.lot));
+    if (tousComptes) soldes.push({ molecule: mol, lot: LOT_A_REGULARISER, datePeremption: '', theorique: reg.restant, compte: 0, ecart: -reg.restant, regularisation: true });
+  });
+  const nbComptes = lignes.length;
+  const ecartsComptes = lignes.filter(l => l.ecart !== 0);
+  lignes.push(...soldes);
   const ecarts = lignes.filter(l => l.ecart !== 0);
-  const moins = ecarts.filter(l => l.ecart < 0).reduce((a, l) => a - l.ecart, 0);
-  const plus  = ecarts.filter(l => l.ecart > 0).reduce((a, l) => a + l.ecart, 0);
-  if (!(await confirmer(`${lignes.length} lot(s) compté(s), ${ecarts.length} écart(s) :\n• ${moins} unité(s) en moins (enregistrées en sortie « Inventaire »)\n• ${plus} unité(s) en plus (enregistrées en entrée « Inventaire »)`, { titre: 'Valider l\'inventaire ?', ok: 'Valider' }))) return;
+  // Unités et plaquettes (contraceptifs) ne s'additionnent pas : elles sont annoncées séparément
+  const somme = l => {
+    const u = l.filter(x => uniteDe(x.molecule) !== 'plaquette').reduce((a, x) => a + Math.abs(x.ecart), 0);
+    const pl = l.filter(x => uniteDe(x.molecule) === 'plaquette').reduce((a, x) => a + Math.abs(x.ecart), 0);
+    return `${u} unité(s)` + (pl ? ` et ${pl} plaquette(s)` : '');
+  };
+  const moins = somme(ecartsComptes.filter(l => l.ecart < 0));
+  const plus  = somme(ecartsComptes.filter(l => l.ecart > 0));
+  if (!(await confirmer(`${nbComptes} lot(s) compté(s), ${ecartsComptes.length} écart(s) :\n• ${moins} en moins (enregistrées en sortie « Inventaire »)\n• ${plus} en plus (enregistrées en entrée « Inventaire »)` +
+      (soldes.length ? `\n\n${soldes.length} médicament(s) entièrement compté(s) avaient des quantités « à régulariser » (${soldes.reduce((a, l) => a + l.ecart, 0)} au total) : elles sont soldées, le comptage fait foi.` : ''),
+      { titre: 'Valider l\'inventaire ?', ok: 'Valider' }))) return;
   const date = dateAujourdhui(), now = Date.now();
   let i = 0;
   for (const l of ecarts) {
@@ -5654,9 +6159,9 @@ async function validerInventaire() {
   }
   const invs = await getParam('inventaires', []);
   invs.unshift({ le: new Date().toISOString(), date, type: 'medicaments', mission: getMissionNumero() || '', lignes });
-  await setParam('inventaires', invs.slice(0, 50));
+  await setParam('inventaires', limiterInventaires(invs));
   localStorage.removeItem(INV_KEY);
-  toast(`✅ Inventaire enregistré — ${ecarts.length} écart(s) corrigé(s)`, 'success');
+  toast(`✅ Inventaire enregistré — ${ecartsComptes.length} écart(s) corrigé(s)${soldes.length ? ` · ${soldes.length} « à régulariser » soldé(s)` : ''}`, 'success');
   await chargerInventaire();
   try { await chargerStock(); } catch(e) {}
 }
@@ -5759,7 +6264,7 @@ async function validerInventaireConso() {
   const invs = await getParam('inventaires', []);
   invs.unshift({ le: new Date().toISOString(), date: dateAujourdhui(), type: 'consommables', mission: getMissionNumero() || '',
                  remarque: (b.remarque || '').trim(), lignes });
-  await setParam('inventaires', invs.slice(0, 50));
+  await setParam('inventaires', limiterInventaires(invs));
   localStorage.removeItem(CONSO_KEY);
   document.getElementById('consoRemarque').value = '';
   toast(`✅ Inventaire enregistré — ${lignes.length} article(s)`, 'success');
@@ -5816,7 +6321,9 @@ async function supprimerConsommable(id) {
 // ═══════════════════════════════════════════════════════════════════
 // ENREGISTREMENT RÉCEPTION
 // ═══════════════════════════════════════════════════════════════════
-function enregistrerReception() {
+function enregistrerReception() { return _enregistrerReceptionProtege(); }
+const _enregistrerReceptionProtege = unSeulEnregistrement('reception', () => !(COMBOS.r_mol?.getValue() || document.getElementById('r_mol').value), _enregistrerReception);
+async function _enregistrerReception() {
   const date    = document.getElementById('r_date').value;
   const fourn   = document.getElementById('r_fourn').value;
   const mol     = COMBOS.r_mol?.getValue() || document.getElementById('r_mol').value;
@@ -5829,10 +6336,19 @@ function enregistrerReception() {
   if (!mol)   { toast('❌ Molécule requise', 'error'); return; }
   if (!perdate) { toast('❌ Date de péremption requise', 'error'); return; }
   if (!qty || qty <= 0) { toast('❌ Quantité invalide', 'error'); return; }
+  const lisible = d => jourLocal(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const inhabituel = [];
+  if (date > dateAujourdhui()) inhabituel.push(`Date de réception dans le futur : ${lisible(date)}`);
+  if (perdate < dateAujourdhui()) inhabituel.push(`Médicament DÉJÀ PÉRIMÉ : péremption le ${lisible(perdate)}`);
+  if (qty > RECEPTION_INHABITUELLE) inhabituel.push(`Quantité : ${qty} ${libUnite(mol, qty)}`);
+  if (inhabituel.length && !(await confirmer(inhabituel.map(x => '• ' + x).join('\n') + '\n\nEst-ce bien ce que vous voulez enregistrer ?',
+      { titre: '⚠ Valeurs inhabituelles', ok: 'Oui, enregistrer', annuler: 'Corriger' }))) return;
 
-  dbAdd('receptions', { date, fournisseur: fourn, molecule: mol, lot: libelleLot(perdate), numLot: lot, datePeremption: perdate, quantite: qty, createdAt: new Date().toISOString() })
-    .then(() => { toast('✅ Réception enregistrée', 'success'); effacerReception(); chargerMouvements('receptions'); })
-    .catch(() => toast('❌ Erreur d\'enregistrement', 'error'));
+  try {
+    await dbAdd('receptions', { date, fournisseur: fourn, molecule: mol, lot: libelleLot(perdate), numLot: lot, datePeremption: perdate, quantite: qty, createdAt: new Date().toISOString() });
+    toast('✅ Réception enregistrée', 'success'); effacerReception(); chargerMouvements('receptions');
+    return true;
+  } catch(e) { toast('❌ Erreur d\'enregistrement', 'error'); }
 }
 
 function effacerReception() {
@@ -5845,27 +6361,63 @@ function effacerReception() {
 // ═══════════════════════════════════════════════════════════════════
 // ENREGISTREMENT SORTIE
 // ═══════════════════════════════════════════════════════════════════
-function enregistrerSortie() {
+// Une sortie se fait toujours sur un lot EXISTANT du médicament (choisi dans la liste), sans dépasser ce qu'il contient.
+// Sinon elle créerait un lot fantôme en négatif, et le vrai lot resterait plein à l'écran.
+function lotsSortables(lots) {
+  return Object.values(lots || {}).filter(l => l.lot !== LOT_A_REGULARISER && l.restant > 0)
+    .sort((a, b) => String(a.datePeremption || '9999').localeCompare(String(b.datePeremption || '9999')));
+}
+async function majLotsSortie() {
+  const sel = document.getElementById('s_lotsel'); if (!sel) return;
+  const mol = COMBOS.s_mol?.getValue() || '';
+  const garde = sel.value;
+  if (!mol) { sel.innerHTML = '<option value="">— Choisir d\'abord le médicament —</option>'; sel.disabled = true; return; }
+  const lots = lotsSortables((await calculerStock())[mol]);
+  if ((COMBOS.s_mol?.getValue() || '') !== mol) return;   // le médicament a changé entre-temps
+  sel.innerHTML = lots.length ? (lots.length > 1 ? '<option value="">— Choisir le lot —</option>' : '') : '<option value="">Aucun stock pour ce médicament</option>';
+  lots.forEach(l => {
+    const o = document.createElement('option');
+    o.value = l.lot;
+    o.textContent = `${l.lot} · ${l.restant} ${libUnite(mol, l.restant)}${l.statut === 'perime' ? ' — périmé' : ''}`;
+    sel.appendChild(o);
+  });
+  sel.disabled = !lots.length;
+  if (lots.some(l => l.lot === garde)) sel.value = garde;
+}
+
+function enregistrerSortie() { return _enregistrerSortieProtege(); }
+const _enregistrerSortieProtege = unSeulEnregistrement('sortie', () => !(COMBOS.s_mol?.getValue() || document.getElementById('s_mol').value), _enregistrerSortie);
+async function _enregistrerSortie() {
   const date   = document.getElementById('s_date').value;
   const motif  = document.getElementById('s_motif').value;
   const mol    = COMBOS.s_mol?.getValue() || document.getElementById('s_mol').value;
   const qty    = parseInt(document.getElementById('s_qty').value);
+  const cleLot = document.getElementById('s_lotsel').value;
 
   if (!date)  { toast('❌ Date requise', 'error'); return; }
   if (!motif) { toast('❌ Motif requis', 'error'); return; }
   if (!mol)   { toast('❌ Molécule requise', 'error'); return; }
+  const lots = lotsSortables((await calculerStock())[mol]);   // recalcul au dernier moment
+  if (!lots.length) { toast('❌ Aucun stock enregistré pour ce médicament : rien à sortir', 'error'); return; }
+  const lot = lots.find(l => l.lot === cleLot);
+  if (!lot)   { toast('❌ Choisir le lot à sortir', 'error'); majLotsSortie(); return; }
   if (!qty || qty <= 0) { toast('❌ Quantité invalide', 'error'); return; }
+  if (qty > lot.restant) { toast(`❌ Ce lot ne contient que ${lot.restant} ${libUnite(mol, lot.restant)} : quantité trop grande`, 'error'); return; }
+  if (date > dateAujourdhui() && !(await confirmer(`• Date de sortie dans le futur : ${jourLocal(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}\n\nEst-ce bien ce que vous voulez enregistrer ?`,
+      { titre: '⚠ Valeurs inhabituelles', ok: 'Oui, enregistrer', annuler: 'Corriger' }))) return;
 
-  const sPer = document.getElementById('s_perdate').value;
   const sNum = document.getElementById('s_lot').value.trim();
-  dbAdd('sorties', { date, motif, molecule: mol, lot: sPer ? libelleLot(sPer) : sNum, numLot: sNum, datePeremption: sPer, quantite: qty, createdAt: new Date().toISOString() })
-    .then(() => { toast('✅ Sortie enregistrée', 'success'); effacerSortie(); chargerMouvements('sorties'); })
-    .catch(() => toast('❌ Erreur d\'enregistrement', 'error'));
+  try {
+    await dbAdd('sorties', { date, motif, molecule: mol, lot: lot.lot, numLot: sNum, datePeremption: lot.datePeremption || '', quantite: qty, createdAt: new Date().toISOString() });
+    toast('✅ Sortie enregistrée', 'success'); effacerSortie(); chargerMouvements('sorties');
+    return true;
+  } catch(e) { toast('❌ Erreur d\'enregistrement', 'error'); }
 }
 
 function effacerSortie() {
-  ['s_motif','s_lot','s_perdate','s_qty'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  ['s_motif','s_lot','s_qty'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   COMBOS.s_mol?.clear();
+  majLotsSortie();
   document.getElementById('s_date').value = dateAujourdhui();
 }
 
@@ -5887,6 +6439,7 @@ async function chargerStock() {
   const moteur = await calculerStock();
   const stockMap = {};
   Object.entries(moteur).forEach(([mol, lots]) => { stockMap[mol] = { lots, dispo: stockDisponible(lots) }; });
+  afficherAnomaliesStock(moteur).catch(e => console.warn('[Stock] anomalies', e));
 
   const tbody = document.getElementById('stockBody');
   tbody.innerHTML = '';
@@ -5913,8 +6466,10 @@ async function chargerStock() {
     const aCommander = (sMin != null && stockUtile <= sMin && sCon != null)
       ? Math.max(sCon - stockUtile, 0) : null;
 
-    const stockColor = stockTotal <= 0 ? 'var(--rouge)'
-      : (sMin != null && stockTotal <= sMin) ? 'var(--orange)' : 'var(--vert)';
+    // La couleur suit le stock UTILISABLE (hors périmés), comme le seuil de commande ; les périmés sont annoncés à part
+    const perimes = Math.max(stockTotal - stockUtile, 0);
+    const stockColor = stockUtile <= 0 ? 'var(--rouge)'
+      : (sMin != null && stockUtile <= sMin) ? 'var(--orange)' : 'var(--vert)';
 
     let badgeCmd = '<span style="color:#b0bec5">—</span>';
     if (aCommander != null) {
@@ -5944,7 +6499,7 @@ async function chargerStock() {
       ${nbLots > 1 ? `<span id="lot-toggle-${molIdx}" class="lot-toggle" style="margin-right:4px;color:var(--brun-clair);font-size:.75rem">▶</span>` : ''}
         ${esc(mol)}${suivi ? '' : ' <span class="badge" style="background:#f5f7f8;color:#90a4ae;font-size:.62rem">non suivi</span>'}
       </td>
-      <td class="c-stock" style="font-weight:800;color:${suivi ? stockColor : 'var(--brun-clair)'};font-size:1rem;text-align:center">${stockTotal}${uniteDe(mol) === 'plaquette' ? '<div style="font-size:.62rem;font-weight:600">plaq.</div>' : ''}</td>
+      <td class="c-stock" style="font-weight:800;color:${suivi ? stockColor : 'var(--brun-clair)'};font-size:1rem;text-align:center">${stockTotal}${uniteDe(mol) === 'plaquette' ? '<div style="font-size:.62rem;font-weight:600">plaq.</div>' : ''}${perimes > 0 ? `<div style="font-size:.62rem;font-weight:700;color:var(--rouge)">dont ${perimes} périmé${perimes > 1 ? 's' : ''}</div>` : ''}</td>
       <td class="c-lot${nbLots > 1 ? ' multi' : ''}" style="font-size:.75rem;color:var(--brun-doux);text-align:center">
         ${nbLots === 1 && lotsTries[0] ? `${lotsTries[0].lot !== '(sans lot)' ? lotsTries[0].lot : '—'}` : `${nbLots} lot${nbLots > 1 ? 's' : ''}`}
       </td>
@@ -6242,16 +6797,37 @@ async function filtrerStockConfig() {
 // ═══════════════════════════════════════════════════════════════════
 const STOCK_INITIAL_PRECHARGE = [{"molecule": "AC ACETYLSALICYLIQUE — 75 mg — sachet", "lot": "Exp. 06/2026", "datePeremption": "2026-06-01", "quantite": 7, "nomCommercial": "kardegic", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.002Z"}, {"molecule": "AC FOLIQUE — 5 mg — cpr", "lot": "Exp. 02/2027", "datePeremption": "2027-02-01", "quantite": 2318, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.003Z"}, {"molecule": "AC FOLIQUE — 5 mg — cpr", "lot": "Exp. 08/2027", "datePeremption": "2027-08-01", "quantite": 293, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.004Z"}, {"molecule": "AC FUSIDIQUE — 2 % — crème", "lot": "Exp. 09/2027", "datePeremption": "2027-09-01", "quantite": 4, "nomCommercial": "fucidine", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.005Z"}, {"molecule": "AC FUSIDIQUE — 2 % — crème", "lot": "Exp. 11/2027", "datePeremption": "2027-11-01", "quantite": 4, "nomCommercial": "fucidine", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.006Z"}, {"molecule": "AC FUSIDIQUE — 2 % — crème", "lot": "Exp. 12/2027", "datePeremption": "2027-12-01", "quantite": 2, "nomCommercial": "fucidine", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.007Z"}, {"molecule": "AC TRANEXAMIQUE — 500 mg — cpr", "lot": "Exp. 03/2028", "datePeremption": "2028-03-01", "quantite": 40, "nomCommercial": "exacyl", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.008Z"}, {"molecule": "AC TRANEXAMIQUE — 500 mg — cpr", "lot": "Exp. 05/2026", "datePeremption": "2026-05-01", "quantite": 20, "nomCommercial": "exacyl", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.009Z"}, {"molecule": "ACETAZOLAMIDE — 250 mg — cpr", "lot": "Exp. 10/2027", "datePeremption": "2027-10-01", "quantite": 12, "nomCommercial": "Diamox", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.010Z"}, {"molecule": "ACICLOVIR — 200 mg — cpr", "lot": "Exp. 11/2027", "datePeremption": "2027-11-01", "quantite": 88, "nomCommercial": "acyvir", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.011Z"}, {"molecule": "ACICLOVIR — 5 % — crème", "lot": "Exp. 01/2027", "datePeremption": "2027-01-01", "quantite": 2, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.012Z"}, {"molecule": "ACICLOVIR — 5 % — crème", "lot": "Exp. 06/2026", "datePeremption": "2026-06-01", "quantite": 2, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.013Z"}, {"molecule": "ADRENALINE — 1 mg / ml — injectable", "lot": "Exp. 10/2026", "datePeremption": "2026-10-01", "quantite": 3, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.015Z"}, {"molecule": "ALBENDAZOLE — 200 mg — cpr", "lot": "Exp. 04/2027", "datePeremption": "2027-04-01", "quantite": 94, "nomCommercial": "zenera", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.016Z"}, {"molecule": "ALBENDAZOLE — 200 mg — cpr", "lot": "Exp. 06/2028", "datePeremption": "2028-06-01", "quantite": 100, "nomCommercial": "zenzera", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.017Z"}, {"molecule": "ALBENDAZOLE — 200 mg — cpr", "lot": "Exp. 07/2027", "datePeremption": "2027-07-01", "quantite": 200, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.018Z"}, {"molecule": "AMIODARONE — 200 mg — cpr", "lot": "Exp. 06/2029", "datePeremption": "2029-06-01", "quantite": 30, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.020Z"}, {"molecule": "AMIODARONE — 200 mg — cpr", "lot": "Exp. 11/2026", "datePeremption": "2026-11-01", "quantite": 30, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.021Z"}, {"molecule": "AMIODARONE — 200 mg — cpr", "lot": "Exp. 11/2027", "datePeremption": "2027-11-01", "quantite": 30, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.022Z"}, {"molecule": "AMLODIPINE — 10 mg — cpr", "lot": "Exp. 02/2028", "datePeremption": "2028-02-01", "quantite": 560, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.024Z"}, {"molecule": "AMLODIPINE — 10 mg — cpr", "lot": "Exp. 10/2028", "datePeremption": "2028-10-01", "quantite": 1480, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.025Z"}, {"molecule": "AMLODIPINE — 5 mg — cpr", "lot": "Exp. 02/2028", "datePeremption": "2028-02-01", "quantite": 1240, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.026Z"}, {"molecule": "AMLODIPINE — 5 mg — cpr", "lot": "Exp. 10/2028", "datePeremption": "2028-10-01", "quantite": 2000, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.027Z"}, {"molecule": "AMOXICILLINE / ACIDE CLAVULANIQUE — 100 mg / 12,5 mg — susp buv", "lot": "Exp. 12/2027", "datePeremption": "2027-12-01", "quantite": 6, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.028Z"}, {"molecule": "AMOXICILLINE / ACIDE CLAVULANIQUE — 500 mg / 62,5 mg — cpr", "lot": "Exp. 01/2027", "datePeremption": "2027-01-01", "quantite": 6, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.029Z"}, {"molecule": "AMOXICILLINE / ACIDE CLAVULANIQUE — 500 mg / 62,5 mg — cpr", "lot": "Exp. 03/2027", "datePeremption": "2027-03-01", "quantite": 28, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.030Z"}, {"molecule": "AMOXICILLINE / ACIDE CLAVULANIQUE — 500 mg / 62,5 mg — cpr", "lot": "Exp. 12/2026", "datePeremption": "2026-12-01", "quantite": 1, "nomCommercial": "clamovid 625", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.031Z"}, {"molecule": "AMOXICILLINE — 250 mg / 5 ml — susp buv", "lot": "Exp. 03/2027", "datePeremption": "2027-03-01", "quantite": 8, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.033Z"}, {"molecule": "AMOXICILLINE — 250 mg / 5 ml — susp buv", "lot": "Exp. 03/2028", "datePeremption": "2028-03-01", "quantite": 50, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.034Z"}, {"molecule": "AMOXICILLINE — 500 mg — gélule", "lot": "Exp. 01/2028", "datePeremption": "2028-01-01", "quantite": 12, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.036Z"}, {"molecule": "AMOXICILLINE — 500 mg — gélule", "lot": "Exp. 03/2029", "datePeremption": "2029-03-01", "quantite": 1000, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.037Z"}, {"molecule": "AMOXICILLINE — 500 mg — gélule", "lot": "Exp. 10/2028", "datePeremption": "2028-10-01", "quantite": 1213, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.038Z"}, {"molecule": "AMPHOTERICINE B — 10 % — susp buv", "lot": "Exp. 08/2026", "datePeremption": "2026-08-01", "quantite": 2, "nomCommercial": "fungizone", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.039Z"}, {"molecule": "AZEOL AF — capsule", "lot": "Exp. 11/2026", "datePeremption": "2026-11-01", "quantite": 480, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.047Z"}, {"molecule": "AZITHROMYCINE — 250 mg — cpr", "lot": "Exp. 05/2027", "datePeremption": "2027-05-01", "quantite": 53, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.048Z"}, {"molecule": "AZITHROMYCINE — 250 mg — cpr", "lot": "Exp. 07/2028", "datePeremption": "2028-07-01", "quantite": 48, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.049Z"}, {"molecule": "AZITHROMYCINE — collyre — dose", "lot": "Exp. 08/2026", "datePeremption": "2026-08-01", "quantite": 30, "nomCommercial": "azyter", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.051Z"}, {"molecule": "BANDELETTE GLYCEMIE — bandelette", "lot": "Exp. 03/2027", "datePeremption": "2027-03-01", "quantite": 200, "nomCommercial": "accu-chek guide", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.052Z"}, {"molecule": "BANDELETTE GLYCEMIE — bandelette", "lot": "Exp. 05/2026", "datePeremption": "2026-05-01", "quantite": 98, "nomCommercial": "accu-chek guide", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.053Z"}, {"molecule": "BECLOMETHASONE — 250 µg / dose — spray inhal", "lot": "Exp. 06/2028", "datePeremption": "2028-06-01", "quantite": 16, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.054Z"}, {"molecule": "BECLOMETHASONE — 250 µg / dose — spray inhal", "lot": "Exp. 10/2027", "datePeremption": "2027-10-01", "quantite": 1, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.055Z"}, {"molecule": "BETAMETHASONE — 0,06 % — crème", "lot": "Exp. 09/2027", "datePeremption": "2027-09-01", "quantite": 4, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.056Z"}, {"molecule": "BETAMETHASONE — injectable", "lot": "Exp. 03/2027", "datePeremption": "2027-03-01", "quantite": 5, "nomCommercial": "diprostene", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.057Z"}, {"molecule": "BILASTINE — 20 mg — cpr", "lot": "Exp. 11/2027", "datePeremption": "2027-11-01", "quantite": 20, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.058Z"}, {"molecule": "BISOPROLOL — 5 mg — cpr", "lot": "Exp. 01/2027", "datePeremption": "2027-01-01", "quantite": 1750, "nomCommercial": "concor", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.059Z"}, {"molecule": "BISOPROLOL — 5 mg — cpr", "lot": "Exp. 02/2027", "datePeremption": "2027-02-01", "quantite": 60, "nomCommercial": "concor", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.060Z"}, {"molecule": "C BIANE (Pilèje) — cpr", "lot": "Exp. 09/2027", "datePeremption": "2027-09-01", "quantite": 1115, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.061Z"}, {"molecule": "CALCITONINE — 100 UI — injectable", "lot": "Sans date de péremption", "datePeremption": "pas d'EXP", "quantite": 10, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.062Z"}, {"molecule": "CARBOMERE — gel ophtalmique", "lot": "Exp. 09/2028", "datePeremption": "2028-09-01", "quantite": 10, "nomCommercial": "gel-larmes", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.065Z"}, {"molecule": "CARTIMOTIL (Pilèje) — cpr", "lot": "Exp. 12/2027", "datePeremption": "2027-12-01", "quantite": 120, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.066Z"}, {"molecule": "CEFIXIME — 100 mg / 5 ml — susp buv", "lot": "Exp. 11/2026", "datePeremption": "2026-11-01", "quantite": 1, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.067Z"}, {"molecule": "CEFTRIAXONE — 1 g / 3,5 ml — injectable", "lot": "Exp. 03/2028", "datePeremption": "2028-03-01", "quantite": 2, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.069Z"}, {"molecule": "CETHEXONIUM — 0,1 mg / 0,4 ml — collyre dose", "lot": "Exp. 07/2027", "datePeremption": "2027-07-01", "quantite": 90, "nomCommercial": "Mono sept", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.070Z"}, {"molecule": "CETIRIZINE — 10 mg — cpr", "lot": "Exp. 04/2027", "datePeremption": "2027-04-01", "quantite": 568, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.071Z"}, {"molecule": "CETIRIZINE — 10 mg — cpr", "lot": "Exp. 07/2027", "datePeremption": "2027-07-01", "quantite": 500, "nomCommercial": "Zertin", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.072Z"}, {"molecule": "CHLORURE DE SODIUM — 15 g — voie rectale", "lot": "Exp. 05/2027", "datePeremption": "2027-05-16", "quantite": 2, "nomCommercial": "patar enema", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.073Z"}, {"molecule": "CHOLECALCIFEROL — 50 000 UI — ampoule", "lot": "Exp. 09/2028", "datePeremption": "2028-09-01", "quantite": 408, "nomCommercial": "vitamine D", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.074Z"}, {"molecule": "CIPROFLOXACINE — 250 mg — cpr", "lot": "Exp. 03/2027", "datePeremption": "2027-03-01", "quantite": 10, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.076Z"}, {"molecule": "CIPROFLOXACINE — 500 mg — cpr", "lot": "Exp. 02/2028", "datePeremption": "2028-02-01", "quantite": 48, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.077Z"}, {"molecule": "CIPROFLOXACINE — 500 mg — cpr", "lot": "Exp. 09/2027", "datePeremption": "2027-09-01", "quantite": 100, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.078Z"}, {"molecule": "CIPROFLOXACINE — 500 mg — cpr", "lot": "Exp. 11/2026", "datePeremption": "2026-11-30", "quantite": 46, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.079Z"}, {"molecule": "CLOXACILLINE — 500 mg — cpr", "lot": "Exp. 06/2027", "datePeremption": "2027-06-01", "quantite": 8, "nomCommercial": "orbenine", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.081Z"}, {"molecule": "CLOXACILLINE — 500 mg — cpr", "lot": "Exp. 10/2027", "datePeremption": "2027-10-01", "quantite": 80, "nomCommercial": "orbenine", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.082Z"}, {"molecule": "CYANOCOBALAMINE — 0,2 mg / 0,4 ml — collyre", "lot": "Exp. 06/2027", "datePeremption": "2027-06-01", "quantite": 10, "nomCommercial": "vitamine B12", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.084Z"}, {"molecule": "DAKIN — solution externe", "lot": "Exp. 11/2027", "datePeremption": "2027-11-01", "quantite": 1, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.086Z"}, {"molecule": "DESOGESTREL — 75 µg — plaquette cpr", "lot": "Exp. 05/2027", "datePeremption": "2027-05-01", "quantite": 12, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.087Z"}, {"molecule": "DESOGESTREL — 75 µg — plaquette cpr", "lot": "Exp. 10/2026", "datePeremption": "2026-10-01", "quantite": 2, "nomCommercial": "cerazette", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.088Z"}, {"molecule": "DEXAMETHASONE / NEOMYCINE — collyre", "lot": "Exp. 01/2027", "datePeremption": "2027-01-01", "quantite": 2, "nomCommercial": "chibro cadron", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.090Z"}, {"molecule": "DEXAMETHASONE / NEOMYCINE — collyre", "lot": "Exp. 06/2027", "datePeremption": "2027-06-01", "quantite": 7, "nomCommercial": "chibro cadron", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.091Z"}, {"molecule": "DEXAMETHASONE / OXYTETRACYCLINE — 0,267 mg / 1,335 — pommade ophtalmique", "lot": "Exp. 03/2028", "datePeremption": "2028-03-01", "quantite": 24, "nomCommercial": "sterdex", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.092Z"}, {"molecule": "DEXAMETHASONE / OXYTETRACYCLINE — 0,267 mg / 1,335 — pommade ophtalmique", "lot": "Exp. 04/2027", "datePeremption": "2027-04-01", "quantite": 36, "nomCommercial": "sterdex", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.093Z"}, {"molecule": "DEXAMETHASONE / OXYTETRACYCLINE — 0,267 mg / 1,335 — pommade ophtalmique", "lot": "Exp. 09/2027", "datePeremption": "2027-09-01", "quantite": 36, "nomCommercial": "sterdex", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.094Z"}, {"molecule": "DEXAMETHASONE / OXYTETRACYCLINE — 0,267 mg / 1,335 — pommade ophtalmique", "lot": "Exp. 10/2027", "datePeremption": "2027-10-01", "quantite": 12, "nomCommercial": "sterdex", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.095Z"}, {"molecule": "DEXAMETHASONE / TOBRAMYCINE — collyre", "lot": "Exp. 06/2027", "datePeremption": "2027-06-01", "quantite": 3, "nomCommercial": "Tobradex", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.096Z"}, {"molecule": "DEXAMETHASONE — 1 mg / ml — collyre", "lot": "Exp. 04/2027", "datePeremption": "2027-04-01", "quantite": 120, "nomCommercial": "dexafree", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.097Z"}, {"molecule": "DEXAMETHASONE — 1 mg / ml — collyre", "lot": "Exp. 12/2026", "datePeremption": "2026-12-01", "quantite": 30, "nomCommercial": "dexafree", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.098Z"}, {"molecule": "DIAZEPAM — 10 mg / 2 ml — injectable", "lot": "Exp. 04/2027", "datePeremption": "2027-04-01", "quantite": 3, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.099Z"}, {"molecule": "DICLOFENAC — 1 % — gel dermique", "lot": "Exp. 04/2028", "datePeremption": "2028-04-01", "quantite": 3, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.100Z"}, {"molecule": "DICLOFENAC — 50 mg — cpr", "lot": "Exp. 03/2028", "datePeremption": "2028-03-01", "quantite": 418, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.101Z"}, {"molecule": "DICLOFENAC — 50 mg — cpr", "lot": "Exp. 08/2028", "datePeremption": "2028-08-01", "quantite": 1400, "nomCommercial": "voren", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.102Z"}, {"molecule": "DIOSMECTITE — 3 g — sachet-dose", "lot": "Exp. 03/2028", "datePeremption": "2028-03-01", "quantite": 60, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.103Z"}, {"molecule": "DIOSMECTITE — 3 g — sachet-dose", "lot": "Exp. 05/2027", "datePeremption": "2027-05-01", "quantite": 30, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.104Z"}, {"molecule": "DOXYCYCLINE — 100 mg — gélule", "lot": "Exp. 01/2028", "datePeremption": "2028-01-01", "quantite": 100, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.105Z"}, {"molecule": "DOXYCYCLINE — 100 mg — gélule", "lot": "Exp. 04/2027", "datePeremption": "2027-04-01", "quantite": 50, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.106Z"}, {"molecule": "DYDROGESTERONE — 10 mg — cpr", "lot": "Exp. 05/2027", "datePeremption": "2027-05-01", "quantite": 30, "nomCommercial": "duphaston", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.107Z"}, {"molecule": "DYDROGESTERONE — 10 mg — cpr", "lot": "Exp. 09/2026", "datePeremption": "2026-09-01", "quantite": 120, "nomCommercial": "duphaston", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.108Z"}, {"molecule": "ECONAZOLE LP — 150 mg — ovule", "lot": "Exp. 05/2027", "datePeremption": "2027-05-01", "quantite": 49, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.109Z"}, {"molecule": "ECONAZOLE LP — 150 mg — ovule", "lot": "Exp. 07/2027", "datePeremption": "2027-07-01", "quantite": 1, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.110Z"}, {"molecule": "ECONAZOLE LP — 150 mg — ovule", "lot": "Exp. 07/2028", "datePeremption": "2028-07-01", "quantite": 3, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.111Z"}, {"molecule": "ECONAZOLE LP — 150 mg — ovule", "lot": "Exp. 11/2027", "datePeremption": "2027-11-01", "quantite": 2, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.112Z"}, {"molecule": "ECONAZOLE — 1 % — crème", "lot": "Exp. 03/2027", "datePeremption": "2027-03-01", "quantite": 1, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.113Z"}, {"molecule": "ECONAZOLE — 1 % — crème", "lot": "Exp. 03/2028", "datePeremption": "2028-03-01", "quantite": 1, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.114Z"}, {"molecule": "ECONAZOLE — 1 % — crème", "lot": "Exp. 12/2027", "datePeremption": "2027-12-01", "quantite": 1, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.115Z"}, {"molecule": "ENALAPRIL — 20 mg — cpr", "lot": "Exp. 03/2027", "datePeremption": "2027-03-01", "quantite": 710, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.116Z"}, {"molecule": "ENALAPRIL — 20 mg — cpr", "lot": "Exp. 10/2027", "datePeremption": "2027-10-01", "quantite": 3240, "nomCommercial": "anapril", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.117Z"}, {"molecule": "ENOXAPARINE — 4000 UI / 0,4 ml — injectable", "lot": "Exp. 01/2027", "datePeremption": "2027-01-01", "quantite": 12, "nomCommercial": "lovenox", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.118Z"}, {"molecule": "ENOXAPARINE — 4000 UI / 0,4 ml — injectable", "lot": "Exp. 09/2026", "datePeremption": "2026-09-01", "quantite": 12, "nomCommercial": "lovenox", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.119Z"}, {"molecule": "ERYTHROMYCINE — 250 mg — sachet", "lot": "Exp. 09/2026", "datePeremption": "2026-09-01", "quantite": 266, "nomCommercial": "erycyl", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.120Z"}, {"molecule": "ERYTHROMYCINE — 500 mg — cpr", "lot": "Exp. 10/2027", "datePeremption": "2027-10-01", "quantite": 80, "nomCommercial": "di-ery", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.121Z"}, {"molecule": "FEMIBIANE INTIMA (Pilèje)", "lot": "Exp. 04/2027", "datePeremption": "2027-04-01", "quantite": 120, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.123Z"}, {"molecule": "FER FUMARATE — 200 mg — cpr", "lot": "Exp. 02/2028", "datePeremption": "2028-02-01", "quantite": 270, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.124Z"}, {"molecule": "FER FUMARATE — 200 mg — cpr", "lot": "Exp. 07/2028", "datePeremption": "2028-07-01", "quantite": 1020, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.125Z"}, {"molecule": "FER FUMARATE — 200 mg — cpr", "lot": "Exp. 09/2028", "datePeremption": "2028-09-01", "quantite": 3000, "nomCommercial": "di-fer", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.126Z"}, {"molecule": "FLUORESCEINE — 0,5 % — collyre", "lot": "Exp. 10/2026", "datePeremption": "2026-10-01", "quantite": 11, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.127Z"}, {"molecule": "FORMAG (Pilèje) — cpr", "lot": "Exp. 02/2028", "datePeremption": "2028-02-01", "quantite": 1230, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.128Z"}, {"molecule": "FOSFOMYCINE — 3 g — sol buvable en sachet", "lot": "Exp. 07/2028", "datePeremption": "2028-07-01", "quantite": 8, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.129Z"}, {"molecule": "FUROSEMIDE — 20 mg / 2 ml — injectable", "lot": "Exp. 05/2027", "datePeremption": "2027-05-01", "quantite": 10, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.130Z"}, {"molecule": "FUROSEMIDE — 40 mg — cpr", "lot": "Exp. 01/2027", "datePeremption": "2027-01-27", "quantite": 228, "nomCommercial": "furasix", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.131Z"}, {"molecule": "FUROSEMIDE — 40 mg — cpr", "lot": "Exp. 02/2027", "datePeremption": "2027-02-01", "quantite": 300, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.132Z"}, {"molecule": "FUROSEMIDE — 40 mg — cpr", "lot": "Exp. 07/2026", "datePeremption": "2026-07-01", "quantite": 5, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.133Z"}, {"molecule": "FUROSEMIDE — 40 mg — cpr", "lot": "Exp. 12/2026", "datePeremption": "2026-12-26", "quantite": 50, "nomCommercial": "furasix", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.134Z"}, {"molecule": "GLIBENCLAMIDE — 5 mg — cpr", "lot": "Exp. 03/2028", "datePeremption": "2028-03-01", "quantite": 2282, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.135Z"}, {"molecule": "GLIBENCLAMIDE — 5 mg — cpr", "lot": "Exp. 06/2028", "datePeremption": "2028-06-01", "quantite": 1000, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.136Z"}, {"molecule": "GLYCEROL / VASELINE / PARAFFINE — crème", "lot": "Exp. 09/2029", "datePeremption": "2029-09-01", "quantite": 1, "nomCommercial": "dexeryl", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.137Z"}, {"molecule": "HARPAGOPHYTUM (Pilèje) — cpr", "lot": "Exp. 02/2027", "datePeremption": "2027-02-01", "quantite": 60, "nomCommercial": "phytobiane", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.138Z"}, {"molecule": "HYALURONATE / CARBOMERE / GLYCEROL — 0,5 ml — collyre", "lot": "Exp. 02/2027", "datePeremption": "2027-02-01", "quantite": 30, "nomCommercial": "Nereya", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.140Z"}, {"molecule": "HYALURONATE / CARBOMERE / GLYCEROL — 0,5 ml — collyre", "lot": "Exp. 04/2027", "datePeremption": "2027-04-01", "quantite": 10, "nomCommercial": "Nereya", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.141Z"}, {"molecule": "HYALURONATE DE SODIUM — collyre", "lot": "Exp. 06/2028", "datePeremption": "2028-06-01", "quantite": 10, "nomCommercial": "vistesia", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.142Z"}, {"molecule": "HYALURONATE DE SODIUM — collyre", "lot": "Exp. 12/2027", "datePeremption": "2027-12-01", "quantite": 10, "nomCommercial": "Néovis total", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.143Z"}, {"molecule": "HYDROCHLOROTHIAZIDE — 50 mg — cpr", "lot": "Exp. 04/2027", "datePeremption": "2027-04-01", "quantite": 360, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.144Z"}, {"molecule": "HYDROCHLOROTHIAZIDE — 50 mg — cpr", "lot": "Exp. 09/2026", "datePeremption": "2026-09-01", "quantite": 130, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.145Z"}, {"molecule": "HYDROCORTISONE / OXYDE ZINC / BENZOCAINE — 5 mg / 200 mg / 10 mg — crème", "lot": "Exp. 01/2028", "datePeremption": "2028-01-01", "quantite": 6, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.146Z"}, {"molecule": "HYDROXYDE ALUMINIUM — sachet", "lot": "Exp. 02/2028", "datePeremption": "2028-02-01", "quantite": 60, "nomCommercial": "antacil", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.148Z"}, {"molecule": "HYDROXYDE ALUMINIUM — sachet", "lot": "Exp. 08/2030", "datePeremption": "2030-08-01", "quantite": 200, "nomCommercial": "anticil", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.149Z"}, {"molecule": "HYDROXYDE ALUMINIUM — sachet", "lot": "Exp. 12/2029", "datePeremption": "2029-12-01", "quantite": 120, "nomCommercial": "anticil", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.150Z"}, {"molecule": "IBUPROFENE — 400 mg — cpr", "lot": "Exp. 06/2027", "datePeremption": "2027-06-01", "quantite": 1287, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.151Z"}, {"molecule": "IBUPROFENE — 400 mg — cpr", "lot": "Exp. 12/2028", "datePeremption": "2028-12-01", "quantite": 1000, "nomCommercial": "kalfen", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.152Z"}, {"molecule": "IVERMECTINE — cpr", "lot": "Exp. 11/2028", "datePeremption": "2028-11-01", "quantite": 422, "nomCommercial": "I-mect 3", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.153Z"}, {"molecule": "KETOPROFENE — 100 mg — injectable", "lot": "Exp. 11/2028", "datePeremption": "2028-11-01", "quantite": 12, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.154Z"}, {"molecule": "KETOTIFENE — 0,25 mg / ml — collyre unidose", "lot": "Exp. 05/2027", "datePeremption": "2027-05-01", "quantite": 1, "nomCommercial": "Zalerg", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.155Z"}, {"molecule": "LACTIBIANE IMEDIA (Pilèje)", "lot": "Exp. 11/2026", "datePeremption": "2026-11-01", "quantite": 69, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.156Z"}, {"molecule": "LACTIBIANE REFERENCE (Pilèje) — gélule", "lot": "Exp. 09/2027", "datePeremption": "2027-09-01", "quantite": 41, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.158Z"}, {"molecule": "LACTULOSE — 10 g / 15 ml — sachet", "lot": "Exp. 01/2027", "datePeremption": "2027-01-01", "quantite": 13, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.159Z"}, {"molecule": "LACTULOSE — 10 g / 15 ml — sachet", "lot": "Exp. 02/2027", "datePeremption": "2027-02-01", "quantite": 300, "nomCommercial": "duphalac", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.160Z"}, {"molecule": "LACTULOSE — 10 g / 15 ml — sachet", "lot": "Exp. 12/2026", "datePeremption": "2026-12-01", "quantite": 132, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.161Z"}, {"molecule": "LAMOTRIGINE — 100 mg — cpr", "lot": "Exp. 11/2028", "datePeremption": "2028-11-01", "quantite": 60, "nomCommercial": "lamictal", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.162Z"}, {"molecule": "LAMOTRIGINE — 25 mg — cpr", "lot": "Exp. 08/2028", "datePeremption": "2028-08-01", "quantite": 30, "nomCommercial": "lamictal", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.163Z"}, {"molecule": "LAMOTRIGINE — 50 mg — cpr", "lot": "Exp. 02/2028", "datePeremption": "2028-02-01", "quantite": 30, "nomCommercial": "lamictal", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.164Z"}, {"molecule": "LATANOPROST — 50 µg / ml — collyre", "lot": "Exp. 05/2027", "datePeremption": "2027-05-01", "quantite": 30, "nomCommercial": "monoprost", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.165Z"}, {"molecule": "LATANOPROST — 50 µg / ml — collyre", "lot": "Exp. 08/2027", "datePeremption": "2027-08-01", "quantite": 60, "nomCommercial": "monoprost", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.166Z"}, {"molecule": "LEVOFLOXACINE — 500 mg — cpr", "lot": "Exp. 05/2028", "datePeremption": "2028-05-01", "quantite": 5, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.167Z"}, {"molecule": "LEVONORGESTREL / ETHINYLESTRADIOL (Anna) — 0,15 / 0,03 — plaquette", "lot": "Exp. 11/2029", "datePeremption": "2029-11-01", "quantite": 32, "nomCommercial": "anna", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.168Z"}, {"molecule": "LEVONORGESTREL / ETHINYLESTRADIOL (Leeloo) — 0,10 mg / 0,02 mg — plaquette", "lot": "Exp. 02/2027", "datePeremption": "2027-02-01", "quantite": 21, "nomCommercial": "leeloo", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.169Z"}, {"molecule": "LEVONORGESTREL — 0,03 mg — cpr", "lot": "Exp. 01/2028", "datePeremption": "2028-01-01", "quantite": 15, "nomCommercial": "microval", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.170Z"}, {"molecule": "LEVONORGESTREL — 0,03 mg — cpr", "lot": "Exp. 10/2026", "datePeremption": "2026-10-01", "quantite": 3, "nomCommercial": "microval", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.171Z"}, {"molecule": "LIDOCAÏNE — 100 mg / 20 ml — injectable", "lot": "Exp. 10/2026", "datePeremption": "2026-10-01", "quantite": 2, "nomCommercial": "xylocaïne", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.172Z"}, {"molecule": "LOPERAMIDE — 2 mg — cpr", "lot": "Exp. 07/2028", "datePeremption": "2028-07-01", "quantite": 20, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.174Z"}, {"molecule": "METFORMINE — 500 mg — cpr", "lot": "Exp. 08/2027", "datePeremption": "2027-08-01", "quantite": 110, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.183Z"}, {"molecule": "METFORMINE — 500 mg — cpr", "lot": "Exp. 08/2028", "datePeremption": "2028-08-01", "quantite": 6020, "nomCommercial": "metfo-500", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.184Z"}, {"molecule": "METHYLPREDNISOLONE — 40 mg — injectable", "lot": "Exp. 09/2028", "datePeremption": "2028-09-01", "quantite": 3, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.185Z"}, {"molecule": "METOCLOPRAMIDE — 10 mg / 2 ml — injectable", "lot": "Exp. 07/2026", "datePeremption": "2026-07-01", "quantite": 6, "nomCommercial": "Primperan", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.186Z"}, {"molecule": "METOCLOPRAMIDE — 10 mg / 2 ml — injectable", "lot": "Exp. 08/2026", "datePeremption": "2026-08-01", "quantite": 12, "nomCommercial": "Primperan", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.187Z"}, {"molecule": "METOCLOPRAMIDE — 10 mg — cpr", "lot": "Exp. 11/2027", "datePeremption": "2027-11-01", "quantite": 40, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.188Z"}, {"molecule": "METOPIMAZINE — 7,5 mg — cpr", "lot": "Exp. 08/2027", "datePeremption": "2027-08-01", "quantite": 16, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.189Z"}, {"molecule": "METOPIMAZINE — 7,5 mg — cpr", "lot": "Exp. 10/2030", "datePeremption": "2030-10-01", "quantite": 32, "nomCommercial": "vogalene", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.190Z"}, {"molecule": "METOPIMAZINE — 7,5 mg — cpr", "lot": "Exp. 11/2027", "datePeremption": "2027-11-01", "quantite": 16, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.191Z"}, {"molecule": "METRONIDAZOLE — 250 mg — cpr", "lot": "Exp. 01/2028", "datePeremption": "2028-01-01", "quantite": 10, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.194Z"}, {"molecule": "METRONIDAZOLE — 250 mg — cpr", "lot": "Exp. 07/2028", "datePeremption": "2028-07-01", "quantite": 40, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.195Z"}, {"molecule": "METRONIDAZOLE — 500 mg — ovule", "lot": "Exp. 05/2027", "datePeremption": "2027-05-01", "quantite": 43, "nomCommercial": "Flagyl", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.196Z"}, {"molecule": "METRONIDAZOLE — 500 mg — ovule", "lot": "Exp. 09/2028", "datePeremption": "2028-09-01", "quantite": 20, "nomCommercial": "flagyl", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.197Z"}, {"molecule": "METRONIDAZOLE — 500 mg — ovule", "lot": "Exp. 10/2026", "datePeremption": "2026-10-01", "quantite": 10, "nomCommercial": "flagyl", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.198Z"}, {"molecule": "MICONAZOLE — 2 % — crème", "lot": "Exp. 03/2027", "datePeremption": "2027-03-01", "quantite": 5, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.199Z"}, {"molecule": "MICONAZOLE — 2 % — crème", "lot": "Exp. 05/2026", "datePeremption": "2026-05-01", "quantite": 1, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.200Z"}, {"molecule": "MULTIBIANE ADULTE (Pilèje)", "lot": "Exp. 11/2027", "datePeremption": "2027-11-01", "quantite": 2280, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.201Z"}, {"molecule": "MULTIBIANE ENFANT (Pilèje)", "lot": "Exp. 03/2027", "datePeremption": "2027-03-01", "quantite": 570, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.202Z"}, {"molecule": "MUPIROCINE — 2 % — crème", "lot": "Exp. 12/2026", "datePeremption": "2026-12-01", "quantite": 1, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.203Z"}, {"molecule": "NEFOPAM — 20 mg / 2 ml — injectable", "lot": "Exp. 05/2027", "datePeremption": "2027-05-01", "quantite": 25, "nomCommercial": "acupan", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.204Z"}, {"molecule": "NEFOPAM — 20 mg / 2 ml — injectable", "lot": "Exp. 07/2026", "datePeremption": "2026-07-01", "quantite": 14, "nomCommercial": "Acupan", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.205Z"}, {"molecule": "NEFOPAM — 20 mg / 2 ml — injectable", "lot": "Exp. 08/2026", "datePeremption": "2026-08-01", "quantite": 8, "nomCommercial": "Acupan", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.206Z"}, {"molecule": "NEFOPAM — 20 mg / 2 ml — injectable", "lot": "Exp. 09/2026", "datePeremption": "2026-09-01", "quantite": 15, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.207Z"}, {"molecule": "NEFOPAM — 20 mg / 2 ml — injectable", "lot": "Exp. 12/2026", "datePeremption": "2026-12-01", "quantite": 15, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.208Z"}, {"molecule": "NICARDIPINE — 20 mg — cpr", "lot": "Exp. 02/2027", "datePeremption": "2027-02-01", "quantite": 40, "nomCommercial": "Loxen", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.209Z"}, {"molecule": "NICARDIPINE — 20 mg — cpr", "lot": "Exp. 10/2027", "datePeremption": "2027-10-01", "quantite": 30, "nomCommercial": "loxen", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.210Z"}, {"molecule": "NIFEDIPINE — 20 mg — cpr", "lot": "Exp. 07/2028", "datePeremption": "2028-07-01", "quantite": 50, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.211Z"}, {"molecule": "NIFEDIPINE — 20 mg — cpr", "lot": "Exp. 09/2029", "datePeremption": "2029-09-01", "quantite": 60, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.212Z"}, {"molecule": "NIFEDIPINE — 20 mg — cpr", "lot": "Exp. 11/2026", "datePeremption": "2026-11-01", "quantite": 180, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.213Z"}, {"molecule": "NIFEDIPINE — 20 mg — cpr", "lot": "Exp. 12/2027", "datePeremption": "2027-12-01", "quantite": 40, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.214Z"}, {"molecule": "NOMEGESTROL / ETHINYLESTRADIOL — 0,5 mg / 0,05 mg — cpr", "lot": "Exp. 06/2026", "datePeremption": "2026-06-01", "quantite": 1, "nomCommercial": "marnon", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.215Z"}, {"molecule": "NOMEGESTROL / ETHINYLESTRADIOL — 0,5 mg / 0,05 mg — cpr", "lot": "Exp. 10/2028", "datePeremption": "2028-10-01", "quantite": 2, "nomCommercial": "marnon", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.216Z"}, {"molecule": "NORFLOXACINE — 0,3 % — collyre", "lot": "Exp. 04/2028", "datePeremption": "2028-04-01", "quantite": 4, "nomCommercial": "Chibroxine", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.217Z"}, {"molecule": "NORFLOXACINE — 0,3 % — collyre", "lot": "Exp. 07/2027", "datePeremption": "2027-07-01", "quantite": 1, "nomCommercial": "Chibroxine", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.218Z"}, {"molecule": "NYSTATINE / NEOMYCINE / POLYMYXINE — 35000 / 35000 / 100000 — ovule", "lot": "Exp. 01/2027", "datePeremption": "2027-01-01", "quantite": 48, "nomCommercial": "polygynax", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.219Z"}, {"molecule": "NYSTATINE / NEOMYCINE / POLYMYXINE — 35000 / 35000 / 100000 — ovule", "lot": "Exp. 04/2026", "datePeremption": "2026-04-01", "quantite": 24, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.220Z"}, {"molecule": "OFLOXACINE — 1,5 mg / 0,5 ml — collyre", "lot": "Exp. 02/2027", "datePeremption": "2027-02-01", "quantite": 9, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.221Z"}, {"molecule": "OFLOXACINE — 1,5 mg / 0,5 ml — collyre", "lot": "Exp. 07/2027", "datePeremption": "2027-07-01", "quantite": 5, "nomCommercial": "monoox", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.222Z"}, {"molecule": "OFLOXACINE — 1,5 mg / 0,5 ml — dose orl", "lot": "Exp. 03/2027", "datePeremption": "2027-03-01", "quantite": 14, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.223Z"}, {"molecule": "OFLOXACINE — 1,5 mg / 0,5 ml — dose orl", "lot": "Exp. 04/2027", "datePeremption": "2027-04-01", "quantite": 40, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.224Z"}, {"molecule": "OFLOXACINE — 1,5 mg / 0,5 ml — dose orl", "lot": "Exp. 08/2027", "datePeremption": "2027-08-01", "quantite": 76, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.225Z"}, {"molecule": "OLIGOBIANE FER CUIVRE (Pilèje) — gélule", "lot": "Exp. 08/2027", "datePeremption": "2027-08-01", "quantite": 600, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.226Z"}, {"molecule": "OMEPRAZOLE — 20 mg — gélule", "lot": "Exp. 05/2027", "datePeremption": "2027-05-01", "quantite": 380, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.227Z"}, {"molecule": "OMEPRAZOLE — 20 mg — gélule", "lot": "Exp. 10/2027", "datePeremption": "2027-10-01", "quantite": 100, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.228Z"}, {"molecule": "OMEPRAZOLE — 20 mg — gélule", "lot": "Exp. 11/2027", "datePeremption": "2027-11-01", "quantite": 1400, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.229Z"}, {"molecule": "OXYBUPROCAÎNE — 1,6 mg / 0,4 ml — collyre", "lot": "Exp. 02/2027", "datePeremption": "2027-02-01", "quantite": 9, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.230Z"}, {"molecule": "OXYBUPROCAÎNE — 1,6 mg / 0,4 ml — collyre", "lot": "Exp. 03/2027", "datePeremption": "2027-03-01", "quantite": 20, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.231Z"}, {"molecule": "OXYTETRACYCLINE / POLYMYXINE B — collyre ou pommade ophtalmique", "lot": "Exp. 01/2027", "datePeremption": "2027-01-01", "quantite": 12, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.232Z"}, {"molecule": "OXYTETRACYCLINE / POLYMYXINE B — collyre ou pommade ophtalmique", "lot": "Exp. 06/2026", "datePeremption": "2026-06-01", "quantite": 1, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.233Z"}, {"molecule": "OXYTETRACYCLINE / POLYMYXINE B — collyre ou pommade ophtalmique", "lot": "Exp. 08/2026", "datePeremption": "2026-08-01", "quantite": 2, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.234Z"}, {"molecule": "PARACETAMOL — 250 mg / 5 ml — susp buv", "lot": "Exp. 06/2027", "datePeremption": "2027-06-01", "quantite": 39, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.236Z"}, {"molecule": "PARACETAMOL — 250 mg / 5 ml — susp buv", "lot": "Exp. 10/2026", "datePeremption": "2026-10-01", "quantite": 34, "nomCommercial": "pyracon fort", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.237Z"}, {"molecule": "PARACETAMOL — 500 mg — cpr", "lot": "Exp. 01/2028", "datePeremption": "2028-01-01", "quantite": 2794, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.239Z"}, {"molecule": "PARACETAMOL — 500 mg — cpr", "lot": "Exp. 03/2028", "datePeremption": "2028-03-01", "quantite": 2500, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.240Z"}, {"molecule": "PARACETAMOL — 500 mg — cpr", "lot": "Exp. 10/2028", "datePeremption": "2028-10-01", "quantite": 3000, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.241Z"}, {"molecule": "PHENOBARBITAL — 100 mg — cpr", "lot": "Exp. 02/2028", "datePeremption": "2028-02-01", "quantite": 100, "nomCommercial": "gardenal", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.242Z"}, {"molecule": "PHENOBARBITAL — 100 mg — cpr", "lot": "Exp. 05/2027", "datePeremption": "2027-05-01", "quantite": 721, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.243Z"}, {"molecule": "PHENOBARBITAL — 100 mg — cpr", "lot": "Exp. 09/2028", "datePeremption": "2028-09-01", "quantite": 500, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.244Z"}, {"molecule": "PHENOBARBITAL — 100 mg — cpr", "lot": "Exp. 12/2027", "datePeremption": "2027-12-01", "quantite": 30, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.245Z"}, {"molecule": "PHLOROGLUCINOL / TRIMETHYLPHLOROGLUCINOL — 160 mg — lyophilisat oral", "lot": "Exp. 05/2028", "datePeremption": "2028-05-01", "quantite": 15, "nomCommercial": "Spasfon lyoc", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.246Z"}, {"molecule": "PHLOROGLUCINOL / TRIMETHYLPHLOROGLUCINOL — 160 mg — lyophilisat oral", "lot": "Exp. 11/2029", "datePeremption": "2029-11-01", "quantite": 15, "nomCommercial": "spasfon", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.247Z"}, {"molecule": "PHLOROGLUCINOL — 80 mg — cpr", "lot": "Exp. 03/2028", "datePeremption": "2028-03-01", "quantite": 250, "nomCommercial": "kinafon", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.252Z"}, {"molecule": "PICLOXYDINE — 0,05 % — collyre", "lot": "Exp. 01/2027", "datePeremption": "2027-01-01", "quantite": 2, "nomCommercial": "Vitabact", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.253Z"}, {"molecule": "POMMADE SOUFREE — pommade", "lot": "Exp. 02/2028", "datePeremption": "2028-02-01", "quantite": 10, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.255Z"}, {"molecule": "POMMADE SOUFREE — pommade", "lot": "Exp. 08/2027", "datePeremption": "2027-08-01", "quantite": 1, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.256Z"}, {"molecule": "POTASSIUM CHLORURE — 600 mg — gélule", "lot": "Exp. 07/2026", "datePeremption": "2026-07-01", "quantite": 144, "nomCommercial": "diffu-k", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.257Z"}, {"molecule": "POTASSIUM CHLORURE — 600 mg — gélule", "lot": "Exp. 10/2026", "datePeremption": "2026-10-01", "quantite": 120, "nomCommercial": "diffu-k", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.258Z"}, {"molecule": "POVIDONE IODEE — 10 % — solution externe", "lot": "Exp. 09/2027", "datePeremption": "2027-09-01", "quantite": 25, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.260Z"}, {"molecule": "POVIDONE IODEE — 5 % — solution oculaire", "lot": "Exp. 12/2027", "datePeremption": "2027-12-01", "quantite": 2, "nomCommercial": "betadine", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.261Z"}, {"molecule": "PRAVASTATINE — 10 mg — cpr", "lot": "Exp. 03/2027", "datePeremption": "2027-03-01", "quantite": 25, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.262Z"}, {"molecule": "PRAZIQUANTEL — 600 mg — cpr", "lot": "Exp. 05/2028", "datePeremption": "2028-05-01", "quantite": 58, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.263Z"}, {"molecule": "PREDNISOLONE — 20 mg — cpr", "lot": "Exp. 06/2027", "datePeremption": "2027-06-01", "quantite": 26, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.264Z"}, {"molecule": "PREDNISOLONE — 20 mg — cpr", "lot": "Exp. 06/2028", "datePeremption": "2028-06-01", "quantite": 250, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.265Z"}, {"molecule": "PREDNISOLONE — 5 mg — cpr", "lot": "Exp. 04/2027", "datePeremption": "2027-04-01", "quantite": 17, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.269Z"}, {"molecule": "PRISTINAMYCINE — 500 mg — cpr", "lot": "Exp. 05/2027", "datePeremption": "2027-05-01", "quantite": 10, "nomCommercial": "pyostacine", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.270Z"}, {"molecule": "PROGESTERONE — 200 mg — capsule orale ou vaginale", "lot": "Exp. 06/2027", "datePeremption": "2027-06-01", "quantite": 30, "nomCommercial": "Utrogestan", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.271Z"}, {"molecule": "PYRANTEL — 125 mg — cpr", "lot": "Exp. 06/2027", "datePeremption": "2027-06-01", "quantite": 18, "nomCommercial": "Combantrin", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.272Z"}, {"molecule": "RACECADOTRIL — 100 mg — gélule", "lot": "Exp. 04/2027", "datePeremption": "2027-04-01", "quantite": 10, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.273Z"}, {"molecule": "RACECADOTRIL — 100 mg — gélule", "lot": "Exp. 11/2027", "datePeremption": "2027-11-01", "quantite": 40, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.274Z"}, {"molecule": "RACECADOTRIL — 175 mg — cpr", "lot": "Exp. 03/2027", "datePeremption": "2027-03-01", "quantite": 4, "nomCommercial": "tiorfan", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.275Z"}, {"molecule": "RACECADOTRIL — 30 mg — sachet", "lot": "Exp. 06/2027", "datePeremption": "2027-06-01", "quantite": 52, "nomCommercial": "Tiorfan enfant", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.276Z"}, {"molecule": "RIFAMYCINE — 1000000 UI — collyre", "lot": "Exp. 01/2027", "datePeremption": "2027-01-01", "quantite": 1, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.277Z"}, {"molecule": "RINGER LACTATE — perfusion", "lot": "Exp. 01/2028", "datePeremption": "2028-01-01", "quantite": 1, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.278Z"}, {"molecule": "SALBUTAMOL — 100 µg / dose — spray inhal", "lot": "Exp. 05/2027", "datePeremption": "2027-05-01", "quantite": 4, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.280Z"}, {"molecule": "SALBUTAMOL — 100 µg / dose — spray inhal", "lot": "Exp. 08/2027", "datePeremption": "2027-08-01", "quantite": 4, "nomCommercial": "ventoline", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.281Z"}, {"molecule": "SERUM PHYSIOLOGIQUE — 5 ml — sol nasale et ophtalmique", "lot": "Exp. 06/2027", "datePeremption": "2027-06-01", "quantite": 27, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.283Z"}, {"molecule": "SERUM PHYSIOLOGIQUE — 5 ml — sol nasale et ophtalmique", "lot": "Exp. 08/2027", "datePeremption": "2027-08-01", "quantite": 35, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.284Z"}, {"molecule": "SERUM PHYSIOLOGIQUE — 5 ml — sol nasale et ophtalmique", "lot": "Exp. 08/2028", "datePeremption": "2028-08-01", "quantite": 869, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.285Z"}, {"molecule": "SOLUTE DE REHYDRATATION ORALE (SRO) — sachet", "lot": "Exp. 07/2027", "datePeremption": "2027-07-01", "quantite": 7, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.286Z"}, {"molecule": "SOLUTE DE REHYDRATATION ORALE (SRO) — sachet", "lot": "Exp. 12/2026", "datePeremption": "2026-12-01", "quantite": 9, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.287Z"}, {"molecule": "SULFAMETHOXAZOLE / TRIMETHOPRIME — 400 mg / 80 mg — cpr", "lot": "Exp. 07/2026", "datePeremption": "2026-07-01", "quantite": 544, "nomCommercial": "vactrim", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.288Z"}, {"molecule": "SULFAMETHOXAZOLE / TRIMETHOPRIME — 800 mg / 160 mg — cpr", "lot": "Exp. 10/2027", "datePeremption": "2027-10-01", "quantite": 7, "nomCommercial": "cotrimoxazole", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.289Z"}, {"molecule": "TAMSULOSINE — 0,4 mg — cpr", "lot": "Exp. 06/2028", "datePeremption": "2028-06-01", "quantite": 690, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.290Z"}, {"molecule": "TEST DE GROSSESSE", "lot": "Exp. 06/2028", "datePeremption": "2028-06-01", "quantite": 5, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.292Z"}, {"molecule": "TEST DE GROSSESSE", "lot": "Exp. 10/2027", "datePeremption": "2027-10-01", "quantite": 12, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.293Z"}, {"molecule": "TETRACAÎNE — collyre", "lot": "Exp. 06/2026", "datePeremption": "2026-06-01", "quantite": 33, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.294Z"}, {"molecule": "TETRACAÎNE — collyre", "lot": "Exp. 07/2026", "datePeremption": "2026-07-01", "quantite": 14, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.295Z"}, {"molecule": "THEALOSE — 15 ml — collyre", "lot": "Exp. 04/2028", "datePeremption": "2028-04-01", "quantite": 2, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.296Z"}, {"molecule": "THIAMINE (VIT B1) — 2,5 mg — cpr", "lot": "Exp. 03/2027", "datePeremption": "2027-03-01", "quantite": 40, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.297Z"}, {"molecule": "THIAMINE (VIT B1) — 2,5 mg — cpr", "lot": "Exp. 06/2028", "datePeremption": "2028-06-01", "quantite": 380, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.298Z"}, {"molecule": "THIOCOLCHICOSIDE — 4 mg — injectable", "lot": "Exp. 03/2028", "datePeremption": "2028-03-01", "quantite": 5, "nomCommercial": "miorel", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.299Z"}, {"molecule": "TIMOLOL — 0,5 % — collyre", "lot": "Exp. 06/2028", "datePeremption": "2028-06-01", "quantite": 2, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.300Z"}, {"molecule": "TIMOLOL — 0,5 % — collyre", "lot": "Exp. 07/2028", "datePeremption": "2028-07-01", "quantite": 2, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.301Z"}, {"molecule": "TOBRAMYCINE — collyre", "lot": "Exp. 09/2026", "datePeremption": "2026-09-01", "quantite": 1, "nomCommercial": "tobrex", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.302Z"}, {"molecule": "TRAMADOL / PARACETAMOL — 37,5 mg / 325 — cpr", "lot": "Exp. 11/2026", "datePeremption": "2026-11-01", "quantite": 38, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.303Z"}, {"molecule": "TRAMADOL — 100 mg — cpr", "lot": "Exp. 05/2027", "datePeremption": "2027-05-01", "quantite": 20, "nomCommercial": "topalgic LP", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.304Z"}, {"molecule": "TRANSITBIANE (Pilèje) — sachet", "lot": "Exp. 01/2028", "datePeremption": "2028-01-01", "quantite": 128, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.305Z"}, {"molecule": "TROLAMINE — 0,67 % — crème", "lot": "Exp. 03/2027", "datePeremption": "2027-03-01", "quantite": 3, "nomCommercial": "biafine", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.308Z"}, {"molecule": "TROLAMINE — 0,67 % — crème", "lot": "Exp. 03/2028", "datePeremption": "2028-03-01", "quantite": 1, "nomCommercial": "biafine", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.309Z"}, {"molecule": "TROLAMINE — 0,67 % — crème", "lot": "Exp. 04/2028", "datePeremption": "2028-04-01", "quantite": 2, "nomCommercial": "biafine", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.310Z"}, {"molecule": "TROLAMINE — 0,67 % — crème", "lot": "Exp. 10/2026", "datePeremption": "2026-10-01", "quantite": 1, "nomCommercial": "biafine", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.311Z"}, {"molecule": "TROPICAMIDE — 2 mg / 0,4 ml — collyre", "lot": "Exp. 03/2028", "datePeremption": "2028-03-01", "quantite": 20, "nomCommercial": "Mydriaticum", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.312Z"}, {"molecule": "TULLE GRAS", "lot": "Exp. 02/2030", "datePeremption": "2030-02-01", "quantite": 20, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.314Z"}, {"molecule": "UNIBIANE IODE (Pilèje) — cpr", "lot": "Exp. 02/2028", "datePeremption": "2028-02-01", "quantite": 480, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.315Z"}, {"molecule": "VASELINE — 50 ou 80 g", "lot": "Sans date de péremption", "datePeremption": "pas d'EXP", "quantite": 1, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.316Z"}, {"molecule": "VASELINE — 50 ou 80 g", "lot": "Exp. 05/2029", "datePeremption": "2029-05-01", "quantite": 1, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.317Z"}, {"molecule": "VASELINE — 50 ou 80 g", "lot": "Exp. 09/2027", "datePeremption": "2027-09-01", "quantite": 1, "nomCommercial": "", "fournisseur": "Stock initial Mission 8", "date": "2026-06-14", "createdAt": "2026-06-14T00:00:00.318Z"}];
 
+// Le repère « stock initial déjà chargé » est gardé DANS la base (paramètre), écrit dans la même transaction que le stock :
+// soit tout le stock initial et son repère sont enregistrés, soit rien. Une interruption ne peut plus le charger deux fois.
+const CLE_STOCK_INITIAL = 'stock_initial_charge';
+async function marquerStockInitialCharge() {
+  const quand = new Date().toISOString();
+  await setParam(CLE_STOCK_INITIAL, quand);
+  try { localStorage.setItem('stock_initial_charge', quand); } catch(e) {}
+}
 async function chargerStockInitialPrecharge() {
-  const deja = localStorage.getItem('stock_initial_charge');
-  if (deja) return;
+  if (await getParam(CLE_STOCK_INITIAL, null)) return;
   // Vérifier explicitement que le store receptions est accessible
   if (!db || !db.objectStoreNames.contains('receptions')) {
     console.warn('[Stock] Store receptions pas encore prêt — report du chargement initial');
     return;
   }
-  await importerDonnéesStock(STOCK_INITIAL_PRECHARGE, 'Stock initial Mission 8');
-  localStorage.setItem('stock_initial_charge', new Date().toISOString());
+  // Appareil déjà en service (ancien repère, ou réceptions déjà présentes) : on pose le repère sans rien recharger
+  if (localStorage.getItem('stock_initial_charge') || (await dbGetAll('receptions')).length) { await marquerStockInitialCharge(); return; }
+  const quand = new Date().toISOString();
+  await new Promise((res, rej) => {
+    const tx = db.transaction(['receptions', 'parametres'], 'readwrite', OPT_ECRITURE);
+    tx.oncomplete = () => res();
+    tx.onabort = tx.onerror = () => rej(tx.error || new Error('Chargement du stock initial annulé'));
+    try {
+      const st = tx.objectStore('receptions');
+      for (const e of STOCK_INITIAL_PRECHARGE) st.add({
+        molecule: e.molecule, date: e.date || '2026-06-14', lot: e.lot || 'Stock initial', datePeremption: e.datePeremption || '',
+        quantite: e.quantite || 0, fournisseur: e.fournisseur || 'Stock initial Mission 8', nomCommercial: e.nomCommercial || '', createdAt: e.createdAt || quand });
+      tx.objectStore('parametres').put({ cle: CLE_STOCK_INITIAL, valeur: quand });
+    } catch(err) { try { tx.abort(); } catch(_) {} rej(err); }
+  });
+  try { localStorage.setItem('stock_initial_charge', quand); } catch(e) {}
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -6384,23 +6960,22 @@ async function importerStockInitial(input) {
     let msg = `Importer le stock initial depuis « ${file.name} » ?\n\n${entrees.length} lots trouvés.`;
     if (existants.length) msg += `\n\nLe stock initial actuel (${existants.length} lots) sera REMPLACÉ. Les réceptions saisies à la main sont conservées.`;
     if (!(await confirmer(msg, { titre: 'Importer le stock initial ?', ok: 'Importer', danger: existants.length > 0 }))) return;
-    for (const r of existants) await dbDelete('receptions', r.id);
 
-    // Ajouter à la liste des médicaments ceux qui n'y figurent pas encore
+    // Tout est écrit en une seule fois : l'ancien stock initial retiré, la liste des médicaments complétée, le nouveau stock
+    // ajouté et le repère posé. Si l'import est interrompu, l'ancien stock initial reste en place, entier.
     const liste = await getParam('molecules', REF.molecules);
     const nouveaux = [...new Set(entrees.map(e => e.molecule))].filter(m => !liste.includes(m));
-    if (nouveaux.length) {
-      await setParam('molecules', [...liste, ...nouveaux].sort((x, y) => x.localeCompare(y, 'fr')));
-      await rechargerCombosMolecules();
-    }
-
-    const base = Date.now();
-    await importerDonnéesStock(entrees.map((e, i) => ({
-      ...e, nomCommercial: e.nomCommercial.join(', '),
-      fournisseur: 'Stock initial — ' + file.name, date: dateAujourdhui(),
-      createdAt: new Date(base + i).toISOString(),
-    })), file.name);
-    localStorage.setItem('stock_initial_charge', new Date().toISOString());
+    const base = Date.now(), quand = new Date().toISOString();
+    const ops = existants.map(r => ({ store: 'receptions', type: 'delete', valeur: r.id }));
+    if (nouveaux.length) ops.push({ store: 'parametres', type: 'put', valeur: { cle: 'molecules', valeur: [...liste, ...nouveaux].sort((x, y) => x.localeCompare(y, 'fr')) } });
+    entrees.forEach((e, i) => ops.push({ store: 'receptions', type: 'add', valeur: {
+      molecule: e.molecule, date: dateAujourdhui(), lot: e.lot || 'Stock initial', datePeremption: e.datePeremption || '', quantite: e.quantite || 0,
+      fournisseur: 'Stock initial — ' + file.name, nomCommercial: e.nomCommercial.join(', '), createdAt: new Date(base + i).toISOString() } }));
+    ops.push({ store: 'parametres', type: 'put', valeur: { cle: CLE_STOCK_INITIAL, valeur: quand } });
+    try { await ecrireEnBloc(ops); }
+    catch(e) { console.error(e); toast('❌ Import interrompu : rien n\'a été modifié, le stock initial précédent est intact', 'error'); return; }
+    try { localStorage.setItem('stock_initial_charge', quand); } catch(e) {}
+    if (nouveaux.length) await rechargerCombosMolecules();
     toast(`✅ ${entrees.length} lots importés` + (nouveaux.length ? ` · ${nouveaux.length} nouveaux médicaments ajoutés à la liste` : ''), 'success');
     try { await chargerStock(); } catch(e) {}
   } catch(e) {
@@ -6409,32 +6984,6 @@ async function importerStockInitial(input) {
   }
 }
 
-async function importerDonnéesStock(entrees, source) {
-  // Vider le stock existant d'abord si c'est un stock initial
-  const wsS  = 'receptions';
-  const wsSM = 'suivi_stock';
-
-  let count = 0;
-  const now = new Date().toISOString();
-  for (const e of entrees) {
-    try {
-      await dbAdd('receptions', {
-        molecule:       e.molecule,
-        date:           e.date || '2026-06-14',
-        lot:            e.lot || 'Stock initial',
-        datePeremption: e.datePeremption || '',
-        quantite:       e.quantite || 0,
-        fournisseur:    e.fournisseur || source,
-        nomCommercial:  e.nomCommercial || '',
-        createdAt:      e.createdAt || now,
-      });
-      count++;
-    } catch(err) {
-      console.warn('Skip:', e.molecule, err.message);
-    }
-  }
-  return count;
-}
 
 // ═══════════════════════════════════════════════════════════════════
 // PROPOSITION DE COMMANDE
@@ -6612,7 +7161,7 @@ async function exporterCommande() {
 
   XLSX.utils.book_append_sheet(wb, ws, 'Commande');
   const nomFichier = `Commande_${(mission?.numero || 'stock').replace(/\s+/g, '_')}_${dateAujourdhui()}.xlsx`;
-  XLSX.writeFile(wb, nomFichier);
+  XLSX.writeFile(wb, nomFichier, OPT_XLSX);
   toast('✅ Liste de commande exportée', 'success');
 }
 
@@ -7232,11 +7781,11 @@ async function mouvementsStock() {
   recs.forEach(r => { if (!r.molecule) return;
     mv.push({ mol: r.molecule, lot: r.lot || libelleLot(r.datePeremption), per: r.datePeremption || '', date: r.date || '',
       type: r.fournisseur === 'Inventaire' ? 'inventaire' : 'entree', q: r.quantite || 0, nc: r.nomCommercial || '', origine: r.fournisseur || '' }); });
-  consults.forEach(c => (c.prescription || []).forEach(p => { if (!p.molecule) return;
+  consults.forEach(c => (c.prescription || []).forEach(p => { if (!p.molecule || !(p.quantite > 0)) return;
     const village = !!c.lieu && !/^Dispensaire/i.test(c.lieu);
     const lots = Array.isArray(p.lots) && p.lots.length ? p.lots : [{ lot: p.lot || '(sans lot)', quantite: p.quantite || 0 }];
     lots.forEach(a => mv.push({ mol: p.molecule, lot: a.lot, per: a.datePeremption || '', date: c.date || '',
-      type: village ? 'village' : 'dispensaire', q: a.quantite || 0 })); }));
+      type: village ? 'village' : 'dispensaire', q: a.quantite || 0, mission: c.mission || '' })); }));
   sorts.forEach(s => { if (!s.molecule) return;
     mv.push({ mol: s.molecule, lot: s.lot || (s.datePeremption ? libelleLot(s.datePeremption) : '(sans lot)'), per: s.datePeremption || '',
       date: s.date || '', type: s.motif === 'Inventaire' ? 'inventaire' : 'detruit', q: (s.motif === 'Inventaire' ? -1 : 1) * (s.quantite || 0), motif: s.motif }); });
@@ -7279,8 +7828,15 @@ async function exporterMission() {
       if (m.nc) L.nc.add(m.nc);
       if (m.type === 'entree') { if (m.origine) L.origine.add(m.origine); if (m.date && (!L.dateEntree || m.date < L.dateEntree)) L.dateEntree = m.date; }
       const signe = (m.type === 'entree' || m.type === 'inventaire') ? 1 : -1;
-      if (!m.date || m.date < M.debut) { L.debut += signe * m.q; return; }       // avant la mission
-      if (m.date > finMission) return;                                             // après la mission
+      // Le stock initial (fichier de la pharmacienne) est le stock de DÉBUT de mission, même s'il est importé
+      // une fois la mission commencée : sinon tout le stock apparaissait en « Entrées pendant la mission ».
+      if (m.type === 'entree' && String(m.origine || '').startsWith('Stock initial') && (!m.date || m.date <= finMission)) { L.debut += m.q; return; }
+      // Une consultation rattachée à cette mission compte dans la mission, même si sa date en sort (erreur de date) :
+      // sinon elle figurait dans l'activité mais pas dans le stock, et le stock de fin du rapport était faux.
+      if (!(m.mission && m.mission === M.numero)) {
+        if (!m.date || m.date < M.debut) { L.debut += signe * m.q; return; }       // avant la mission
+        if (m.date > finMission) return;                                             // après la mission
+      }
       if (m.type === 'entree') L.entrees += m.q;
       else if (m.type === 'dispensaire') L.disp += m.q;
       else if (m.type === 'village') L.vill += m.q;
@@ -7420,7 +7976,7 @@ async function exporterMission() {
       'Patients à revoir', [11, 24, 20, 6, 20, 20, 22, 11, 35, 40]);
     ajouter(Object.entries(pathoCounts).sort((a, b) => b[1] - a[1]).map(([p, n]) => ({ 'Pathologie': p, 'Nb': n })), 'Pathologies', [50, 8]);
 
-    XLSX.writeFile(wb, `Rapport_fin_de_mission_${M.numero.replace(/[^a-zA-Z0-9]+/g, '_')}_${dateAujourdhui()}.xlsx`);
+    XLSX.writeFile(wb, `Rapport_fin_de_mission_${M.numero.replace(/[^a-zA-Z0-9]+/g, '_')}_${dateAujourdhui()}.xlsx`, OPT_XLSX);
     toast('✅ Rapport de fin de mission exporté', 'success');
   } catch(e) {
     console.error(e);
@@ -7582,6 +8138,8 @@ function getMissionNumero() {
 // PROTECTION DES DONNÉES : stockage persistant, sauvegarde automatique, détection de perte
 // ═══════════════════════════════════════════════════════════════════
 const CLE_DOSSIER = 'dossier_sauvegarde';
+const CLE_REPERES = 'reperes_apres_reprise';   // mission et repère de reprise à remettre en place au prochain démarrage (jamais exporté)
+const CLE_COPIE = 'copie_avant_reprise';   // copie interne des données d'avant la dernière reprise (jamais exportée)
 let _etatStockage = 'inconnu';     // protege | non | indisponible
 let _dossierAutorise = false;
 let _sauvegardeAutoTimer = null;
@@ -7800,10 +8358,25 @@ async function exporterJSON() {
   }
 }
 
+// Un appareil est « vide » s'il ne contient aucune saisie : ni consultation, ni sortie, ni réception autre que le stock initial
+async function appareilVide() {
+  const [c, r, s] = await Promise.all([dbGetAll('consultations'), dbGetAll('receptions'), dbGetAll('sorties')]);
+  return !c.length && !s.length && r.every(x => String(x.fournisseur || '').startsWith('Stock initial'));
+}
+
 async function importerJSON(input) {
   if (!input.files?.length) return;
   const file = input.files[0];
   input.value = '';
+
+  // « Restaurer » ne fait qu'ajouter : sur un appareil qui contient déjà des données, il laisserait en place ce que
+  // l'autre appareil a corrigé ou annulé (stock compté deux fois). On passe alors par la reprise.
+  if (!(await appareilVide())) {
+    if (await confirmer('« Restaurer » sert à remplir un appareil VIDE (tablette neuve ou réinitialisée).\n\nCet appareil contient déjà des données : pour y faire entrer cette sauvegarde, il faut passer par « Reprendre les données d\'une sauvegarde », qui tient compte des corrections et des annulations et conserve les saisies faites ici.',
+        { titre: 'Cet appareil contient déjà des données', ok: 'Reprendre cette sauvegarde', annuler: 'Abandonner' }))
+      await reprendreSauvegarde(null, file);
+    return;
+  }
 
   try {
     const text = await file.text();
@@ -7856,7 +8429,7 @@ async function importerJSON(input) {
     if (initImport.length && !initImport.some(r => r.fournisseur === 'Stock initial Mission 8')) {
       const pre = (await dbGetAll('receptions')).filter(r => r.fournisseur === 'Stock initial Mission 8');
       for (const r of pre) await dbDelete('receptions', r.id);
-      if (pre.length) localStorage.setItem('stock_initial_charge', new Date().toISOString());
+      if (pre.length) await marquerStockInitialCharge();
     }
     // Saisies annulées sur cette tablette : ne pas les réintroduire
     const journalLocal = await getParam('journal_corrections', []);
@@ -7899,7 +8472,7 @@ async function importerJSON(input) {
     // Paramètres : les listes sont FUSIONNÉES (rien de ce qui existe sur cet appareil n'est perdu)
     const LISTES = ['lieux', 'medecins', 'fournisseurs', 'molecules'];
     for (const p of (data.parametres || [])) {
-      if (p.cle === CLE_DOSSIER) continue;
+      if (p.cle === CLE_DOSSIER || p.cle === CLE_COPIE || p.cle === CLE_REPERES) continue;
       if (LISTES.includes(p.cle) && Array.isArray(p.valeur)) {
         const local = await getParam(p.cle, REF[p.cle] || null);   // liste par défaut si jamais modifiée
         if (Array.isArray(local)) {
@@ -7920,8 +8493,8 @@ async function importerJSON(input) {
       } else if (p.cle === 'inventaires' && Array.isArray(p.valeur)) {
         const local = await getParam('inventaires', []);
         const vus = new Set(local.map(x => x.le));
-        await setParam('inventaires', [...local, ...p.valeur.filter(x => !vus.has(x.le))]
-          .sort((a, b) => String(b.le).localeCompare(String(a.le))).slice(0, 50));
+        await setParam('inventaires', limiterInventaires([...local, ...p.valeur.filter(x => !vus.has(x.le))]
+          .sort((a, b) => String(b.le).localeCompare(String(a.le)))));
         continue;
       } else if (p.cle === 'journal_corrections' && Array.isArray(p.valeur)) {
         const local = await getParam('journal_corrections', []);
@@ -8012,6 +8585,17 @@ async function ecrireDansDossierDrive(nom, blob) {
   await wr.write(blob); await wr.close();
 }
 
+// Feuille Excel à partir de lignes { colonne: valeur } : mêmes colonnes dans le même ordre, mais les cases vides ne sont pas
+// écrites du tout (au lieu d'un texte vide dans chacune). Avec une soixantaine de colonnes le plus souvent vides, l'export
+// est bien plus rapide et le fichier bien plus petit ; à l'ouverture, les cases sont vides comme avant.
+function feuilleExcel(lignes) {
+  if (!lignes.length) return XLSX.utils.json_to_sheet([{}]);
+  const colonnes = Object.keys(lignes[0]);
+  const sansVides = lignes.map(l => { const o = {}; for (const c of colonnes) if (l[c] !== '' && l[c] != null) o[c] = l[c]; return o; });
+  return XLSX.utils.json_to_sheet(sansVides, { header: colonnes });
+}
+const OPT_XLSX = { compression: true };   // fichier compressé : environ dix fois plus léger à partager
+
 async function genererWorkbook() {
   if (!(await chargerXLSX())) throw new Error('XLSX indisponible');
 
@@ -8038,21 +8622,21 @@ async function genererWorkbook() {
     'ID Patient': c.patientId || '',
     'Mission': c.mission || '',
   }));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsC.length ? rowsC : [{}]), 'Consultations');
+  XLSX.utils.book_append_sheet(wb, feuilleExcel(rowsC), 'Consultations');
 
   const recs  = await dbGetAll('receptions');
   const rowsR = recs.map(r => ({
     'Date': r.date, 'Fournisseur': r.fournisseur, 'Molécule': r.molecule,
     'N° lot': r.lot, 'Date péremption': r.datePeremption, 'Quantité': r.quantite
   }));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsR.length ? rowsR : [{}]), 'Receptions');
+  XLSX.utils.book_append_sheet(wb, feuilleExcel(rowsR), 'Receptions');
 
   const sorts = await dbGetAll('sorties');
   const rowsS = sorts.map(s => ({
     'Date': s.date, 'Motif': s.motif, 'Molécule': s.molecule,
     'N° lot': s.lot, 'Date péremption': s.datePeremption, 'Quantité': s.quantite
   }));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsS.length ? rowsS : [{}]), 'Sorties');
+  XLSX.utils.book_append_sheet(wb, feuilleExcel(rowsS), 'Sorties');
 
   return wb;
 }
@@ -8068,9 +8652,9 @@ function nomFichierJSON() {
 async function genererBlobJSON() {
   const [consultations, receptions, sorties, stockConfig, parametres] = await Promise.all([
     dbGetAll('consultations'), dbGetAll('receptions'), dbGetAll('sorties'),
-    dbGetAll('stock_config'),  dbGetAll('parametres'),
+    dbGetAll('stock_config'),  dbGetAllSauf('parametres', [CLE_DOSSIER, CLE_COPIE, CLE_REPERES]),
   ]);
-  const sauvegarde = {
+  const entete = {
     version:      '1.0',
     exportedAt:   new Date().toISOString(),
     appName:      'MedecinsPakbeng',
@@ -8080,9 +8664,22 @@ async function genererBlobJSON() {
     dernierMed2:  localStorage.getItem('dernier_med2')   || null,
     provenance:   { role: roleAppareil(), libelle: libelleRole(roleAppareil()) },
     base:         (() => { try { return JSON.parse(localStorage.getItem('base_reprise') || 'null'); } catch(e) { return null; } })(),
-    consultations, receptions, sorties, stockConfig, parametres: parametres.filter(p => p.cle !== CLE_DOSSIER),
   };
-  return new Blob([JSON.stringify(sauvegarde, null, 2)], { type: 'application/json' });
+  // Le fichier est écrit par morceaux de 500 enregistrements, un enregistrement par ligne, en rendant la main entre deux
+  // morceaux : la sauvegarde automatique, qui part 20 secondes après chaque saisie, ne fige plus l'écran pendant qu'un
+  // médecin tape la consultation suivante. Sans mise en page indentée, le fichier est aussi plus léger à envoyer.
+  const morceaux = [JSON.stringify(entete).slice(0, -1)];
+  const listes = { consultations, receptions, sorties, stockConfig, parametres };
+  for (const [nom, lignes] of Object.entries(listes)) {
+    morceaux.push(`,\n"${nom}":[`);
+    for (let i = 0; i < lignes.length; i += 500) {
+      morceaux.push((i ? ',\n' : '\n') + lignes.slice(i, i + 500).map(x => JSON.stringify(x)).join(',\n'));
+      if (i + 500 < lignes.length) await new Promise(r => setTimeout(r, 0));
+    }
+    morceaux.push('\n]');
+  }
+  morceaux.push('\n}\n');
+  return new Blob(morceaux, { type: 'application/json' });
 }
 
 function marquerExport() {
@@ -8097,7 +8694,7 @@ async function exporterExcel() {
   toast('⏳ Préparation de l\'export…', 'success');
   try {
     const wb = await genererWorkbook();
-    XLSX.writeFile(wb, nomFichierExport());
+    XLSX.writeFile(wb, nomFichierExport(), OPT_XLSX);
     marquerExport();
     toast('✅ Fichier téléchargé', 'success');
   } catch(e) {
@@ -8129,7 +8726,7 @@ async function exporterVersDrive() {
     if (await chargerXLSX()) {
       try {
         const wb = await genererWorkbook();
-        blobXLSX = new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })],
+        blobXLSX = new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array', ...OPT_XLSX })],
           { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       } catch(e) { console.warn('[Export Excel]', e); }
     }
@@ -8222,262 +8819,6 @@ function majBoutonDrive() {
     if (info) info.textContent = 'Non configuré — choisissez un dossier Drive ci-dessous';
     if (btnChoisir) btnChoisir.textContent = '📂 Choisir le dossier Drive';
   }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// IMPORT EXCEL
-// ═══════════════════════════════════════════════════════════════════
-let _importData = null; // données en attente de confirmation
-
-async function importerExcel(input) {
-  if (!input.files?.length) return;
-  const file = input.files[0];
-  input.value = ''; // reset pour permettre re-sélection du même fichier
-
-  // Charger SheetJS si besoin
-  if (!(await chargerXLSX())) { toast(MSG_SANS_RESEAU, 'error'); return; }
-
-  try {
-    const buf  = await file.arrayBuffer();
-    const wb   = XLSX.read(buf, { type: 'array', cellDates: true });
-
-    // Lire les 3 feuilles attendues
-    const consultations = lireFeuilleXLSX(wb, 'Consultations');
-    const receptions    = lireFeuilleXLSX(wb, 'Receptions');
-    const sorties       = lireFeuilleXLSX(wb, 'Sorties');
-
-    if (!consultations && !receptions && !sorties) {
-      toast('❌ Fichier invalide — onglets introuvables', 'error');
-      return;
-    }
-
-    // Convertir les lignes en objets base de données
-    const cons = (consultations || []).map(rowToConsultation).filter(Boolean);
-    const recs = (receptions    || []).map(rowToReception).filter(Boolean);
-    const sors = (sorties        || []).map(rowToSortie).filter(Boolean);
-
-    // Stocker pour confirmation
-    _importData = { cons, recs, sors };
-
-    // Compter les existants pour le résumé
-    const [exCons, exRecs, exSors] = await Promise.all([
-      dbGetAll('consultations'), dbGetAll('receptions'), dbGetAll('sorties')
-    ]);
-
-    // Calculer nouveaux (fusion) = entrées du fichier dont createdAt n'existe pas localement
-    const exDates = {
-      cons: new Set(exCons.map(r => r.createdAt)),
-      recs: new Set(exRecs.map(r => r.createdAt)),
-      sors: new Set(exSors.map(r => r.createdAt)),
-    };
-    const nouveaux = {
-      cons: cons.filter(r => !exDates.cons.has(r.createdAt)).length,
-      recs: recs.filter(r => !exDates.recs.has(r.createdAt)).length,
-      sors: sors.filter(r => !exDates.sors.has(r.createdAt)).length,
-    };
-
-    // Afficher le résumé dans le modal
-    document.getElementById('importResume').innerHTML = `
-      <strong>Fichier :</strong> ${esc(file.name)}<br>
-      <strong>Contenu du fichier :</strong>
-      ${cons.length} consultation(s) · ${recs.length} réception(s) · ${sors.length} sortie(s)<br>
-      <strong>Actuellement sur cet appareil :</strong>
-      ${exCons.length} consultation(s) · ${exRecs.length} réception(s) · ${exSors.length} sortie(s)<br>
-      <strong>Nouvelles entrées à ajouter (fusion) :</strong>
-      <span style="color:var(--vert);font-weight:700">+${nouveaux.cons} consultation(s) · +${nouveaux.recs} réception(s) · +${nouveaux.sors} sortie(s)</span>
-    `;
-
-    majImportMode('fusion');
-    const modal = document.getElementById('importModal');
-    modal.style.display = 'flex';
-
-  } catch(e) {
-    console.error(e);
-    toast('❌ Erreur lecture du fichier', 'error');
-  }
-}
-
-function lireFeuilleXLSX(wb, nom) {
-  if (!wb.SheetNames.includes(nom)) return null;
-  return XLSX.utils.sheet_to_json(wb.Sheets[nom], { defval: '' });
-}
-
-// Relit « 1-0-1-0 · 10 j · au repas » (export Excel) en posologie
-function lirePosoTexte(t) {
-  if (!t) return null;
-  const p = {};
-  String(t).split(' · ').forEach(part => {
-    const m = /^([\d½¼¾,.]+)-([\d½¼¾,.]+)-([\d½¼¾,.]+)-([\d½¼¾,.]+)$/.exec(part.trim());
-    const j = /^(\d+) j$/.exec(part.trim());
-    if (m) POSO_CHAMPS.forEach(([, nom], k) => { const n = lireNbPoso(m[k + 1]); if (n) p[nom] = n; });
-    else if (j) p.jours = +j[1];
-    else if (part.trim()) p.consigne = (p.consigne ? p.consigne + ' · ' : '') + part.trim();
-  });
-  return Object.keys(p).length ? p : null;
-}
-
-function rowToConsultation(row) {
-  if (!row['Date'] && !row['Nom']) return null;
-  const pathologies = [];
-  for (let i = 1; i <= 4; i++) {
-    const patho = row[`Pathologie ${i}`] || '';
-    const spec  = row[`Spécialité ${i}`] || '';
-    if (patho) pathologies.push({ specialite: spec, pathologie: patho });
-  }
-  const prescription = [];
-  for (let i = 1; i <= 5; i++) {
-    const mol = row[`Molécule ${i}`] || '';
-    const lot = row[`Lot ${i}`]      || '';
-    const qty = row[`Qté ${i}`]      || 0;
-    if (!mol) continue;
-    // Retrouver le détail des lots à partir du résumé « Exp. 04/2027 (90) + Exp. 08/2027 (5) »
-    const lots = String(lot).split(' + ').map(s => /^(.+) \((\d+)\)$/.exec(s.trim())).filter(Boolean)
-      .map(m => ({ lot: m[1], datePeremption: '', quantite: parseInt(m[2]) }));
-    const poso = lirePosoTexte(row[`Posologie ${i}`]);
-    prescription.push({ molecule: mol, lot, quantite: parseInt(qty) || 0, ...(lots.length ? { lots } : {}), ...(poso ? { posologie: poso } : {}) });
-  }
-  return {
-    date:      formatDateImport(row['Date']),
-    lieu:      row['Lieu']      || '',
-    medecin1:  row['Médecin 1'] || '',
-    medecin2:  row['Médecin 2'] || '',
-    nom:       row['Nom']       || '',
-    prenom:    row['Prénom']    || '',
-    age:       row['Âge'] ? parseInt(row['Âge']) : null,
-    tranche:   row['Tranche']   || '',
-    genre:     row['Genre']     || '',
-    habitation:row["Lieu d'habitation"] || '',
-    allergies: row['Allergies'] || '', antecedents: row['Antécédents'] || '', traitements: row['Traitements au long cours'] || '',
-    constantes: Object.fromEntries([['poids','Poids (kg)'],['taille','Taille (cm)'],['tas','TA systolique'],['tad','TA diastolique'],['pouls','Pouls'],
-      ['temp','Température (°C)'],['spo2','SpO2 (%)'],['glyc','Glycémie (g/L)']].map(([k, col]) => [k, parseFloat(String(row[col] ?? '').replace(',', '.'))]).filter(([, v]) => !isNaN(v))),
-    examen:    row['Examen clinique et complémentaire'] || '',
-    ...(row['Grossesse'] ? { grossesse: { statut: row['Grossesse'], ...(parseInt(row['Grossesse (SA)']) ? { semaines: parseInt(row['Grossesse (SA)']) } : {}) } } : {}),
-    ...(row['À revoir (délai)'] ? { aRevoir: { delai: row['À revoir (délai)'], motif: row['À revoir (motif)'] || '', echeance: row['À revoir (échéance)'] ? formatDateImport(row['À revoir (échéance)']) : '',
-        ...(row['À revoir (retiré)'] === 'Oui' ? { fait: true } : {}) } } : {}),
-    ...(row['Orientation (hôpital)'] || row['Orientation (motif)'] ? { orientation: { hopital: row['Orientation (hôpital)'] || '', motif: row['Orientation (motif)'] || '', accord: row['Orientation (accord famille)'] || '' } } : {}),
-    notes:     row['Notes']     || '',
-    patientId: row['ID Patient'] || '',
-    mission:   row['Mission']   || '',
-    pathologies,
-    prescription,
-    createdAt: row['createdAt'] || new Date().toISOString(),
-  };
-}
-
-function rowToReception(row) {
-  if (!row['Molécule']) return null;
-  return {
-    date:           formatDateImport(row['Date']),
-    fournisseur:    row['Fournisseur']      || '',
-    molecule:       row['Molécule']         || '',
-    lot:            row['N° lot']           || '',
-    datePeremption: formatDateImport(row['Date péremption']),
-    quantite:       parseInt(row['Quantité']) || 0,
-    createdAt:      row['createdAt'] || new Date().toISOString(),
-  };
-}
-
-function rowToSortie(row) {
-  if (!row['Molécule']) return null;
-  return {
-    date:           formatDateImport(row['Date']),
-    motif:          row['Motif']            || '',
-    molecule:       row['Molécule']         || '',
-    lot:            row['N° lot']           || '',
-    datePeremption: formatDateImport(row['Date péremption']),
-    quantite:       parseInt(row['Quantité']) || 0,
-    createdAt:      row['createdAt'] || new Date().toISOString(),
-  };
-}
-
-function formatDateImport(val) {
-  if (!val) return '';
-  // Date lue dans Excel : on prend le jour le plus proche (évite le décalage d'un jour dû au fuseau horaire)
-  if (val instanceof Date) return isNaN(val) ? '' : dateLocaleISO(new Date(val.getTime() + 12 * 3600 * 1000));
-  // Numéro de jour Excel (jours depuis le 30/12/1899)
-  if (typeof val === 'number' && val > 20000 && val < 80000) {
-    const d = new Date(Date.UTC(1899, 11, 30) + Math.round(val) * 86400000);
-    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-  }
-  if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}/)) return val.split('T')[0];
-  // Format JJ/MM/AAAA
-  if (typeof val === 'string' && val.includes('/')) {
-    const [d, m, y] = val.split('/');
-    return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
-  }
-  return String(val);
-}
-
-function majImportMode(mode) {
-  const desc = document.getElementById('importModeDesc');
-  if (mode === 'fusion') {
-    desc.innerHTML = '✅ <strong>Fusion</strong> : les entrées déjà présentes sur cet appareil sont conservées. Seules les entrées absentes du fichier importé sont ajoutées. Recommandé dans tous les cas.';
-  } else {
-    desc.innerHTML = '⚠️ <strong>Remplacement</strong> : toutes les données locales seront <strong style="color:var(--rouge)">définitivement supprimées</strong> et remplacées par le contenu du fichier. À utiliser uniquement pour restaurer sur une nouvelle tablette.';
-  }
-  // Mettre en évidence la sélection active
-  document.getElementById('labelFusion').style.borderColor  = mode === 'fusion'  ? 'var(--brique)' : 'var(--sable-fonce)';
-  document.getElementById('labelEcraser').style.borderColor = mode === 'ecraser' ? 'var(--rouge)'    : 'var(--sable-fonce)';
-}
-
-function fermerImportModal() {
-  document.getElementById('importModal').style.display = 'none';
-  _importData = null;
-}
-
-async function confirmerImport() {
-  if (!_importData) return;
-  const mode = document.querySelector('input[name="importMode"]:checked').value;
-  const { cons, recs, sors } = _importData;
-
-  const btn = document.getElementById('btnConfirmImport');
-  btn.textContent = '⏳ Import en cours…';
-  btn.disabled = true;
-
-  try {
-    if (mode === 'ecraser') {
-      // Vider puis remplir
-      await viderStore('consultations');
-      await viderStore('receptions');
-      await viderStore('sorties');
-      for (const r of cons) { delete r.id; await dbAdd('consultations', r); }
-      for (const r of recs) { delete r.id; await dbAdd('receptions',    r); }
-      for (const r of sors) { delete r.id; await dbAdd('sorties',        r); }
-    } else {
-      // Fusion : ajouter seulement les absents (basé sur createdAt)
-      const [exCons, exRecs, exSors] = await Promise.all([
-        dbGetAll('consultations'), dbGetAll('receptions'), dbGetAll('sorties')
-      ]);
-      const exDates = {
-        cons: new Set(exCons.map(r => r.createdAt)),
-        recs: new Set(exRecs.map(r => r.createdAt)),
-        sors: new Set(exSors.map(r => r.createdAt)),
-      };
-      for (const r of cons) { if (!exDates.cons.has(r.createdAt)) { delete r.id; await dbAdd('consultations', r); } }
-      for (const r of recs) { if (!exDates.recs.has(r.createdAt)) { delete r.id; await dbAdd('receptions',    r); } }
-      for (const r of sors) { if (!exDates.sors.has(r.createdAt)) { delete r.id; await dbAdd('sorties',        r); } }
-    }
-
-    fermerImportModal();
-    toast(`✅ Import réussi — données ${mode === 'ecraser' ? 'remplacées' : 'fusionnées'}`, 'success');
-    try { await chargerStock(); } catch(e) {}
-
-  } catch(e) {
-    console.error(e);
-    toast('❌ Erreur lors de l\'import', 'error');
-  } finally {
-    btn.textContent = '✅ Confirmer l\'import';
-    btn.disabled = false;
-  }
-}
-
-function viderStore(store) {
-  return new Promise((res, rej) => {
-    const tx  = db.transaction(store, 'readwrite');
-    const req = tx.objectStore(store).clear();
-    req.onsuccess = () => res();
-    req.onerror   = () => rej(req.error);
-  });
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -8655,7 +8996,7 @@ async function sauvegarderListe(cle, containerId, _defautIgnore) {
     const doublon = avant.includes(n) ? `\n\n⚠ « ${n} » existe déjà dans la liste : les deux seront regroupés sous ce nom.` : '';
     if (await confirmer(`${nb} enregistrement(s) utilisent l'ancien nom (consultations, stock, seuils…). Les mettre à jour ?${doublon}`, { titre: `« ${a} » → « ${n} »`, ok: 'Mettre à jour', annuler: 'Garder l\'ancien nom' })) {
       await renommerDansDonnees(cle, a, n);
-      await journaliser('renommage', 'liste', null, null, `${a} → ${n}`);
+      await journaliser('renommage', 'liste', null, null, `${a} → ${n}`, { liste: cle, ancien: a, nouveau: n });
       renomme = true;
     }
   }
@@ -8756,6 +9097,7 @@ function getCouleurListe(containerId) {
 // ═══════════════════════════════════════════════════════════════════
 async function init() {
   await ouvrirDB();
+  try { await appliquerReperesApresReprise(); } catch(e) { console.warn('[Reprise] repères', e); }
   try { await migrerListeLieux(); } catch(e) { console.warn('[Lieux]', e); }
   try { await chargerFichesPrechargees(); } catch(e) { console.warn('[Fiches]', e); }
   try { await chargerFiches(); } catch(e) {}
@@ -8786,6 +9128,7 @@ async function init() {
   demanderStockagePersistant();
   restaurerDossierSauvegarde();
   enregistrerServiceWorker();
+  majBoutonAnnulerReprise();
   const msgReprise = localStorage.getItem('message_apres_reprise');
   if (msgReprise) { localStorage.removeItem('message_apres_reprise'); setTimeout(() => toast(msgReprise, 'success'), 1200); }
   setTimeout(() => demanderRoleSiBesoin(), 2500);
@@ -8822,7 +9165,27 @@ async function init() {
   setTimeout(() => restaurerBrouillon(), 300);
 }
 
-init();
+// Si la base ne s'ouvre pas, l'application s'arrête sur un message clair. Rien n'est effacé.
+function afficherErreurBase(e) {
+  console.error('[Démarrage]', e);
+  const d = document.createElement('div');
+  d.id = 'erreurBase';
+  d.style.cssText = 'position:fixed;inset:0;z-index:5000;background:#fff8f0;color:#2c1a0e;padding:28px 22px;overflow:auto;font-family:system-ui,sans-serif;line-height:1.6';
+  d.innerHTML = `<h2 style="color:#b71c1c;margin:0 0 12px">⚠ L'application n'a pas pu ouvrir ses données</h2>
+    <p><strong>Rien n'a été effacé.</strong></p>
+    <p>1. Fermez toutes les fenêtres de l'application, puis rouvrez-la.<br>
+       2. Si ce message revient : <strong>n'effacez pas les données du navigateur et ne désinstallez pas l'application</strong>, et prévenez la personne qui s'occupe de la tablette.</p>
+    <p><button id="erreurBaseSauver" style="padding:12px 18px;font-size:1rem;font-weight:700;border-radius:8px;border:2px solid #2e7d32;background:#fff;color:#2e7d32">🗄️ Télécharger une sauvegarde de ce qui est lisible</button></p>
+    <p style="font-size:.8rem;color:#8d6e63">Détail technique : <span id="erreurBaseDetail"></span></p>`;
+  document.body.appendChild(d);
+  document.getElementById('erreurBaseDetail').textContent = (e && (e.message || e.name)) || String(e);
+  document.getElementById('erreurBaseSauver').onclick = async () => {
+    try { telechargerBlob(await genererBlobJSON(), `${prefixeFichier()}_secours_${horodatageFichier()}.json`); }
+    catch(err) { document.getElementById('erreurBaseDetail').textContent += ' — sauvegarde impossible : ' + (err.message || err); }
+  };
+}
+
+init().catch(afficherErreurBase);
 
 </script>
 </body>
