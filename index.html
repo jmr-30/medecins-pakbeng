@@ -5191,6 +5191,19 @@ async function reprendreSauvegarde(input, fichier) {
     if (_driveDirectoryHandle && _dossierAutorise) { try { await ecrireDansDossierDrive(nom, blob); } catch(e) {} }
   } catch(e) { toast('❌ Copie de sécurité impossible : rien n\'a été modifié', 'error'); return; }
 
+  // Mission et repère de la dernière reprise. Si c'est une sauvegarde de CET appareil qui est restaurée (retour en arrière),
+  // on revient au repère qu'elle portait : le fichier reçu ensuite pourra être repris de nouveau.
+  // Ces repères vivent dans les préférences du navigateur ; ils sont AUSSI écrits dans la base, dans la même transaction
+  // que les données, et remis en place au redémarrage : la reprise ne dépend plus de ces préférences.
+  const propreSauvegarde = !!data.provenance?.role && data.provenance.role === roleAppareil();
+  let missionReprise = null;
+  try { missionReprise = data.mission ? (typeof data.mission === 'string' ? JSON.parse(data.mission) : data.mission) : null; } catch(e) {}
+  const reperes = {
+    mission: missionReprise,
+    base: propreSauvegarde ? (data.base?.exportedAt ? data.base : null) : { role: data.provenance?.role || '', exportedAt: data.exportedAt, le: new Date().toISOString() },
+    message: `✅ Données reprises — ${aGarder.length + modifsGardees.length} saisie(s) locale(s) conservée(s)`,
+  };
+
   toast('⏳ Reprise des données…', 'success');
   clearTimeout(_sauvegardeAutoTimer); clearTimeout(_autosaveTimer);
   try {
@@ -5221,7 +5234,7 @@ async function reprendreSauvegarde(input, fichier) {
     };
     const params = new Map();
     for (const p of data.parametres) {
-      if (p.cle === CLE_DOSSIER || p.cle === CLE_COPIE) continue;
+      if (p.cle === CLE_DOSSIER || p.cle === CLE_COPIE || p.cle === CLE_REPERES) continue;
       if (p.cle === 'journal_corrections') params.set(p.cle, fusionner(p.cle, p.valeur, 500));
       else if (p.cle === 'inventaires') params.set(p.cle, limiterInventaires(fusionner(p.cle, p.valeur, Infinity)));
       else if (LISTES_NOMS.includes(p.cle) && Array.isArray(p.valeur)) {
@@ -5232,7 +5245,7 @@ async function reprendreSauvegarde(input, fichier) {
       else params.set(p.cle, p.valeur);
     }
     // Réglages propres à cet appareil, absents de la sauvegarde : gardés tels quels
-    for (const p of paramsLocaux) if (!params.has(p.cle) && p.cle !== CLE_DOSSIER && p.cle !== CLE_COPIE) params.set(p.cle, p.valeur);
+    for (const p of paramsLocaux) if (!params.has(p.cle) && p.cle !== CLE_DOSSIER && p.cle !== CLE_COPIE && p.cle !== CLE_REPERES) params.set(p.cle, p.valeur);
     // Listes : les noms utilisés par les saisies conservées (village ou médecin ajouté ici entre-temps…) y restent
     const utilises = { lieux: [], medecins: [], fournisseurs: [], molecules: [], hopitaux: [] };
     for (const x of [...aGarder, ...modifsGardees]) {
@@ -5272,6 +5285,7 @@ async function reprendreSauvegarde(input, fichier) {
     const dossier = paramsLocaux.find(p => p.cle === CLE_DOSSIER);
     if (dossier) contenu.parametres.push(dossier);
     contenu.parametres.push({ cle: CLE_COPIE, valeur: copieAvant });   // permet « Annuler la dernière reprise »
+    contenu.parametres.push({ cle: CLE_REPERES, valeur: reperes });    // mission et repère de reprise, remis en place au redémarrage
 
     // 2. Écriture en une seule fois : tout ou rien
     await remplacerBase(contenu);
@@ -5281,19 +5295,26 @@ async function reprendreSauvegarde(input, fichier) {
       { titre: '❌ Reprise annulée', ok: 'Compris', annuler: false });
     return;
   }
-  // 3. Mission et repères de la reprise
-  try {
-    if (data.mission) localStorage.setItem('mission_active', JSON.stringify(typeof data.mission === 'string' ? JSON.parse(data.mission) : data.mission));
-    // Repère de la dernière reprise. Si c'est une sauvegarde de CET appareil qui est restaurée (retour en arrière),
-    // on revient au repère qu'elle portait : le fichier reçu ensuite pourra être repris de nouveau.
-    const propreSauvegarde = !!data.provenance?.role && data.provenance.role === roleAppareil();
-    const repere = propreSauvegarde ? (data.base?.exportedAt ? data.base : null) : { role: data.provenance?.role || '', exportedAt: data.exportedAt, le: new Date().toISOString() };
-    if (repere) localStorage.setItem('base_reprise', JSON.stringify(repere)); else localStorage.removeItem('base_reprise');
-    localStorage.setItem('stock_initial_charge', localStorage.getItem('stock_initial_charge') || new Date().toISOString());   // ancien repère, gardé par compatibilité
-    localStorage.setItem('nbConsultationsConnu', String((await dbGetAll('consultations')).length));
-    localStorage.setItem('message_apres_reprise', `✅ Données reprises — ${aGarder.length + modifsGardees.length} saisie(s) locale(s) conservée(s)`);
-  } catch(e) { console.warn('[Reprise] repères', e); }
+  // 3. Repères posés tout de suite (ils le seront de nouveau au redémarrage, depuis la base)
+  poserReperes(reperes);
   location.reload();
+}
+
+// Remet en place la mission et le repère de reprise dans les préférences du navigateur
+function poserReperes(r) {
+  try {
+    if (r.mission) localStorage.setItem(MISSION_KEY, JSON.stringify(r.mission)); else if (r.sansMission) localStorage.removeItem(MISSION_KEY);
+    if (r.base) localStorage.setItem('base_reprise', JSON.stringify(r.base)); else localStorage.removeItem('base_reprise');
+    if (r.message) localStorage.setItem('message_apres_reprise', r.message);
+    localStorage.removeItem('nbConsultationsConnu');   // recompté au démarrage
+  } catch(e) { console.warn('[Reprise] repères', e); }
+}
+// Au démarrage : si une reprise (ou son annulation) vient d'avoir lieu, ses repères sont relus dans la base, puis retirés
+async function appliquerReperesApresReprise() {
+  const r = await getParam(CLE_REPERES, null);
+  if (!r) return;
+  poserReperes(r);
+  await dbDelete('parametres', CLE_REPERES);
 }
 
 // ── Annuler la dernière reprise : retour aux données d'avant, les saisies faites depuis sont conservées ──
@@ -5318,12 +5339,14 @@ async function annulerDerniereReprise() {
       (depuis.length ? `\n\n✅ Les ${depuis.length} saisie(s) faites depuis la reprise seront CONSERVÉES.` : ''),
       { titre: 'Annuler la dernière reprise ?', ok: 'Annuler la reprise', danger: true }))) return;
   try { telechargerBlob(await genererBlobJSON(), `${prefixeFichier()}_avant_annulation_reprise_${horodatageFichier()}.json`); } catch(e) {}
+  let baseAvant = null; try { baseAvant = copie.repere ? JSON.parse(copie.repere) : null; } catch(e) {}
+  const reperesAnnulation = { mission: d.mission || null, sansMission: !d.mission, base: baseAvant, message: `✅ Reprise annulée — ${depuis.length} saisie(s) faites depuis conservée(s)` };
   clearTimeout(_sauvegardeAutoTimer); clearTimeout(_autosaveTimer);
   try {
     const contenu = { stock_config: d.stockConfig };
     for (const [store] of STORES_DONNEES)
       contenu[store] = [...d[store], ...depuis.filter(x => x.store === store).map(x => { const c = { ...x.r }; delete c.id; return c; })];
-    const params = d.parametres.filter(p => p.cle !== CLE_DOSSIER && p.cle !== CLE_COPIE && p.cle !== 'journal_corrections');
+    const params = d.parametres.filter(p => p.cle !== CLE_DOSSIER && p.cle !== CLE_COPIE && p.cle !== CLE_REPERES && p.cle !== 'journal_corrections');
     const journal = [...(d.parametres.find(p => p.cle === 'journal_corrections')?.valeur || [])];
     journal.unshift({ le: new Date().toISOString(), action: 'reprise', type: 'sauvegarde', resume: '', champs: [], avant: null, apres: null,
       motif: `Reprise de « ${copie.fichier} » annulée — retour aux données du ${quand}, ${depuis.length} saisie(s) faites depuis conservées` });
@@ -5331,6 +5354,7 @@ async function annulerDerniereReprise() {
     if (!params.some(p => p.cle === CLE_STOCK_INITIAL)) params.push({ cle: CLE_STOCK_INITIAL, valeur: new Date().toISOString() });
     const dossier = await dbGet('parametres', CLE_DOSSIER);
     if (dossier) params.push(dossier);
+    params.push({ cle: CLE_REPERES, valeur: reperesAnnulation });
     contenu.parametres = params;
     await remplacerBase(contenu);
   } catch(e) {
@@ -5338,12 +5362,7 @@ async function annulerDerniereReprise() {
     await confirmer('L\'annulation n\'a pas pu se faire. Rien n\'a été modifié.', { titre: '❌ Annulation impossible', ok: 'Compris', annuler: false });
     return;
   }
-  try {
-    if (d.mission) localStorage.setItem('mission_active', JSON.stringify(d.mission));
-    if (copie.repere) localStorage.setItem('base_reprise', copie.repere); else localStorage.removeItem('base_reprise');
-    localStorage.setItem('nbConsultationsConnu', String((await dbGetAll('consultations')).length));
-    localStorage.setItem('message_apres_reprise', `✅ Reprise annulée — ${depuis.length} saisie(s) faites depuis conservée(s)`);
-  } catch(e) { console.warn('[Reprise] repères', e); }
+  poserReperes(reperesAnnulation);
   location.reload();
 }
 
@@ -7982,6 +8001,7 @@ function getMissionNumero() {
 // PROTECTION DES DONNÉES : stockage persistant, sauvegarde automatique, détection de perte
 // ═══════════════════════════════════════════════════════════════════
 const CLE_DOSSIER = 'dossier_sauvegarde';
+const CLE_REPERES = 'reperes_apres_reprise';   // mission et repère de reprise à remettre en place au prochain démarrage (jamais exporté)
 const CLE_COPIE = 'copie_avant_reprise';   // copie interne des données d'avant la dernière reprise (jamais exportée)
 let _etatStockage = 'inconnu';     // protege | non | indisponible
 let _dossierAutorise = false;
@@ -8315,7 +8335,7 @@ async function importerJSON(input) {
     // Paramètres : les listes sont FUSIONNÉES (rien de ce qui existe sur cet appareil n'est perdu)
     const LISTES = ['lieux', 'medecins', 'fournisseurs', 'molecules'];
     for (const p of (data.parametres || [])) {
-      if (p.cle === CLE_DOSSIER || p.cle === CLE_COPIE) continue;
+      if (p.cle === CLE_DOSSIER || p.cle === CLE_COPIE || p.cle === CLE_REPERES) continue;
       if (LISTES.includes(p.cle) && Array.isArray(p.valeur)) {
         const local = await getParam(p.cle, REF[p.cle] || null);   // liste par défaut si jamais modifiée
         if (Array.isArray(local)) {
@@ -8496,7 +8516,7 @@ async function genererBlobJSON() {
     dernierMed2:  localStorage.getItem('dernier_med2')   || null,
     provenance:   { role: roleAppareil(), libelle: libelleRole(roleAppareil()) },
     base:         (() => { try { return JSON.parse(localStorage.getItem('base_reprise') || 'null'); } catch(e) { return null; } })(),
-    consultations, receptions, sorties, stockConfig, parametres: parametres.filter(p => p.cle !== CLE_DOSSIER && p.cle !== CLE_COPIE),
+    consultations, receptions, sorties, stockConfig, parametres: parametres.filter(p => p.cle !== CLE_DOSSIER && p.cle !== CLE_COPIE && p.cle !== CLE_REPERES),
   };
   return new Blob([JSON.stringify(sauvegarde, null, 2)], { type: 'application/json' });
 }
@@ -8916,6 +8936,7 @@ function getCouleurListe(containerId) {
 // ═══════════════════════════════════════════════════════════════════
 async function init() {
   await ouvrirDB();
+  try { await appliquerReperesApresReprise(); } catch(e) { console.warn('[Reprise] repères', e); }
   try { await migrerListeLieux(); } catch(e) { console.warn('[Lieux]', e); }
   try { await chargerFichesPrechargees(); } catch(e) { console.warn('[Fiches]', e); }
   try { await chargerFiches(); } catch(e) {}

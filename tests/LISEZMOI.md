@@ -80,6 +80,7 @@ Chaque scénario affiche ✓ (réussi) ou ✗ (échec) avec la raison. Compter e
 | 37 | Double appui | un double appui sur « Enregistrer » (réception, sortie, consultation) n'écrit qu'une fois, sans message d'erreur ; la saisie suivante reste possible |
 | 38 | Date hors mission | date future ou hors de la mission : confirmation demandée (corriger ou garder) ; le rapport compte dans la mission toute consultation qui lui est rattachée, stock de fin égal au stock réel |
 | 39 | Valeurs inhabituelles | âge ou quantité impossibles refusés ; âge, quantité, constantes, réception périmée, future ou énorme : confirmation demandée (corriger ou enregistrer) |
+| 40 | Reprise sans les préférences du navigateur | préférences perdues au rechargement : mission et repère de reprise relus dans la base, contrôle de date intact, stock initial non rechargé ; de même pour l'annulation de la reprise |
 
 Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 36 dans un vrai navigateur (Chromium).
 Les scénarios 18 à 35 vérifient les corrections de l'audit de novembre 2026 ; ceux du passage de relais partagent les outils de `scenarios/_relais.js`.
