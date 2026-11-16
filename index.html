@@ -2825,6 +2825,7 @@ function ouvrirDB() {
 
     req.onsuccess = e => {
       db = e.target.result;
+      surveillerEcritures(db);
 
       // Vérification défensive : une partie de la base manque ? On n'efface JAMAIS rien : l'ouverture est refusée
       // et un message s'affiche (voir init). Les données présentes restent lisibles pour une sauvegarde.
@@ -2897,21 +2898,84 @@ function dbAdd(store, obj) {
   return transactionEcriture(store, st => st.add(obj));
 }
 
-function dbGetAll(store) {
-  return new Promise((res, rej) => {
-    if (!db) { res([]); return; }
-    if (!db.objectStoreNames.contains(store)) {
-      console.warn(`[DB] Store "${store}" introuvable — retour tableau vide`);
-      res([]);
-      return;
+// ── Mémoire des données lues ──────────────────────────────────────
+// Relire toutes les consultations dans la base à chaque affichage et à chaque frappe devenait lent avec plusieurs
+// missions cumulées. Le contenu des stores de données est donc gardé en mémoire et réutilisé tant que rien n'a été écrit.
+// TOUTE transaction d'écriture, d'où qu'elle vienne, passe par db.transaction : elle augmente le numéro de version des
+// stores concernés (au début et à la fin), ce qui oublie leur contenu gardé et tout ce qui en a été calculé.
+const STORES_EN_MEMOIRE = ['consultations', 'receptions', 'sorties', 'stock_config'];   // pas « parametres » (copie interne volumineuse)
+const _versionsStores = {}, _memoireStores = {};
+const versionStore = store => _versionsStores[store] || 0;
+const versionDonnees = () => STORES_EN_MEMOIRE.map(versionStore).join('.');
+function noterEcriture(stores) {
+  for (const st of stores) { _versionsStores[st] = versionStore(st) + 1; delete _memoireStores[st]; }
+}
+function surveillerEcritures(base) {
+  base.transaction = function (noms, mode, options) {
+    const tx = Object.getPrototypeOf(base).transaction.call(base, noms, mode, options);
+    if (mode === 'readwrite') {
+      const stores = typeof noms === 'string' ? [noms] : [...noms];
+      noterEcriture(stores);
+      const fin = () => noterEcriture(stores);
+      tx.addEventListener('complete', fin); tx.addEventListener('abort', fin);
     }
+    return tx;
+  };
+}
+function lireStore(store) {
+  return new Promise((res, rej) => {
     const tx  = db.transaction(store, 'readonly');
     const req = tx.objectStore(store).getAll();
     req.onsuccess = () => res(req.result);
     req.onerror   = () => rej(req.error);
   });
 }
-
+// Renvoie tous les enregistrements d'un store. Le tableau renvoyé est une copie (on peut le trier ou le filtrer),
+// mais les enregistrements sont partagés : NE PAS les modifier sans les réécrire aussitôt dans la base.
+async function dbGetAll(store) {
+  if (!db) return [];
+  if (!db.objectStoreNames.contains(store)) {
+    console.warn(`[DB] Store "${store}" introuvable — retour tableau vide`);
+    return [];
+  }
+  if (!STORES_EN_MEMOIRE.includes(store)) return lireStore(store);
+  const garde = _memoireStores[store];
+  if (garde && garde.version === versionStore(store)) {
+    if (window.__verifierMemoire) await verifierMemoire(store, garde);
+    return garde.lignes.slice();
+  }
+  const version = versionStore(store);
+  const lignes = await lireStore(store);
+  if (version === versionStore(store)) _memoireStores[store] = { version, lignes };   // rien n'a été écrit pendant la lecture
+  return lignes.slice();
+}
+// Contrôle utilisé par les tests (window.__verifierMemoire = true) : le contenu gardé doit être identique à la base
+async function verifierMemoire(store, garde) {
+  const reel = await lireStore(store);
+  if (garde.version !== versionStore(store)) return;
+  if (JSON.stringify(reel) !== JSON.stringify(garde.lignes)) {
+    window.__memoireIncoherente = (window.__memoireIncoherente || 0) + 1;
+    console.error(`[Mémoire] contenu gardé différent de la base pour « ${store} »`);
+    delete _memoireStores[store];
+    throw new Error(`Mémoire incohérente : ${store}`);
+  }
+}
+// Lit un store sans certaines clés (évite de charger la copie interne d'avant reprise, aussi grosse que la base)
+function dbGetAllSauf(store, clesExclues) {
+  return new Promise((res, rej) => {
+    if (!db || !db.objectStoreNames.contains(store)) { res([]); return; }
+    const st = db.transaction(store, 'readonly').objectStore(store);
+    const cles = st.getAllKeys();
+    cles.onerror = () => rej(cles.error);
+    cles.onsuccess = () => {
+      const voulues = cles.result.filter(k => !clesExclues.includes(k)), lignes = [];
+      if (!voulues.length) { res(lignes); return; }
+      let restant = voulues.length;
+      voulues.forEach((k, i) => { const r = st.get(k); r.onerror = () => rej(r.error);
+        r.onsuccess = () => { lignes[i] = r.result; if (--restant === 0) res(lignes.filter(Boolean)); }; });
+    };
+  });
+}
 function dbGet(store, key) {
   return new Promise((res, rej) => {
     if (!db || !db.objectStoreNames.contains(store)) { res(null); return; }
@@ -3650,7 +3714,10 @@ function cleSonore(s) {
     .replace(/(.)\1+/g, '$1');
 }
 let _indexPatients = [], _suggListe = [], _suggChoisi = null, _suggTimer = null, _suggFermeture = null;
+let _indexPatientsVersion = null;   // l'index n'est reconstruit que si des consultations ont été écrites depuis
 async function chargerIndexPatients() {
+  const version = versionStore('consultations');
+  if (_indexPatientsVersion === version && _indexPatients.length) return;
   const groupes = {};
   for (const c of await dbGetAll('consultations')) {
     if (!c.nom && !c.prenom) continue;
@@ -3661,6 +3728,7 @@ async function chargerIndexPatients() {
   }
   _indexPatients = Object.values(groupes).map(g => ({ ...g,
     nNom: normNomPatient(g.c.nom), nPre: normNomPatient(g.c.prenom), sNom: cleSonore(g.c.nom), sPre: cleSonore(g.c.prenom) }));
+  _indexPatientsVersion = versionStore('consultations') === version ? version : null;
 }
 // 3 : début identique · 2 : début « sonore » identique · 1 : correspond à l'autre champ (nom et prénom inversés) · 0 : non
 function scoreChamp(q, n, s, nAutre, sAutre) {
@@ -5677,7 +5745,25 @@ async function afficherAnomaliesStock(moteur) {
 }
 
 // Calcul complet : { molecule: { lotKey: {lot, datePeremption, recu, delivre, detruit, restant, statut} } }
+// Le résultat est gardé tant qu'aucune donnée n'a été écrite et que le jour n'a pas changé (les statuts de péremption
+// dépendent de la date). Chaque appel reçoit sa propre copie : la modifier ne touche pas le résultat gardé.
+let _stockGarde = { cle: '', resultats: new Map() };
 async function calculerStock(exclureConsultationId) {
+  const cle = versionDonnees() + '|' + dateAujourdhui();
+  if (_stockGarde.cle !== cle) _stockGarde = { cle, resultats: new Map() };
+  const copier = map => { const c = {}; for (const mol in map) { c[mol] = {}; for (const lot in map[mol]) c[mol][lot] = { ...map[mol][lot] }; } return c; };
+  const id = exclureConsultationId ?? '';
+  if (_stockGarde.resultats.has(id) && !window.__verifierMemoire) return copier(_stockGarde.resultats.get(id));
+  const map = await calculerStockComplet(exclureConsultationId);
+  if (window.__verifierMemoire && _stockGarde.resultats.has(id) && versionDonnees() + '|' + dateAujourdhui() === cle
+      && JSON.stringify(map) !== JSON.stringify(_stockGarde.resultats.get(id))) {
+    window.__memoireIncoherente = (window.__memoireIncoherente || 0) + 1;
+    throw new Error('Mémoire incohérente : stock calculé');
+  }
+  if (versionDonnees() + '|' + dateAujourdhui() === cle) _stockGarde.resultats.set(id, map);   // rien n'a été écrit pendant le calcul
+  return copier(map);
+}
+async function calculerStockComplet(exclureConsultationId) {
   const [recs, sorts, consults] = await Promise.all([
     dbGetAll('receptions'), dbGetAll('sorties'), dbGetAll('consultations')
   ]);
@@ -8529,7 +8615,7 @@ function nomFichierJSON() {
 async function genererBlobJSON() {
   const [consultations, receptions, sorties, stockConfig, parametres] = await Promise.all([
     dbGetAll('consultations'), dbGetAll('receptions'), dbGetAll('sorties'),
-    dbGetAll('stock_config'),  dbGetAll('parametres'),
+    dbGetAll('stock_config'),  dbGetAllSauf('parametres', [CLE_DOSSIER, CLE_COPIE, CLE_REPERES]),
   ]);
   const sauvegarde = {
     version:      '1.0',
