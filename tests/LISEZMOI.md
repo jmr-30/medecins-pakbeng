@@ -82,9 +82,10 @@ Chaque scénario affiche ✓ (réussi) ou ✗ (échec) avec la raison. Compter e
 | 39 | Valeurs inhabituelles | âge ou quantité impossibles refusés ; âge, quantité, constantes, réception périmée, future ou énorme : confirmation demandée (corriger ou enregistrer) |
 | 40 | Reprise sans les préférences du navigateur | préférences perdues au rechargement : mission et repère de reprise relus dans la base, contrôle de date intact, stock initial non rechargé ; de même pour l'annulation de la reprise |
 | 41 | Consultation en double | même patient, même date, même prescription déjà enregistrés : avertissement à l'enregistrement et à la reprise d'un brouillon ; une seconde visite différente passe sans question |
+| 42 | Stock initial importé en cours de mission | dans le rapport, il reste le « Stock début de mission » ; seules les vraies réceptions comptent en entrées |
 
-Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 36 dans un vrai navigateur (Chromium).
-Les scénarios 18 à 35 vérifient les corrections de l'audit de novembre 2026 ; ceux du passage de relais partagent les outils de `scenarios/_relais.js`.
+Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 42 dans un vrai navigateur (Chromium).
+Les scénarios 18 à 35 et 37 à 42 vérifient les corrections de l'audit de novembre 2026 ; ceux du passage de relais partagent les outils de `scenarios/_relais.js`.
 
 Le scénario 36 joue une mission entière. Pour le lancer seul : `node lancer-tout.js 36` (une minute environ). Il tient sa propre comptabilité du stock et s'arrête en échec au moindre écart.
 

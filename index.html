@@ -7716,6 +7716,9 @@ async function exporterMission() {
       if (m.nc) L.nc.add(m.nc);
       if (m.type === 'entree') { if (m.origine) L.origine.add(m.origine); if (m.date && (!L.dateEntree || m.date < L.dateEntree)) L.dateEntree = m.date; }
       const signe = (m.type === 'entree' || m.type === 'inventaire') ? 1 : -1;
+      // Le stock initial (fichier de la pharmacienne) est le stock de DÉBUT de mission, même s'il est importé
+      // une fois la mission commencée : sinon tout le stock apparaissait en « Entrées pendant la mission ».
+      if (m.type === 'entree' && String(m.origine || '').startsWith('Stock initial') && (!m.date || m.date <= finMission)) { L.debut += m.q; return; }
       // Une consultation rattachée à cette mission compte dans la mission, même si sa date en sort (erreur de date) :
       // sinon elle figurait dans l'activité mais pas dans le stock, et le stock de fin du rapport était faux.
       if (!(m.mission && m.mission === M.numero)) {
