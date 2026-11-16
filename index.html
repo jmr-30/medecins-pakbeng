@@ -2059,6 +2059,13 @@ button[onclick^="supprimerItem"], .btn-sortir-lot, #missionBadge button {
     Stock médicaments
   </div>
 
+  <!-- Anomalies de stock (affiché seulement s'il y en a) -->
+  <details id="stockAnomalies" style="display:none;margin-bottom:12px;background:var(--orange-clair);border:1.5px solid var(--orange);border-radius:8px;padding:10px 14px;">
+    <summary id="stockAnomaliesTitre" style="font-weight:800;font-size:.9rem;color:var(--brun);cursor:pointer"></summary>
+    <div style="font-size:.8rem;color:var(--brun);margin:8px 0 6px">Le stock calculé de ces médicaments ne correspond sans doute pas à l'étagère. Pour corriger : faire l'<strong>inventaire</strong> du médicament (Autres fonctions → Inventaire), ou prévenir la pharmacienne.</div>
+    <div id="stockAnomaliesListe" style="font-size:.82rem;line-height:1.7"></div>
+  </details>
+
   <!-- Filtres -->
   <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:stretch;">
     <input type="text" id="stockSearch" placeholder="🔍 Filtrer par molécule…"
@@ -5525,6 +5532,40 @@ function statutLot(datePeremption, lot) {
   return 'ok';
 }
 
+// Anomalies de stock : situations où le stock calculé ne peut pas correspondre à l'étagère.
+// Renvoie [{ molecule, lot, type, texte }], triées par médicament.
+function anomaliesStock(moteur, listeMolecules) {
+  const res = [];
+  const connus = new Set(listeMolecules || []);
+  Object.entries(moteur).forEach(([mol, lots]) => {
+    const u = n => `${n} ${libUnite(mol, n)}`;
+    const tous = Object.values(lots);
+    tous.forEach(l => {
+      if (l.lot === LOT_A_REGULARISER) {
+        if (l.restant < 0) res.push({ molecule: mol, lot: l.lot, type: 'regulariser', texte: `${u(-l.restant)} délivrée(s) au-delà du stock connu (« à régulariser »)` });
+      } else if (l.restant < 0 && l.recu === 0) {
+        res.push({ molecule: mol, lot: l.lot, type: 'jamais_recu', texte: `lot « ${l.lot} » : ${u(-l.restant)} sortie(s) ou délivrée(s) sur un lot qui n'a jamais été reçu` });
+      } else if (l.restant < 0) {
+        res.push({ molecule: mol, lot: l.lot, type: 'negatif', texte: `lot « ${l.lot} » : stock négatif (${l.restant}) — plus de sorties que d'entrées` });
+      } else if (l.statut === 'averifier' && l.restant > 0) {
+        res.push({ molecule: mol, lot: l.lot, type: 'date', texte: `lot « ${l.lot} » : date de péremption illisible (« ${l.datePeremption} ») — ${u(l.restant)} jamais délivrée(s) automatiquement` });
+      }
+    });
+    if (listeMolecules && !connus.has(mol) && tous.some(l => l.restant !== 0))
+      res.push({ molecule: mol, lot: '', type: 'hors_liste', texte: 'ce nom ne figure pas dans la liste des médicaments (nom modifié ?) : son stock n\'est pas proposé à la prescription' });
+  });
+  return res.sort((a, b) => a.molecule.localeCompare(b.molecule, 'fr'));
+}
+async function afficherAnomaliesStock(moteur) {
+  const bloc = document.getElementById('stockAnomalies'); if (!bloc) return;
+  const l = anomaliesStock(moteur, await getParam('molecules', REF.molecules));
+  bloc.style.display = l.length ? '' : 'none';
+  if (!l.length) return;
+  const nbMol = new Set(l.map(a => a.molecule)).size;
+  document.getElementById('stockAnomaliesTitre').textContent = `⚠ ${l.length} anomalie(s) de stock sur ${nbMol} médicament(s) — toucher pour voir`;
+  document.getElementById('stockAnomaliesListe').innerHTML = l.map(a => `<div>• <strong>${esc(a.molecule)}</strong> — ${esc(a.texte)}</div>`).join('');
+}
+
 // Calcul complet : { molecule: { lotKey: {lot, datePeremption, recu, delivre, detruit, restant, statut} } }
 async function calculerStock(exclureConsultationId) {
   const [recs, sorts, consults] = await Promise.all([
@@ -6154,6 +6195,7 @@ async function chargerStock() {
   const moteur = await calculerStock();
   const stockMap = {};
   Object.entries(moteur).forEach(([mol, lots]) => { stockMap[mol] = { lots, dispo: stockDisponible(lots) }; });
+  afficherAnomaliesStock(moteur).catch(e => console.warn('[Stock] anomalies', e));
 
   const tbody = document.getElementById('stockBody');
   tbody.innerHTML = '';
