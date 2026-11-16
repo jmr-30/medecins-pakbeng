@@ -62,6 +62,7 @@ Chaque scénario affiche ✓ (réussi) ou ✗ (échec) avec la raison. Compter e
 | 19 | Reprise : contrôle de la date | fichier plus ancien que celui déjà repris refusé, fichier déjà repris signalé, fichier sans date refusé, fichier plus récent accepté, retour en arrière avec la copie « avant_reprise » |
 | 20 | Annuler la dernière reprise | copie interne des données d'avant la reprise, jamais exportée ; annulation : données d'avant retrouvées, saisies faites depuis conservées, nouvelle reprise possible |
 | 21 | Reprise : annulations locales | une consultation et une réception annulées sur la tablette après l'envoi du fichier ne reviennent pas avec le fichier de la pharmacienne ; stock inchangé |
+| 22 | Reprise : noms corrigés | médicament renommé par la pharmacienne reporté sur la consultation saisie entre-temps (stock sous un seul nom) ; médecin renommé sur la tablette reporté sur les données reprises ; journal au format actuel et ancien |
 
 Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 16 dans un vrai navigateur (Chromium).
 

@@ -4989,6 +4989,7 @@ function demanderRoleSiBesoin() { if (!roleAppareil()) choisirRoleAppareil(true)
 
 // Date de la dernière modification connue d'un enregistrement
 const dateModif = r => r ? (r.modifieLe || r.createdAt || '') : '';
+const LISTES_NOMS = ['lieux', 'medecins', 'fournisseurs', 'molecules'];
 const STORES_DONNEES = [['consultations', 'consultation'], ['receptions', 'reception'], ['sorties', 'sortie']];
 
 function viderStore(store) {
@@ -5059,6 +5060,29 @@ function remplacerBase(contenu) {
   });
 }
 
+// Renommages de liste notés dans un journal et absents de l'autre, du plus ancien au plus récent
+const cleJournal = x => (x.le || '') + '|' + (x.resume || x.type || '');
+function renommagesAAppliquer(journal, journalAutre) {
+  const connus = new Set(journalAutre.map(cleJournal));
+  return journal.filter(j => j.action === 'renommage' && !connus.has(cleJournal(j))).map(j => {
+    const i = String(j.motif || '').indexOf(' → ');   // anciennes entrées : seul le texte « ancien → nouveau » est connu
+    return { le: j.le || '', liste: j.liste || '', ancien: j.ancien ?? (i > 0 ? j.motif.slice(0, i) : ''), nouveau: j.nouveau ?? (i > 0 ? j.motif.slice(i + 3) : '') };
+  }).filter(x => x.ancien && x.nouveau && x.ancien !== x.nouveau).sort((a, b) => a.le.localeCompare(b.le));
+}
+// Applique un renommage à un enregistrement : renvoie une copie corrigée s'il est concerné, sinon l'enregistrement tel quel
+function renommerDansEnregistrement(type, r, x) {
+  const tout = !x.liste; let c = r;
+  const champ = n => { if (r[n] === x.ancien) { if (c === r) c = { ...r }; c[n] = x.nouveau; } };
+  if (tout || x.liste === 'molecules') {
+    if (type !== 'consultation') champ('molecule');
+    else if ((r.prescription || []).some(p => p.molecule === x.ancien)) { c = { ...c, prescription: r.prescription.map(p => p.molecule === x.ancien ? { ...p, molecule: x.nouveau } : p) }; }
+  }
+  if (type === 'consultation' && (tout || x.liste === 'medecins')) { champ('medecin1'); champ('medecin2'); }
+  if (type === 'consultation' && (tout || x.liste === 'lieux')) { champ('lieu'); champ('habitation'); }
+  if (type === 'reception' && (tout || x.liste === 'fournisseurs')) champ('fournisseur');
+  return c;
+}
+
 async function reprendreSauvegarde(input) {
   if (!input.files?.length) return;
   const file = input.files[0]; input.value = '';
@@ -5088,11 +5112,22 @@ async function reprendreSauvegarde(input) {
   const annuleesSauv = new Set(journalSauv.filter(j => j.action === 'annulation' && j.avant?.createdAt).map(j => j.type + '|' + j.avant.createdAt));
   const dateRelais = data.base?.exportedAt || '';   // quand cet appareil a transmis ses données (si connu)
   // Saisies annulées sur CET appareil (selon son journal) : si la sauvegarde les contient encore, elles ne reviennent pas
-  const annuleesIci = new Set((await getParam('journal_corrections', [])).filter(j => j.action === 'annulation' && j.avant?.createdAt).map(j => j.type + '|' + j.avant.createdAt));
+  const journalLocal = await getParam('journal_corrections', []);
+  const annuleesIci = new Set(journalLocal.filter(j => j.action === 'annulation' && j.avant?.createdAt).map(j => j.type + '|' + j.avant.createdAt));
   const donnees = {}; let nbAnnuleesIci = 0;
   for (const [store, type] of STORES_DONNEES) {
     donnees[store] = data[store].filter(r => !annuleesIci.has(type + '|' + r.createdAt));
     nbAnnuleesIci += data[store].length - donnees[store].length;
+  }
+  // Noms corrigés dans une liste (médicament, médecin, lieu, fournisseur) d'un seul côté depuis le dernier échange :
+  // – corrigés ailleurs : à reporter sur les saisies de cet appareil qui seront conservées ;
+  // – corrigés ici : à reporter sur les données de la sauvegarde.
+  const renomAilleurs = renommagesAAppliquer(journalSauv, journalLocal), renomIci = renommagesAAppliquer(journalLocal, journalSauv);
+  let fiches = data.stockConfig;
+  for (const x of renomIci) {
+    for (const [store, type] of STORES_DONNEES) donnees[store] = donnees[store].map(r => renommerDansEnregistrement(type, r, x));
+    if ((!x.liste || x.liste === 'molecules') && fiches.some(f => f.molecule === x.ancien))
+      fiches = fiches.some(f => f.molecule === x.nouveau) ? fiches.filter(f => f.molecule !== x.ancien) : fiches.map(f => f.molecule === x.ancien ? { ...f, molecule: x.nouveau } : f);
   }
 
   // Saisies de cet appareil absentes de la sauvegarde (à conserver) et modifications plus récentes (à garder)
@@ -5105,6 +5140,7 @@ async function reprendreSauvegarde(input) {
       else if (r.modifieLe && r.modifieLe > dateModif(s) && (!dateRelais || r.modifieLe > dateRelais)) modifsGardees.push({ store, type, r });
     }
   }
+  for (const x of [...aGarder, ...modifsGardees]) x.r = renomAilleurs.reduce((r, ren) => renommerDansEnregistrement(x.type, r, ren), x.r);
   const resume = x => x.type === 'consultation' ? `• Consultation ${x.r.nom || ''} ${x.r.prenom || ''} du ${x.r.date ? jourLocal(x.r.date).toLocaleDateString('fr-FR') : '?'}`
     : `• ${x.type === 'reception' ? 'Réception' : 'Sortie'} ${x.r.molecule || ''} × ${x.r.quantite || 0}`;
   const liste = l => l.slice(0, 6).map(resume).join('\n') + (l.length > 6 ? `\n• … et ${l.length - 6} autre(s)` : '');
@@ -5133,7 +5169,7 @@ async function reprendreSauvegarde(input) {
   clearTimeout(_sauvegardeAutoTimer); clearTimeout(_autosaveTimer);
   try {
     // 1. Tout le nouveau contenu est préparé en mémoire, sans rien écrire
-    const contenu = { stock_config: data.stockConfig };
+    const contenu = { stock_config: fiches };
     for (const [store] of STORES_DONNEES) {
       // Données de la sauvegarde (identifiants conservés), avec les corrections locales plus récentes…
       const modifs = new Map(modifsGardees.filter(x => x.store === store).map(x => [x.r.createdAt, x.r]));
@@ -5162,6 +5198,11 @@ async function reprendreSauvegarde(input) {
       if (p.cle === CLE_DOSSIER || p.cle === CLE_COPIE) continue;
       if (p.cle === 'journal_corrections') params.set(p.cle, fusionner(p.cle, p.valeur, 500));
       else if (p.cle === 'inventaires') params.set(p.cle, fusionner(p.cle, p.valeur, 50));
+      else if (LISTES_NOMS.includes(p.cle) && Array.isArray(p.valeur)) {
+        // Listes : les noms corrigés ici restent corrigés
+        const noms = p.valeur.map(v => renomIci.filter(x => !x.liste || x.liste === p.cle).reduce((n, x) => n === x.ancien ? x.nouveau : n, v));
+        params.set(p.cle, [...new Set(noms)]);
+      }
       else params.set(p.cle, p.valeur);
     }
     // La reprise elle-même est tracée dans le journal
@@ -5261,7 +5302,7 @@ function resumeSaisie(type, r) {
   return `${r.molecule || '—'} · ${r.lot || '—'} · ${r.quantite || 0} u. (${r.date ? jourLocal(r.date).toLocaleDateString('fr-FR') : ''})`;
 }
 
-async function journaliser(action, type, avant, apres, motif) {
+async function journaliser(action, type, avant, apres, motif, plus) {
   const journal = await getParam('journal_corrections', []);
   const libelles = { date:'Date', lieu:'Lieu', medecin1:'Médecin 1', medecin2:'Médecin 2', nom:'Nom', prenom:'Prénom',
     age:'Âge', genre:'Genre', habitation:"Lieu d'habitation", allergies:'Allergies', antecedents:'Antécédents',
@@ -5271,7 +5312,7 @@ async function journaliser(action, type, avant, apres, motif) {
     ? Object.keys(libelles).filter(k => JSON.stringify(avant[k] ?? '') !== JSON.stringify(apres[k] ?? '')).map(k => libelles[k])
     : [];
   journal.unshift({ le: new Date().toISOString(), action, type, resume: resumeSaisie(type, avant || apres),
-                    champs, motif: motif || '', avant: avant || null, apres: apres || null });
+                    champs, motif: motif || '', avant: avant || null, apres: apres || null, ...(plus || {}) });
   await setParam('journal_corrections', journal.slice(0, 500));
 }
 
@@ -8817,7 +8858,7 @@ async function sauvegarderListe(cle, containerId, _defautIgnore) {
     const doublon = avant.includes(n) ? `\n\n⚠ « ${n} » existe déjà dans la liste : les deux seront regroupés sous ce nom.` : '';
     if (await confirmer(`${nb} enregistrement(s) utilisent l'ancien nom (consultations, stock, seuils…). Les mettre à jour ?${doublon}`, { titre: `« ${a} » → « ${n} »`, ok: 'Mettre à jour', annuler: 'Garder l\'ancien nom' })) {
       await renommerDansDonnees(cle, a, n);
-      await journaliser('renommage', 'liste', null, null, `${a} → ${n}`);
+      await journaliser('renommage', 'liste', null, null, `${a} → ${n}`, { liste: cle, ancien: a, nouveau: n });
       renomme = true;
     }
   }
