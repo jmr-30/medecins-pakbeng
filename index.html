@@ -2819,32 +2819,13 @@ function ouvrirDB() {
     req.onsuccess = e => {
       db = e.target.result;
 
-      // Vérification défensive : stores manquants ?
+      // Vérification défensive : une partie de la base manque ? On n'efface JAMAIS rien : l'ouverture est refusée
+      // et un message s'affiche (voir init). Les données présentes restent lisibles pour une sauvegarde.
       const storeNames = ['consultations', 'receptions', 'sorties', 'parametres', 'stock_config'];
       const missing    = storeNames.filter(s => !db.objectStoreNames.contains(s));
-
       if (missing.length > 0) {
-        console.warn('[DB] Stores manquants après upgrade :', missing, '— réinitialisation');
-        db.close();
-        const delReq = indexedDB.deleteDatabase(DB_NAME);
-        delReq.onsuccess = () => {
-          localStorage.removeItem('stock_initial_charge');
-          // Réouvrir proprement
-          const req2 = indexedDB.open(DB_NAME, DB_VER);
-          req2.onupgradeneeded = e2 => {
-            const d2 = e2.target.result;
-            storeNames.forEach(s => {
-              if (!d2.objectStoreNames.contains(s)) {
-                if (s === 'parametres')  d2.createObjectStore(s, { keyPath: 'cle' });
-                else if (s === 'stock_config') d2.createObjectStore(s, { keyPath: 'molecule' });
-                else d2.createObjectStore(s, { keyPath: 'id', autoIncrement: true });
-              }
-            });
-          };
-          req2.onsuccess = e2 => { db = e2.target.result; resolve(db); };
-          req2.onerror   = e2 => reject(e2.target.error);
-        };
-        delReq.onerror = () => resolve(db); // continuer quand même
+        console.error('[DB] Parties manquantes dans la base :', missing);
+        reject(new Error('Base incomplète (parties manquantes : ' + missing.join(', ') + ')'));
         return;
       }
 
@@ -8799,7 +8780,27 @@ async function init() {
   setTimeout(() => restaurerBrouillon(), 300);
 }
 
-init();
+// Si la base ne s'ouvre pas, l'application s'arrête sur un message clair. Rien n'est effacé.
+function afficherErreurBase(e) {
+  console.error('[Démarrage]', e);
+  const d = document.createElement('div');
+  d.id = 'erreurBase';
+  d.style.cssText = 'position:fixed;inset:0;z-index:5000;background:#fff8f0;color:#2c1a0e;padding:28px 22px;overflow:auto;font-family:system-ui,sans-serif;line-height:1.6';
+  d.innerHTML = `<h2 style="color:#b71c1c;margin:0 0 12px">⚠ L'application n'a pas pu ouvrir ses données</h2>
+    <p><strong>Rien n'a été effacé.</strong></p>
+    <p>1. Fermez toutes les fenêtres de l'application, puis rouvrez-la.<br>
+       2. Si ce message revient : <strong>n'effacez pas les données du navigateur et ne désinstallez pas l'application</strong>, et prévenez la personne qui s'occupe de la tablette.</p>
+    <p><button id="erreurBaseSauver" style="padding:12px 18px;font-size:1rem;font-weight:700;border-radius:8px;border:2px solid #2e7d32;background:#fff;color:#2e7d32">🗄️ Télécharger une sauvegarde de ce qui est lisible</button></p>
+    <p style="font-size:.8rem;color:#8d6e63">Détail technique : <span id="erreurBaseDetail"></span></p>`;
+  document.body.appendChild(d);
+  document.getElementById('erreurBaseDetail').textContent = (e && (e.message || e.name)) || String(e);
+  document.getElementById('erreurBaseSauver').onclick = async () => {
+    try { telechargerBlob(await genererBlobJSON(), `${prefixeFichier()}_secours_${horodatageFichier()}.json`); }
+    catch(err) { document.getElementById('erreurBaseDetail').textContent += ' — sauvegarde impossible : ' + (err.message || err); }
+  };
+}
+
+init().catch(afficherErreurBase);
 
 </script>
 </body>
