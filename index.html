@@ -3860,7 +3860,8 @@ async function confirmerAvantEnregistrement() {
     if (allergieConcernee(mol, document.getElementById('c_allergies')?.value)) alertesAllergie.push(mol);
     const ag = alerteGrossesse(mol); if (ag) alertesGrossesse.push(`${mol} — ${ag}`);
     presc.push(`${esc(mol)}${qty ? ' ×' + qty + (uniteDe(mol) === 'plaquette' ? ' plaq.' : '') : ''}${lirePoso(i) ? ' <span style="font-weight:500;color:var(--brun-doux)">(' + esc(resumePoso(lirePoso(i))) + ')</span>' : ''}` +
-      (a ? `<br><span style="font-size:.75rem;font-weight:500;color:${a.manque > 0 ? 'var(--orange)' : 'var(--brun-clair)'}">↳ ${esc(resumePrelevements(a.prelevements, a.manque))}</span>` : ''));
+      (a ? `<br><span style="font-size:.75rem;font-weight:500;color:${a.manque > 0 ? 'var(--orange)' : 'var(--brun-clair)'}">↳ ${esc(resumePrelevements(a.prelevements, a.manque))}</span>`
+         : `<br><span style="font-size:.75rem;font-weight:500;color:var(--brun-clair)">↳ sans quantité : noté au dossier, rien n'est retiré du stock</span>`));
   }
 
   const dateStr = jourLocal(date).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
@@ -3915,7 +3916,13 @@ async function enregistrerConsultation() {
   const alloc = await calculerAllocationsPrescription();
   for (let i = 1; i <= 5; i++) {
     const a = alloc[i];
-    if (!a) continue;
+    if (!a) {
+      // Médicament prescrit sans quantité (à acheter ailleurs, quantité inconnue…) : il fait partie du dossier du patient.
+      // La ligne est enregistrée telle quelle ; rien n'est retiré du stock.
+      const molSeule = COMBOS['presc_mol_' + i]?.getValue() || '';
+      if (molSeule) prescription.push({ molecule: molSeule, quantite: 0, lot: '', lots: [], lotForce: '', aRegulariser: 0, ...(lirePoso(i) ? { posologie: lirePoso(i) } : {}) });
+      continue;
+    }
     const lots = a.prelevements.map(p => ({ lot: p.lot, datePeremption: p.datePeremption, quantite: p.quantite }));
     if (a.manque > 0) lots.push({ lot: LOT_A_REGULARISER, datePeremption: '', quantite: a.manque });
     prescription.push({
@@ -5523,10 +5530,10 @@ async function calculerStock(exclureConsultationId) {
     if (!p.molecule) return;
     if (Array.isArray(p.lots) && p.lots.length) {
       p.lots.forEach(a => { lotDe(p.molecule, a.lot, a.datePeremption).delivre += (a.quantite || 0); });
-    } else {
+    } else if (p.quantite > 0) {
       // Anciennes consultations : un seul lot saisi à la main
       lotDe(p.molecule, p.lot || '(sans lot)', '').delivre += (p.quantite || 0);
-    }
+    }   // ligne sans quantité : notée au dossier, sans effet sur le stock
   }));
   sorts.forEach(s => {
     if (!s.molecule) return;
@@ -7477,7 +7484,7 @@ async function mouvementsStock() {
   recs.forEach(r => { if (!r.molecule) return;
     mv.push({ mol: r.molecule, lot: r.lot || libelleLot(r.datePeremption), per: r.datePeremption || '', date: r.date || '',
       type: r.fournisseur === 'Inventaire' ? 'inventaire' : 'entree', q: r.quantite || 0, nc: r.nomCommercial || '', origine: r.fournisseur || '' }); });
-  consults.forEach(c => (c.prescription || []).forEach(p => { if (!p.molecule) return;
+  consults.forEach(c => (c.prescription || []).forEach(p => { if (!p.molecule || !(p.quantite > 0)) return;
     const village = !!c.lieu && !/^Dispensaire/i.test(c.lieu);
     const lots = Array.isArray(p.lots) && p.lots.length ? p.lots : [{ lot: p.lot || '(sans lot)', quantite: p.quantite || 0 }];
     lots.forEach(a => mv.push({ mol: p.molecule, lot: a.lot, per: a.datePeremption || '', date: c.date || '',
