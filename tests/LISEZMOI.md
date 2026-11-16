@@ -66,6 +66,7 @@ Chaque scénario affiche ✓ (réussi) ou ✗ (échec) avec la raison. Compter e
 | 23 | Reprise : listes | village, médecin, hôpital et fournisseur utilisés par une saisie faite entre-temps gardés dans les listes ; mission créée sur la tablette gardée ; nom retiré par la pharmacienne non réintroduit |
 | 24 | Restaurer .json réservé à un appareil vide | appareil neuf : restauration directe ; appareil en service : renvoi vers la reprise, stock initial réimporté par la pharmacienne non compté deux fois |
 | 25 | Plus d'import Excel des données | bouton, fenêtre et code d'import retirés ; export Excel et import du stock initial conservés |
+| 26 | Stock initial chargé une seule fois | premier lancement interrompu : rien d'enregistré, puis chargement complet ; repère gardé dans la base : pas de second chargement si les préférences du navigateur sont perdues |
 
 Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 16 dans un vrai navigateur (Chromium).
 

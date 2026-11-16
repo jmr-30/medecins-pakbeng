@@ -32,6 +32,7 @@ const ATTENDUS = {
   '23_reprise_listes': ['Listes après reprise : {"villageUtilise":true,"villageAncien":true,"villageNonUtilise":false,"medecinUtilise":true,"medecinRetire":false,"hopital":true,"fournisseur":true,"medicamentPharmacienne":true,"mission":"Mission 8, Mission 9, Mission 10","dispensairesEnTete":true}'],
   '24_restaurer_appareil_vide': ['Appareil neuf considéré vide : true', 'Sur appareil vide : Restaurer cette sauvegarde ?', 'Restauré : 32 consultations | vide ensuite : false', 'Sur appareil non vide : Cet appareil contient déjà des données | boutons : Reprendre cette sauvegarde / Abandonner', 'Après « Abandonner » : 200 (Exp. 06/2028 : 200)', 'Puis : Reprendre les données de cette sauvegarde ?', 'Après reprise : 180 (Exp. 06/2028 : 180)'],
   '25_plus_d_import_excel_des_donnees': ['Import Excel des données : {"bouton":false,"champ":false,"fenetre":false,"fonction":"undefined"}', 'Conservés : export Excel true | feuilles : Consultations, Receptions, Sorties | import du stock initial : true'],
+  '26_stock_initial_une_seule_fois': ['Lancement interrompu : {"receptions":0,"repereBase":false}', 'Lancement suivant : {"receptions":264,"repereBase":true}', 'Ancien repère perdu : {"receptions":264,"repereBase":true}', 'Appareil déjà en service : {"receptions":264,"repereBase":true}', 'Réceptions supprimées : {"receptions":0,"repereBase":true}'],
 };
 
 const filtres = process.argv.slice(2);
