@@ -2024,8 +2024,8 @@ button[onclick^="supprimerItem"], .btn-sortir-lot, #missionBadge button {
           <input type="text" id="s_lot" placeholder="Optionnel">
         </div>
         <div class="field">
-          <div class="field-label">Date de péremption</div>
-          <input type="date" id="s_perdate">
+          <div class="field-label">Lot à sortir <span class="req">*</span></div>
+          <select id="s_lotsel" disabled><option value="">— Choisir d'abord le médicament —</option></select>
         </div>
       </div>
       <div class="field-row single">
@@ -2948,7 +2948,7 @@ function goScreen(name) {
     if (name === 'inventaire')   chargerInventaire();
     if (name === 'consommables') chargerConsommables();
     if (name === 'reception')    chargerMouvements('receptions');
-    if (name === 'sortie')       chargerMouvements('sorties');
+    if (name === 'sortie')     { chargerMouvements('sorties'); majLotsSortie(); }
   }
   window.scrollTo(0, 0);
 }
@@ -3190,7 +3190,7 @@ async function initFormsListes() {
   // Molécules — charger depuis paramètres (liste éditable)
   const molecules = await getParam('molecules', REF.molecules);
   COMBOS.r_mol = new Combo('r_mol', molecules, { placeholder: 'Taper le nom…', alias: princepsDe });
-  COMBOS.s_mol = new Combo('s_mol', molecules, { placeholder: 'Taper le nom…', alias: princepsDe });
+  COMBOS.s_mol = new Combo('s_mol', molecules, { placeholder: 'Taper le nom…', alias: princepsDe, onChange: () => majLotsSortie() });
   // Fournisseurs – select simple (liste courte)
   remplirSelect('r_fourn', fournisseurs);
 }
@@ -6038,27 +6038,58 @@ function effacerReception() {
 // ═══════════════════════════════════════════════════════════════════
 // ENREGISTREMENT SORTIE
 // ═══════════════════════════════════════════════════════════════════
-function enregistrerSortie() {
+// Une sortie se fait toujours sur un lot EXISTANT du médicament (choisi dans la liste), sans dépasser ce qu'il contient.
+// Sinon elle créerait un lot fantôme en négatif, et le vrai lot resterait plein à l'écran.
+function lotsSortables(lots) {
+  return Object.values(lots || {}).filter(l => l.lot !== LOT_A_REGULARISER && l.restant > 0)
+    .sort((a, b) => String(a.datePeremption || '9999').localeCompare(String(b.datePeremption || '9999')));
+}
+async function majLotsSortie() {
+  const sel = document.getElementById('s_lotsel'); if (!sel) return;
+  const mol = COMBOS.s_mol?.getValue() || '';
+  const garde = sel.value;
+  if (!mol) { sel.innerHTML = '<option value="">— Choisir d\'abord le médicament —</option>'; sel.disabled = true; return; }
+  const lots = lotsSortables((await calculerStock())[mol]);
+  if ((COMBOS.s_mol?.getValue() || '') !== mol) return;   // le médicament a changé entre-temps
+  sel.innerHTML = lots.length ? (lots.length > 1 ? '<option value="">— Choisir le lot —</option>' : '') : '<option value="">Aucun stock pour ce médicament</option>';
+  lots.forEach(l => {
+    const o = document.createElement('option');
+    o.value = l.lot;
+    o.textContent = `${l.lot} · ${l.restant} ${libUnite(mol, l.restant)}${l.statut === 'perime' ? ' — périmé' : ''}`;
+    sel.appendChild(o);
+  });
+  sel.disabled = !lots.length;
+  if (lots.some(l => l.lot === garde)) sel.value = garde;
+}
+
+async function enregistrerSortie() {
   const date   = document.getElementById('s_date').value;
   const motif  = document.getElementById('s_motif').value;
   const mol    = COMBOS.s_mol?.getValue() || document.getElementById('s_mol').value;
   const qty    = parseInt(document.getElementById('s_qty').value);
+  const cleLot = document.getElementById('s_lotsel').value;
 
   if (!date)  { toast('❌ Date requise', 'error'); return; }
   if (!motif) { toast('❌ Motif requis', 'error'); return; }
   if (!mol)   { toast('❌ Molécule requise', 'error'); return; }
+  const lots = lotsSortables((await calculerStock())[mol]);   // recalcul au dernier moment
+  if (!lots.length) { toast('❌ Aucun stock enregistré pour ce médicament : rien à sortir', 'error'); return; }
+  const lot = lots.find(l => l.lot === cleLot);
+  if (!lot)   { toast('❌ Choisir le lot à sortir', 'error'); majLotsSortie(); return; }
   if (!qty || qty <= 0) { toast('❌ Quantité invalide', 'error'); return; }
+  if (qty > lot.restant) { toast(`❌ Ce lot ne contient que ${lot.restant} ${libUnite(mol, lot.restant)} : quantité trop grande`, 'error'); return; }
 
-  const sPer = document.getElementById('s_perdate').value;
   const sNum = document.getElementById('s_lot').value.trim();
-  dbAdd('sorties', { date, motif, molecule: mol, lot: sPer ? libelleLot(sPer) : sNum, numLot: sNum, datePeremption: sPer, quantite: qty, createdAt: new Date().toISOString() })
-    .then(() => { toast('✅ Sortie enregistrée', 'success'); effacerSortie(); chargerMouvements('sorties'); })
-    .catch(() => toast('❌ Erreur d\'enregistrement', 'error'));
+  try {
+    await dbAdd('sorties', { date, motif, molecule: mol, lot: lot.lot, numLot: sNum, datePeremption: lot.datePeremption || '', quantite: qty, createdAt: new Date().toISOString() });
+    toast('✅ Sortie enregistrée', 'success'); effacerSortie(); chargerMouvements('sorties');
+  } catch(e) { toast('❌ Erreur d\'enregistrement', 'error'); }
 }
 
 function effacerSortie() {
-  ['s_motif','s_lot','s_perdate','s_qty'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  ['s_motif','s_lot','s_qty'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   COMBOS.s_mol?.clear();
+  majLotsSortie();
   document.getElementById('s_date').value = dateAujourdhui();
 }
 
