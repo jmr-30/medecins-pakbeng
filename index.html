@@ -3761,6 +3761,8 @@ function majPatientIdBadge() {
 // ═══════════════════════════════════════════════════════════════════
 // AUTOSAVE BROUILLON (localStorage)
 // ═══════════════════════════════════════════════════════════════════
+// Seuils au-delà desquels une valeur est jugée inhabituelle (confirmation demandée, jamais de blocage)
+const AGE_INHABITUEL = 110, QTE_INHABITUELLE = 200, QTE_INHABITUELLE_PLAQUETTES = 12, RECEPTION_INHABITUELLE = 10000;
 const AUTOSAVE_KEY = 'brouillon_consultation';
 let _autosaveTimer = null;
 
@@ -3891,6 +3893,26 @@ async function confirmerAvantEnregistrement() {
       alerte = `La date saisie (${lisible(date)}) est en dehors de la mission en cours (${mis.numero}, du ${lisible(mis.debut)} au ${lisible(mis.fin)}).`;
     if (alerte && !(await confirmer(alerte + '\n\nEst-ce bien la bonne date ?', { titre: '⚠ Vérifier la date', ok: 'Oui, garder cette date', annuler: 'Corriger' }))) return;
   }
+
+  // Valeurs impossibles : refusées. Valeurs inhabituelles (faute de frappe probable) : confirmation demandée.
+  const inhabituel = [];
+  if (age !== '') {
+    const a = Number(String(age).replace(',', '.'));
+    if (!Number.isInteger(a) || a < 0) { toast('❌ Âge invalide : nombre entier d\'années attendu', 'error'); return; }
+    if (a > AGE_INHABITUEL) inhabituel.push(`Âge : ${a} ans`);
+  }
+  for (let i = 1; i <= 5; i++) {
+    const mol = COMBOS['presc_mol_' + i]?.getValue() || '';
+    const brut = String(document.getElementById('presc_qty_' + i)?.value || '').trim();
+    if (!mol || brut === '') continue;
+    const q = Number(brut.replace(',', '.'));
+    if (!Number.isInteger(q) || q < 0) { toast(`❌ Quantité invalide pour ${mol} : nombre entier attendu`, 'error'); return; }
+    if (q > (uniteDe(mol) === 'plaquette' ? QTE_INHABITUELLE_PLAQUETTES : QTE_INHABITUELLE)) inhabituel.push(`Quantité : ${q} ${libUnite(mol, q)} de ${mol}`);
+  }
+  const k = lireConstantes();
+  CONSTANTES.forEach(c => { if (k[c.k] != null && (k[c.k] < c.min || k[c.k] > c.max)) inhabituel.push(`${c.lib} : ${k[c.k]} ${c.u} (valeurs habituelles : ${c.min} à ${c.max})`); });
+  if (inhabituel.length && !(await confirmer(inhabituel.map(x => '• ' + x).join('\n') + '\n\nEst-ce bien ce que vous voulez enregistrer ?',
+      { titre: '⚠ Valeurs inhabituelles', ok: 'Oui, enregistrer', annuler: 'Corriger' }))) return;
 
   const pathos = [];
   for (let i = 1; i <= 4; i++) {
@@ -6161,6 +6183,13 @@ async function _enregistrerReception() {
   if (!mol)   { toast('❌ Molécule requise', 'error'); return; }
   if (!perdate) { toast('❌ Date de péremption requise', 'error'); return; }
   if (!qty || qty <= 0) { toast('❌ Quantité invalide', 'error'); return; }
+  const lisible = d => jourLocal(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const inhabituel = [];
+  if (date > dateAujourdhui()) inhabituel.push(`Date de réception dans le futur : ${lisible(date)}`);
+  if (perdate < dateAujourdhui()) inhabituel.push(`Médicament DÉJÀ PÉRIMÉ : péremption le ${lisible(perdate)}`);
+  if (qty > RECEPTION_INHABITUELLE) inhabituel.push(`Quantité : ${qty} ${libUnite(mol, qty)}`);
+  if (inhabituel.length && !(await confirmer(inhabituel.map(x => '• ' + x).join('\n') + '\n\nEst-ce bien ce que vous voulez enregistrer ?',
+      { titre: '⚠ Valeurs inhabituelles', ok: 'Oui, enregistrer', annuler: 'Corriger' }))) return;
 
   try {
     await dbAdd('receptions', { date, fournisseur: fourn, molecule: mol, lot: libelleLot(perdate), numLot: lot, datePeremption: perdate, quantite: qty, createdAt: new Date().toISOString() });
@@ -6221,6 +6250,8 @@ async function _enregistrerSortie() {
   if (!lot)   { toast('❌ Choisir le lot à sortir', 'error'); majLotsSortie(); return; }
   if (!qty || qty <= 0) { toast('❌ Quantité invalide', 'error'); return; }
   if (qty > lot.restant) { toast(`❌ Ce lot ne contient que ${lot.restant} ${libUnite(mol, lot.restant)} : quantité trop grande`, 'error'); return; }
+  if (date > dateAujourdhui() && !(await confirmer(`• Date de sortie dans le futur : ${jourLocal(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}\n\nEst-ce bien ce que vous voulez enregistrer ?`,
+      { titre: '⚠ Valeurs inhabituelles', ok: 'Oui, enregistrer', annuler: 'Corriger' }))) return;
 
   const sNum = document.getElementById('s_lot').value.trim();
   try {
