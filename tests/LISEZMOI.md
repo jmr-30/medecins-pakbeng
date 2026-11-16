@@ -52,7 +52,7 @@ Chaque scénario affiche ✓ (réussi) ou ✗ (échec) avec la raison. Compter e
 | 08 | Suivi, grossesse, fiche patient | patients à revoir, orientation, alertes grossesse, médicaments habituels, rapport, recherche par patient, fiche complète |
 | 09 | Posologie et consigne | calcul des quantités, fractions, reprise de prescription, consigne et « Montrer au patient » |
 | 10 | Fenêtres de dialogue | fenêtres intégrées, Échap, motif d'annulation, brouillon (aucune boîte du navigateur) |
-| 11 | Dates, sauvegarde, restauration | heure du Laos et d'ailleurs, import Excel, sauvegarde automatique, sauvegarde ancienne, détection de perte |
+| 11 | Dates, sauvegarde, restauration | heure du Laos et d'ailleurs, sauvegarde automatique, sauvegarde ancienne, détection de perte |
 | 12 | Données de démonstration | import complet du fichier de démo |
 | 14 | Application installable | (dossier `site/`) installation, fonctionnement hors ligne, Excel hors ligne, partage de la sauvegarde, arrivée d'une nouvelle version |
 | 15 | Passage de relais | rôle de l'appareil demandé au premier lancement, noms de fichiers `Pakbeng_tablette_…` / `Pakbeng_pharmacie_…`, reprise tablette → pharmacienne → tablette : annulation et correction de la pharmacienne reportées, consultation saisie entre-temps conservée, copie de sécurité |
@@ -65,6 +65,7 @@ Chaque scénario affiche ✓ (réussi) ou ✗ (échec) avec la raison. Compter e
 | 22 | Reprise : noms corrigés | médicament renommé par la pharmacienne reporté sur la consultation saisie entre-temps (stock sous un seul nom) ; médecin renommé sur la tablette reporté sur les données reprises ; journal au format actuel et ancien |
 | 23 | Reprise : listes | village, médecin, hôpital et fournisseur utilisés par une saisie faite entre-temps gardés dans les listes ; mission créée sur la tablette gardée ; nom retiré par la pharmacienne non réintroduit |
 | 24 | Restaurer .json réservé à un appareil vide | appareil neuf : restauration directe ; appareil en service : renvoi vers la reprise, stock initial réimporté par la pharmacienne non compté deux fois |
+| 25 | Plus d'import Excel des données | bouton, fenêtre et code d'import retirés ; export Excel et import du stock initial conservés |
 
 Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 16 dans un vrai navigateur (Chromium).
 

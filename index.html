@@ -1584,10 +1584,6 @@ button[onclick^="supprimerItem"], .btn-sortir-lot, #missionBadge button {
     <button class="btn btn-export" style="flex:1;min-width:160px" onclick="exporterExcel()">
       📥 Télécharger (.xlsx)
     </button>
-    <button class="btn btn-secondary" style="flex:1;min-width:160px" onclick="document.getElementById('importFile').click()">
-      📂 Importer .xlsx
-    </button>
-    <input type="file" id="importFile" accept=".xlsx" style="display:none" onchange="importerExcel(this)">
   </div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
     <button class="btn btn-secondary" style="flex:1;min-width:160px;border-color:var(--vert);color:var(--vert)" onclick="exporterJSON()">
@@ -1630,35 +1626,6 @@ button[onclick^="supprimerItem"], .btn-sortir-lot, #missionBadge button {
       <button class="btn btn-secondary" style="flex:1" onclick="fermerConfirmModal()">✏️ Corriger</button>
       <button class="btn btn-secondary" style="flex:1" onclick="afficherConsignePatient();montrerConsigne(0)">📱 Consigne</button>
       <button class="btn btn-primary"   style="flex:1" onclick="enregistrerConsultation()">✅ Confirmer</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── MODAL IMPORT ─────────────────────────────────────────────── -->
-<div id="importModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:var(--blanc);border-radius:var(--radius-lg);max-width:460px;width:100%;box-shadow:var(--ombre-lg);overflow:hidden;">
-    <div style="background:var(--bleu);color:var(--blanc);padding:16px 20px;font-weight:700;font-size:1rem;">
-      📂 Importer une sauvegarde
-    </div>
-    <div style="padding:20px;">
-      <div id="importResume" style="background:var(--sable-fonce);border-radius:8px;padding:14px;margin-bottom:16px;font-size:.88rem;line-height:1.7;"></div>
-      <div style="font-size:.82rem;color:var(--texte-doux);margin-bottom:16px;" id="importModeDesc"></div>
-      <div style="display:flex;gap:10px;margin-bottom:10px;">
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:2px solid var(--sable-fonce);border-radius:8px;cursor:pointer;font-size:.85rem;" id="labelFusion">
-          <input type="radio" name="importMode" value="fusion" checked onchange="majImportMode(this.value)">
-          <div><strong>Fusionner</strong><br><span style="color:var(--texte-doux);font-size:.78rem">Ajoute les nouvelles entrées sans supprimer les existantes</span></div>
-        </label>
-      </div>
-      <div style="display:flex;gap:10px;">
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:2px solid var(--sable-fonce);border-radius:8px;cursor:pointer;font-size:.85rem;" id="labelEcraser">
-          <input type="radio" name="importMode" value="ecraser" onchange="majImportMode(this.value)">
-          <div><strong>Remplacer</strong><br><span style="color:var(--rouge);font-size:.78rem">⚠ Efface toutes les données locales et les remplace</span></div>
-        </label>
-      </div>
-    </div>
-    <div style="padding:0 20px 20px;display:flex;gap:10px;">
-      <button class="btn btn-secondary" style="flex:1" onclick="fermerImportModal()">Annuler</button>
-      <button class="btn btn-export" style="flex:1" id="btnConfirmImport" onclick="confirmerImport()">✅ Confirmer l'import</button>
     </div>
   </div>
 </div>
@@ -2787,7 +2754,6 @@ button[onclick^="supprimerItem"], .btn-sortir-lot, #missionBadge button {
  *     – BIBLIOTHÈQUE EXCEL — chargée depuis internet uniquement quand on en a besoin
  *     – EXPORT LOCAL (.xlsx téléchargement classique)
  *     – EXPORT GOOGLE DRIVE (via File System Access API)
- *     – IMPORT EXCEL
  *     – RAPPEL EXPORT
  *  6. PARAMÈTRES
  *     – PARAMÈTRES – listes dynamiques
@@ -4991,13 +4957,6 @@ function demanderRoleSiBesoin() { if (!roleAppareil()) choisirRoleAppareil(true)
 const dateModif = r => r ? (r.modifieLe || r.createdAt || '') : '';
 const LISTES_NOMS = ['lieux', 'medecins', 'fournisseurs', 'molecules'];
 const STORES_DONNEES = [['consultations', 'consultation'], ['receptions', 'reception'], ['sorties', 'sortie']];
-
-function viderStore(store) {
-  return new Promise((res, rej) => {
-    const tx = db.transaction(store, 'readwrite'); tx.objectStore(store).clear();
-    tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
-  });
-}
 
 // Contrôle complet d'un fichier de sauvegarde AVANT toute écriture.
 // Renvoie la liste des problèmes trouvés (liste vide = fichier utilisable).
@@ -8471,262 +8430,6 @@ function majBoutonDrive() {
     if (info) info.textContent = 'Non configuré — choisissez un dossier Drive ci-dessous';
     if (btnChoisir) btnChoisir.textContent = '📂 Choisir le dossier Drive';
   }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// IMPORT EXCEL
-// ═══════════════════════════════════════════════════════════════════
-let _importData = null; // données en attente de confirmation
-
-async function importerExcel(input) {
-  if (!input.files?.length) return;
-  const file = input.files[0];
-  input.value = ''; // reset pour permettre re-sélection du même fichier
-
-  // Charger SheetJS si besoin
-  if (!(await chargerXLSX())) { toast(MSG_SANS_RESEAU, 'error'); return; }
-
-  try {
-    const buf  = await file.arrayBuffer();
-    const wb   = XLSX.read(buf, { type: 'array', cellDates: true });
-
-    // Lire les 3 feuilles attendues
-    const consultations = lireFeuilleXLSX(wb, 'Consultations');
-    const receptions    = lireFeuilleXLSX(wb, 'Receptions');
-    const sorties       = lireFeuilleXLSX(wb, 'Sorties');
-
-    if (!consultations && !receptions && !sorties) {
-      toast('❌ Fichier invalide — onglets introuvables', 'error');
-      return;
-    }
-
-    // Convertir les lignes en objets base de données
-    const cons = (consultations || []).map(rowToConsultation).filter(Boolean);
-    const recs = (receptions    || []).map(rowToReception).filter(Boolean);
-    const sors = (sorties        || []).map(rowToSortie).filter(Boolean);
-
-    // Stocker pour confirmation
-    _importData = { cons, recs, sors };
-
-    // Compter les existants pour le résumé
-    const [exCons, exRecs, exSors] = await Promise.all([
-      dbGetAll('consultations'), dbGetAll('receptions'), dbGetAll('sorties')
-    ]);
-
-    // Calculer nouveaux (fusion) = entrées du fichier dont createdAt n'existe pas localement
-    const exDates = {
-      cons: new Set(exCons.map(r => r.createdAt)),
-      recs: new Set(exRecs.map(r => r.createdAt)),
-      sors: new Set(exSors.map(r => r.createdAt)),
-    };
-    const nouveaux = {
-      cons: cons.filter(r => !exDates.cons.has(r.createdAt)).length,
-      recs: recs.filter(r => !exDates.recs.has(r.createdAt)).length,
-      sors: sors.filter(r => !exDates.sors.has(r.createdAt)).length,
-    };
-
-    // Afficher le résumé dans le modal
-    document.getElementById('importResume').innerHTML = `
-      <strong>Fichier :</strong> ${esc(file.name)}<br>
-      <strong>Contenu du fichier :</strong>
-      ${cons.length} consultation(s) · ${recs.length} réception(s) · ${sors.length} sortie(s)<br>
-      <strong>Actuellement sur cet appareil :</strong>
-      ${exCons.length} consultation(s) · ${exRecs.length} réception(s) · ${exSors.length} sortie(s)<br>
-      <strong>Nouvelles entrées à ajouter (fusion) :</strong>
-      <span style="color:var(--vert);font-weight:700">+${nouveaux.cons} consultation(s) · +${nouveaux.recs} réception(s) · +${nouveaux.sors} sortie(s)</span>
-    `;
-
-    majImportMode('fusion');
-    const modal = document.getElementById('importModal');
-    modal.style.display = 'flex';
-
-  } catch(e) {
-    console.error(e);
-    toast('❌ Erreur lecture du fichier', 'error');
-  }
-}
-
-function lireFeuilleXLSX(wb, nom) {
-  if (!wb.SheetNames.includes(nom)) return null;
-  return XLSX.utils.sheet_to_json(wb.Sheets[nom], { defval: '' });
-}
-
-// Relit « 1-0-1-0 · 10 j · au repas » (export Excel) en posologie
-function lirePosoTexte(t) {
-  if (!t) return null;
-  const p = {};
-  String(t).split(' · ').forEach(part => {
-    const m = /^([\d½¼¾,.]+)-([\d½¼¾,.]+)-([\d½¼¾,.]+)-([\d½¼¾,.]+)$/.exec(part.trim());
-    const j = /^(\d+) j$/.exec(part.trim());
-    if (m) POSO_CHAMPS.forEach(([, nom], k) => { const n = lireNbPoso(m[k + 1]); if (n) p[nom] = n; });
-    else if (j) p.jours = +j[1];
-    else if (part.trim()) p.consigne = (p.consigne ? p.consigne + ' · ' : '') + part.trim();
-  });
-  return Object.keys(p).length ? p : null;
-}
-
-function rowToConsultation(row) {
-  if (!row['Date'] && !row['Nom']) return null;
-  const pathologies = [];
-  for (let i = 1; i <= 4; i++) {
-    const patho = row[`Pathologie ${i}`] || '';
-    const spec  = row[`Spécialité ${i}`] || '';
-    if (patho) pathologies.push({ specialite: spec, pathologie: patho });
-  }
-  const prescription = [];
-  for (let i = 1; i <= 5; i++) {
-    const mol = row[`Molécule ${i}`] || '';
-    const lot = row[`Lot ${i}`]      || '';
-    const qty = row[`Qté ${i}`]      || 0;
-    if (!mol) continue;
-    // Retrouver le détail des lots à partir du résumé « Exp. 04/2027 (90) + Exp. 08/2027 (5) »
-    const lots = String(lot).split(' + ').map(s => /^(.+) \((\d+)\)$/.exec(s.trim())).filter(Boolean)
-      .map(m => ({ lot: m[1], datePeremption: '', quantite: parseInt(m[2]) }));
-    const poso = lirePosoTexte(row[`Posologie ${i}`]);
-    prescription.push({ molecule: mol, lot, quantite: parseInt(qty) || 0, ...(lots.length ? { lots } : {}), ...(poso ? { posologie: poso } : {}) });
-  }
-  return {
-    date:      formatDateImport(row['Date']),
-    lieu:      row['Lieu']      || '',
-    medecin1:  row['Médecin 1'] || '',
-    medecin2:  row['Médecin 2'] || '',
-    nom:       row['Nom']       || '',
-    prenom:    row['Prénom']    || '',
-    age:       row['Âge'] ? parseInt(row['Âge']) : null,
-    tranche:   row['Tranche']   || '',
-    genre:     row['Genre']     || '',
-    habitation:row["Lieu d'habitation"] || '',
-    allergies: row['Allergies'] || '', antecedents: row['Antécédents'] || '', traitements: row['Traitements au long cours'] || '',
-    constantes: Object.fromEntries([['poids','Poids (kg)'],['taille','Taille (cm)'],['tas','TA systolique'],['tad','TA diastolique'],['pouls','Pouls'],
-      ['temp','Température (°C)'],['spo2','SpO2 (%)'],['glyc','Glycémie (g/L)']].map(([k, col]) => [k, parseFloat(String(row[col] ?? '').replace(',', '.'))]).filter(([, v]) => !isNaN(v))),
-    examen:    row['Examen clinique et complémentaire'] || '',
-    ...(row['Grossesse'] ? { grossesse: { statut: row['Grossesse'], ...(parseInt(row['Grossesse (SA)']) ? { semaines: parseInt(row['Grossesse (SA)']) } : {}) } } : {}),
-    ...(row['À revoir (délai)'] ? { aRevoir: { delai: row['À revoir (délai)'], motif: row['À revoir (motif)'] || '', echeance: row['À revoir (échéance)'] ? formatDateImport(row['À revoir (échéance)']) : '',
-        ...(row['À revoir (retiré)'] === 'Oui' ? { fait: true } : {}) } } : {}),
-    ...(row['Orientation (hôpital)'] || row['Orientation (motif)'] ? { orientation: { hopital: row['Orientation (hôpital)'] || '', motif: row['Orientation (motif)'] || '', accord: row['Orientation (accord famille)'] || '' } } : {}),
-    notes:     row['Notes']     || '',
-    patientId: row['ID Patient'] || '',
-    mission:   row['Mission']   || '',
-    pathologies,
-    prescription,
-    createdAt: row['createdAt'] || new Date().toISOString(),
-  };
-}
-
-function rowToReception(row) {
-  if (!row['Molécule']) return null;
-  return {
-    date:           formatDateImport(row['Date']),
-    fournisseur:    row['Fournisseur']      || '',
-    molecule:       row['Molécule']         || '',
-    lot:            row['N° lot']           || '',
-    datePeremption: formatDateImport(row['Date péremption']),
-    quantite:       parseInt(row['Quantité']) || 0,
-    createdAt:      row['createdAt'] || new Date().toISOString(),
-  };
-}
-
-function rowToSortie(row) {
-  if (!row['Molécule']) return null;
-  return {
-    date:           formatDateImport(row['Date']),
-    motif:          row['Motif']            || '',
-    molecule:       row['Molécule']         || '',
-    lot:            row['N° lot']           || '',
-    datePeremption: formatDateImport(row['Date péremption']),
-    quantite:       parseInt(row['Quantité']) || 0,
-    createdAt:      row['createdAt'] || new Date().toISOString(),
-  };
-}
-
-function formatDateImport(val) {
-  if (!val) return '';
-  // Date lue dans Excel : on prend le jour le plus proche (évite le décalage d'un jour dû au fuseau horaire)
-  if (val instanceof Date) return isNaN(val) ? '' : dateLocaleISO(new Date(val.getTime() + 12 * 3600 * 1000));
-  // Numéro de jour Excel (jours depuis le 30/12/1899)
-  if (typeof val === 'number' && val > 20000 && val < 80000) {
-    const d = new Date(Date.UTC(1899, 11, 30) + Math.round(val) * 86400000);
-    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-  }
-  if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}/)) return val.split('T')[0];
-  // Format JJ/MM/AAAA
-  if (typeof val === 'string' && val.includes('/')) {
-    const [d, m, y] = val.split('/');
-    return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
-  }
-  return String(val);
-}
-
-function majImportMode(mode) {
-  const desc = document.getElementById('importModeDesc');
-  if (mode === 'fusion') {
-    desc.innerHTML = '✅ <strong>Fusion</strong> : les entrées déjà présentes sur cet appareil sont conservées. Seules les entrées absentes du fichier importé sont ajoutées. Recommandé dans tous les cas.';
-  } else {
-    desc.innerHTML = '⚠️ <strong>Remplacement</strong> : toutes les données locales seront <strong style="color:var(--rouge)">définitivement supprimées</strong> et remplacées par le contenu du fichier. À utiliser uniquement pour restaurer sur une nouvelle tablette.';
-  }
-  // Mettre en évidence la sélection active
-  document.getElementById('labelFusion').style.borderColor  = mode === 'fusion'  ? 'var(--brique)' : 'var(--sable-fonce)';
-  document.getElementById('labelEcraser').style.borderColor = mode === 'ecraser' ? 'var(--rouge)'    : 'var(--sable-fonce)';
-}
-
-function fermerImportModal() {
-  document.getElementById('importModal').style.display = 'none';
-  _importData = null;
-}
-
-async function confirmerImport() {
-  if (!_importData) return;
-  const mode = document.querySelector('input[name="importMode"]:checked').value;
-  const { cons, recs, sors } = _importData;
-
-  const btn = document.getElementById('btnConfirmImport');
-  btn.textContent = '⏳ Import en cours…';
-  btn.disabled = true;
-
-  try {
-    if (mode === 'ecraser') {
-      // Vider puis remplir
-      await viderStore('consultations');
-      await viderStore('receptions');
-      await viderStore('sorties');
-      for (const r of cons) { delete r.id; await dbAdd('consultations', r); }
-      for (const r of recs) { delete r.id; await dbAdd('receptions',    r); }
-      for (const r of sors) { delete r.id; await dbAdd('sorties',        r); }
-    } else {
-      // Fusion : ajouter seulement les absents (basé sur createdAt)
-      const [exCons, exRecs, exSors] = await Promise.all([
-        dbGetAll('consultations'), dbGetAll('receptions'), dbGetAll('sorties')
-      ]);
-      const exDates = {
-        cons: new Set(exCons.map(r => r.createdAt)),
-        recs: new Set(exRecs.map(r => r.createdAt)),
-        sors: new Set(exSors.map(r => r.createdAt)),
-      };
-      for (const r of cons) { if (!exDates.cons.has(r.createdAt)) { delete r.id; await dbAdd('consultations', r); } }
-      for (const r of recs) { if (!exDates.recs.has(r.createdAt)) { delete r.id; await dbAdd('receptions',    r); } }
-      for (const r of sors) { if (!exDates.sors.has(r.createdAt)) { delete r.id; await dbAdd('sorties',        r); } }
-    }
-
-    fermerImportModal();
-    toast(`✅ Import réussi — données ${mode === 'ecraser' ? 'remplacées' : 'fusionnées'}`, 'success');
-    try { await chargerStock(); } catch(e) {}
-
-  } catch(e) {
-    console.error(e);
-    toast('❌ Erreur lors de l\'import', 'error');
-  } finally {
-    btn.textContent = '✅ Confirmer l\'import';
-    btn.disabled = false;
-  }
-}
-
-function viderStore(store) {
-  return new Promise((res, rej) => {
-    const tx  = db.transaction(store, 'readwrite');
-    const req = tx.objectStore(store).clear();
-    req.onsuccess = () => res();
-    req.onerror   = () => rej(req.error);
-  });
 }
 
 // ═══════════════════════════════════════════════════════════════════

@@ -47,9 +47,6 @@ const set = (id, v) => { const el = d.getElementById(id); el.value = v; ev(el); 
   console.log('Historique :', d.getElementById('historiqueContenu').textContent.replace(/\s+/g, ' ').match(/AMOX[^·]*/)?.[0]);
   w.eval('reprendrePrescription()'); await wait(700);
   console.log('Repris :', w.eval("COMBOS.presc_mol_1.getValue()"), d.getElementById('presc_qty_1').value, d.getElementById('presc_pm_1').value, d.getElementById('presc_ps_1').value, d.getElementById('presc_pj_1').value, d.getElementById('presc_pcons_1').value, '| L2', d.getElementById('presc_qty_2').value);
-  // export / réimport
-  const t = w.eval("lirePosoTexte('1-0-1-0 · 10 j · au repas')");
-  console.log('Relecture texte :', JSON.stringify(t));
   set('c_nom', 'VONG'); set('c_prenom', 'Naly'); await wait(1200);
   console.log('Autre patient — bouton masqué :', rp.style.display);
   // modification

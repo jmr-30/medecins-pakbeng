@@ -24,7 +24,7 @@ async function page(b, tz, heure) {
       const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'C');
       const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
       const row = XLSX.utils.sheet_to_json(XLSX.read(buf, { type: 'array', cellDates: true }).Sheets.C)[0];
-      return { auj: dateAujourdhui(), finMission: missionEstTerminee({ fin: dateAujourdhui() }), imp: formatDateImport(row['Date']), impSerial: formatDateImport(46310),
+      return { auj: dateAujourdhui(), finMission: missionEstTerminee({ fin: dateAujourdhui() }),
         aff: resumeSaisie('consultation', { nom: 'X', date: '2026-10-15' }), per: formatDateAffichage('2027-04-01'), fichier: nomFichierJSON() };
     });
     console.log(tz, JSON.stringify(r));
