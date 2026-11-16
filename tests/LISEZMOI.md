@@ -58,6 +58,7 @@ Chaque scénario affiche ✓ (réussi) ou ✗ (échec) avec la raison. Compter e
 | 15 | Passage de relais | rôle de l'appareil demandé au premier lancement, noms de fichiers `Pakbeng_tablette_…` / `Pakbeng_pharmacie_…`, reprise tablette → pharmacienne → tablette : annulation et correction de la pharmacienne reportées, consultation saisie entre-temps conservée, copie de sécurité |
 | 16 | Suggestions de patients | liste des patients déjà vus dès 2 lettres, variantes de transcription (« Kampou » → KHAMPHOUI), prénom tapé dans le champ nom, choix et annulation, recherche tolérante |
 | 13 | Réinitialisation | sauvegarde préalable, mot de confirmation, effacement, restauration enchaînée, stock initial non doublé |
+| 18 | Reprise d'un fichier invalide | fichier tronqué, mal formé ou d'une ancienne version refusé avant toute écriture ; panne en cours d'écriture : rien n'est modifié (tout ou rien) |
 
 Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 16 dans un vrai navigateur (Chromium).
 

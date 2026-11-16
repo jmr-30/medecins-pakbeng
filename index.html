@@ -4997,23 +4997,88 @@ function viderStore(store) {
   });
 }
 
+// Contrôle complet d'un fichier de sauvegarde AVANT toute écriture.
+// Renvoie la liste des problèmes trouvés (liste vide = fichier utilisable).
+function controlerSauvegarde(data) {
+  const pbs = [];
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return ['le fichier ne contient pas une sauvegarde'];
+  if (data.appName !== 'MedecinsPakbeng' || !data.version) return ['ce fichier ne vient pas de l\'application'];
+  const objet = r => r && typeof r === 'object' && !Array.isArray(r);
+  for (const [store, type] of STORES_DONNEES) {
+    const l = data[store];
+    if (!Array.isArray(l)) { pbs.push(`la partie « ${store} » est absente ou illisible`); continue; }
+    const ids = new Set();
+    l.forEach((r, i) => {
+      const ou = `${type === 'reception' ? 'réception' : type} n° ${i + 1}`;
+      if (!objet(r)) { pbs.push(`${ou} : illisible`); return; }
+      if (typeof r.createdAt !== 'string' || !r.createdAt) pbs.push(`${ou} : date d'enregistrement absente`);
+      if (r.id != null) {
+        if (!Number.isInteger(r.id) || r.id < 1) pbs.push(`${ou} : numéro interne invalide`);
+        else if (ids.has(r.id)) pbs.push(`${ou} : numéro interne en double`);
+        ids.add(r.id);
+      }
+      if (type === 'consultation') {
+        if (r.prescription != null && !Array.isArray(r.prescription)) pbs.push(`${ou} : prescription illisible`);
+      } else {
+        if (typeof r.molecule !== 'string' || !r.molecule) pbs.push(`${ou} : médicament absent`);
+        if (typeof r.quantite !== 'number' || !isFinite(r.quantite) || r.quantite < 0) pbs.push(`${ou} : quantité invalide`);
+      }
+    });
+  }
+  if (!Array.isArray(data.stockConfig)) pbs.push('la fiche médicaments est absente (fichier d\'une ancienne version ?)');
+  else data.stockConfig.forEach((f, i) => { if (!objet(f) || typeof f.molecule !== 'string' || !f.molecule) pbs.push(`fiche médicament n° ${i + 1} : nom absent`); });
+  if (!Array.isArray(data.parametres)) pbs.push('les listes et réglages sont absents (fichier d\'une ancienne version ?)');
+  else data.parametres.forEach((p, i) => {
+    if (!objet(p) || typeof p.cle !== 'string' || !p.cle) pbs.push(`réglage n° ${i + 1} : illisible`);
+    else if ((p.cle === 'journal_corrections' || p.cle === 'inventaires') && !Array.isArray(p.valeur)) pbs.push(`réglage « ${p.cle} » : illisible`);
+  });
+  return pbs;
+}
+
+// Remplace tout le contenu de la base en UNE SEULE transaction : soit tout est écrit, soit rien ne change
+// (fichier invalide, batterie vide, application fermée en cours de route…).
+// contenu = { consultations: [], receptions: [], sorties: [], stock_config: [], parametres: [] }
+function remplacerBase(contenu) {
+  return new Promise((res, rej) => {
+    let tx;
+    try {
+      const noms = Object.keys(contenu);
+      tx = db.transaction(noms, 'readwrite');
+      tx.oncomplete = () => res();
+      tx.onabort = tx.onerror = () => rej(tx.error || new Error('Écriture annulée'));
+      for (const nom of noms) {
+        const st = tx.objectStore(nom);
+        st.clear();
+        // Les enregistrements qui ont déjà un numéro d'abord : les nouveaux reçoivent ensuite un numéro libre
+        const l = contenu[nom];
+        [...l.filter(r => r.id != null), ...l.filter(r => r.id == null)].forEach(r => st.put(r));
+      }
+    } catch(e) { try { tx && tx.abort(); } catch(_) {} rej(e); }
+  });
+}
+
 async function reprendreSauvegarde(input) {
   if (!input.files?.length) return;
   const file = input.files[0]; input.value = '';
   let data;
-  try { data = JSON.parse(await file.text()); } catch(e) { toast('❌ Fichier illisible', 'error'); return; }
-  if (data.appName !== 'MedecinsPakbeng' || !data.version) { toast('❌ Fichier JSON invalide ou incompatible', 'error'); return; }
+  try { data = JSON.parse(await file.text()); } catch(e) { toast('❌ Fichier illisible ou incomplet : rien n\'a été modifié', 'error'); return; }
+  const pbs = controlerSauvegarde(data);
+  if (pbs.length) {
+    await confirmer(`Ce fichier ne peut pas être repris :\n\n${pbs.slice(0, 5).map(p => '• ' + p).join('\n')}${pbs.length > 5 ? `\n• … et ${pbs.length - 5} autre(s) problème(s)` : ''}\n\nRien n'a été modifié sur cet appareil. Demandez un nouveau fichier.`,
+      { titre: '❌ Sauvegarde refusée', ok: 'Compris', annuler: false });
+    return;
+  }
   const f = iso => iso ? new Date(iso).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '?';
 
   // Saisies annulées volontairement (selon le journal de la sauvegarde) : à ne pas réintégrer
-  const journalSauv = (data.parametres || []).find(p => p.cle === 'journal_corrections')?.valeur || [];
+  const journalSauv = data.parametres.find(p => p.cle === 'journal_corrections')?.valeur || [];
   const annuleesSauv = new Set(journalSauv.filter(j => j.action === 'annulation' && j.avant?.createdAt).map(j => j.type + '|' + j.avant.createdAt));
   const dateRelais = data.base?.exportedAt || '';   // quand cet appareil a transmis ses données (si connu)
 
   // Saisies de cet appareil absentes de la sauvegarde (à conserver) et modifications plus récentes (à garder)
   const aGarder = [], modifsGardees = [];
   for (const [store, type] of STORES_DONNEES) {
-    const sauv = new Map((data[store] || []).map(r => [r.createdAt, r]));
+    const sauv = new Map(data[store].map(r => [r.createdAt, r]));
     for (const r of await dbGetAll(store)) {
       const s = sauv.get(r.createdAt);
       if (!s) { if (!annuleesSauv.has(type + '|' + r.createdAt) && !String(r.fournisseur || '').startsWith('Stock initial')) aGarder.push({ store, type, r }); }
@@ -5026,7 +5091,7 @@ async function reprendreSauvegarde(input) {
 
   let msg = `Sauvegarde de : ${data.provenance ? data.provenance.libelle : 'appareil non précisé'} — ${f(data.exportedAt)}`;
   if (data.base?.exportedAt) msg += `\nConstruite à partir de : ${libelleRole(data.base.role)} — ${f(data.base.exportedAt)}`;
-  msg += `\n\nContenu : ${(data.consultations || []).length} consultation(s), ${(data.receptions || []).length} réception(s), ${(data.sorties || []).length} sortie(s).`;
+  msg += `\n\nContenu : ${data.consultations.length} consultation(s), ${data.receptions.length} réception(s), ${data.sorties.length} sortie(s).`;
   msg += `\n\nLes données de cet appareil seront REMPLACÉES par celles de la sauvegarde (corrections et annulations comprises). Les réglages de l'appareil sont conservés.`;
   if (aGarder.length) msg += `\n\n✅ Saisies faites ici et absentes de la sauvegarde, qui seront CONSERVÉES (${aGarder.length}) :\n${liste(aGarder)}`;
   if (modifsGardees.length) msg += `\n\n✅ Corrections faites ici plus récentes que la sauvegarde, qui seront CONSERVÉES (${modifsGardees.length}) :\n${liste(modifsGardees)}`;
@@ -5043,46 +5108,63 @@ async function reprendreSauvegarde(input) {
   toast('⏳ Reprise des données…', 'success');
   clearTimeout(_sauvegardeAutoTimer); clearTimeout(_autosaveTimer);
   try {
-    // 1. Remplacement des données (les identifiants de la sauvegarde sont conservés)
+    // 1. Tout le nouveau contenu est préparé en mémoire, sans rien écrire
+    const contenu = { stock_config: data.stockConfig };
     for (const [store] of STORES_DONNEES) {
-      await viderStore(store);
-      for (const r of (data[store] || [])) await dbPut(store, r);
+      // Données de la sauvegarde (identifiants conservés), avec les corrections locales plus récentes…
+      const modifs = new Map(modifsGardees.filter(x => x.store === store).map(x => [x.r.createdAt, x.r]));
+      const vus = new Set();
+      contenu[store] = data[store].map(r => {
+        const m = modifs.get(r.createdAt);
+        if (!m || vus.has(r.createdAt)) return r;
+        vus.add(r.createdAt);
+        const c = { ...m }; if (r.id != null) c.id = r.id; else delete c.id;
+        return c;
+      });
+      // … puis les saisies propres à cet appareil (elles reçoivent un nouveau numéro)
+      for (const x of aGarder.filter(x => x.store === store)) { const c = { ...x.r }; delete c.id; contenu[store].push(c); }
     }
-    await viderStore('stock_config');
-    for (const sc of (data.stockConfig || [])) await dbPut('stock_config', sc);
     // Paramètres : ceux de la sauvegarde ; le journal et les inventaires sont fusionnés ; le dossier de sauvegarde de l'appareil est gardé
     const paramsLocaux = await dbGetAll('parametres');
     const local = cle => paramsLocaux.find(p => p.cle === cle)?.valeur;
-    for (const p of paramsLocaux) if (p.cle !== CLE_DOSSIER) await dbDelete('parametres', p.cle);
-    for (const p of (data.parametres || [])) {
+    const k = x => (x.le || '') + '|' + (x.resume || x.type || '');
+    const fusionner = (cle, deLaSauvegarde, max) => {
+      const l = Array.isArray(local(cle)) ? local(cle) : [];
+      const vus = new Set(deLaSauvegarde.map(k));
+      return [...deLaSauvegarde, ...l.filter(x => !vus.has(k(x)))].sort((a, b) => String(b.le).localeCompare(String(a.le))).slice(0, max);
+    };
+    const params = new Map();
+    for (const p of data.parametres) {
       if (p.cle === CLE_DOSSIER) continue;
-      if (p.cle === 'journal_corrections' || p.cle === 'inventaires') {
-        const l = Array.isArray(local(p.cle)) ? local(p.cle) : [];
-        const k = x => (x.le || '') + '|' + (x.resume || x.type || '');
-        const vus = new Set(p.valeur.map(k));
-        await dbPut('parametres', { cle: p.cle, valeur: [...p.valeur, ...l.filter(x => !vus.has(k(x)))].sort((a, b) => String(b.le).localeCompare(String(a.le))).slice(0, p.cle === 'journal_corrections' ? 500 : 50) });
-      } else await dbPut('parametres', p);
+      if (p.cle === 'journal_corrections') params.set(p.cle, fusionner(p.cle, p.valeur, 500));
+      else if (p.cle === 'inventaires') params.set(p.cle, fusionner(p.cle, p.valeur, 50));
+      else params.set(p.cle, p.valeur);
     }
-    // 2. Réintégration des saisies et corrections propres à cet appareil
-    for (const x of aGarder) { const c = { ...x.r }; delete c.id; await dbAdd(x.store, c); }
-    for (const x of modifsGardees) {
-      const cible = (await dbGetAll(x.store)).find(r => r.createdAt === x.r.createdAt);
-      await dbPut(x.store, { ...x.r, id: cible ? cible.id : x.r.id });
-    }
-    await journaliser('reprise', 'sauvegarde', null, null,
-      `Reprise de « ${file.name} » (${data.provenance ? data.provenance.libelle : '?'}, ${f(data.exportedAt)}) — ${aGarder.length} saisie(s) et ${modifsGardees.length} correction(s) locales conservées`);
-    // 3. Mission et repères de la reprise
+    // La reprise elle-même est tracée dans le journal
+    const journal = params.get('journal_corrections') || fusionner('journal_corrections', [], 500);
+    journal.unshift({ le: new Date().toISOString(), action: 'reprise', type: 'sauvegarde', resume: '', champs: [], avant: null, apres: null,
+      motif: `Reprise de « ${file.name} » (${data.provenance ? data.provenance.libelle : '?'}, ${f(data.exportedAt)}) — ${aGarder.length} saisie(s) et ${modifsGardees.length} correction(s) locales conservées` });
+    params.set('journal_corrections', journal.slice(0, 500));
+    contenu.parametres = [...params].map(([cle, valeur]) => ({ cle, valeur }));
+    const dossier = paramsLocaux.find(p => p.cle === CLE_DOSSIER);
+    if (dossier) contenu.parametres.push(dossier);
+
+    // 2. Écriture en une seule fois : tout ou rien
+    await remplacerBase(contenu);
+  } catch(e) {
+    console.error(e);
+    await confirmer('La reprise n\'a pas pu se faire. Rien n\'a été modifié : les données de cet appareil sont intactes.\n\nVérifiez le fichier, puis recommencez.',
+      { titre: '❌ Reprise annulée', ok: 'Compris', annuler: false });
+    return;
+  }
+  // 3. Mission et repères de la reprise
+  try {
     if (data.mission) localStorage.setItem('mission_active', JSON.stringify(typeof data.mission === 'string' ? JSON.parse(data.mission) : data.mission));
     localStorage.setItem('base_reprise', JSON.stringify({ role: data.provenance?.role || '', exportedAt: data.exportedAt }));
     localStorage.setItem('stock_initial_charge', localStorage.getItem('stock_initial_charge') || new Date().toISOString());
     localStorage.setItem('nbConsultationsConnu', String((await dbGetAll('consultations')).length));
     localStorage.setItem('message_apres_reprise', `✅ Données reprises — ${aGarder.length + modifsGardees.length} saisie(s) locale(s) conservée(s)`);
-  } catch(e) {
-    console.error(e);
-    await confirmer('La reprise a échoué en cours de route. Restaurez la copie de sécurité qui vient d\'être téléchargée (« avant_reprise ») avec « Reprendre les données d\'une sauvegarde ».',
-      { titre: '❌ Erreur pendant la reprise', ok: 'Compris', annuler: false });
-    return;
-  }
+  } catch(e) { console.warn('[Reprise] repères', e); }
   location.reload();
 }
 
