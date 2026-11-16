@@ -77,6 +77,7 @@ Chaque scénario affiche ✓ (réussi) ou ✗ (échec) avec la raison. Compter e
 | 34 | Anomalies de stock | l'écran Stock liste les quantités à régulariser, lots jamais reçus ou négatifs, dates illisibles et noms hors liste ; rien d'affiché sur un stock sain ; l'inventaire fait disparaître l'anomalie |
 | 35 | Points mineurs | périmés annoncés dans le stock et couleur selon le stock utilisable ; plaquettes dans les libellés ; historique des inventaires par sorte ; consultation de plus de 5 médicaments jamais tronquée |
 | 36 | **Mission fictive complète** | paramétrage par la pharmacienne, deux semaines de saisies à cheval sur deux mois, FEFO, réception, casse, corrections, annulations, relais vendredi/lundi, inventaire, export Excel, rapport de fin de mission, restauration sur un appareil neuf ; le stock de l'application est comparé à chaque étape à un registre tenu par le test |
+| 37 | Double appui | un double appui sur « Enregistrer » (réception, sortie, consultation) n'écrit qu'une fois, sans message d'erreur ; la saisie suivante reste possible |
 
 Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 36 dans un vrai navigateur (Chromium).
 Les scénarios 18 à 35 vérifient les corrections de l'audit de novembre 2026 ; ceux du passage de relais partagent les outils de `scenarios/_relais.js`.

@@ -2862,6 +2862,21 @@ function transactionEcriture(store, action) {
   });
 }
 
+// Un second appui sur « Enregistrer » ne doit jamais écrire deux fois (double appui sur la tablette).
+// – pendant que la première écriture est en cours, les appuis suivants sont ignorés ;
+// – juste après une écriture réussie, le formulaire est vide : un appui en retard est ignoré sans message d'erreur.
+// La fonction protégée renvoie true quand elle a enregistré.
+const _enregistrementEnCours = {}, _enregistrementFini = {};
+function unSeulEnregistrement(nom, formulaireVide, f) {
+  return async function (...args) {
+    if (_enregistrementEnCours[nom]) return false;
+    if (formulaireVide && Date.now() - (_enregistrementFini[nom] || 0) < 1500 && formulaireVide()) return false;
+    _enregistrementEnCours[nom] = true;
+    try { const fait = await f.apply(this, args); if (fait === true) _enregistrementFini[nom] = Date.now(); return fait; }
+    finally { _enregistrementEnCours[nom] = false; }
+  };
+}
+
 // Plusieurs écritures liées en UNE SEULE transaction : tout est enregistré, ou rien (interruption, erreur…).
 // ops = [{ store, type: 'add' | 'put' | 'delete', valeur }]
 function ecrireEnBloc(ops) {
@@ -3918,7 +3933,9 @@ function fermerConfirmModal() {
   document.getElementById('confirmModal').style.display = 'none';
 }
 
-async function enregistrerConsultation() {
+function enregistrerConsultation() { return _enregistrerConsultationProtege(); }
+const _enregistrerConsultationProtege = unSeulEnregistrement('consultation', () => !document.getElementById('c_nom').value.trim(), _enregistrerConsultation);
+async function _enregistrerConsultation() {
   fermerConfirmModal();
 
   const date  = document.getElementById('c_date').value;
@@ -3998,11 +4015,13 @@ async function enregistrerConsultation() {
       toast('✅ Consultation modifiée', 'success');
       goScreen(retour);
       await rafraichirContexte(retour);
+      return true;
     } catch(e) { console.error(e); toast('❌ Erreur de modification', 'error'); }
     return;
   }
 
-  dbAdd('consultations', record).then(() => {
+  try {
+    await dbAdd('consultations', record);
     localStorage.removeItem(AUTOSAVE_KEY);
     // Mémoriser lieu et médecins pour la prochaine consultation
     if (lieu) localStorage.setItem('dernier_lieu', lieu);
@@ -4015,7 +4034,8 @@ async function enregistrerConsultation() {
     effacerConsultation();
     memoriserDerniereConsigne(record);
     chargerStatsPathoMol();
-  }).catch(() => toast('❌ Erreur d\'enregistrement', 'error'));
+    return true;
+  } catch(e) { console.error(e); toast('❌ Erreur d\'enregistrement', 'error'); }
 }
 
 function effacerConsultation() {
@@ -6113,7 +6133,9 @@ async function supprimerConsommable(id) {
 // ═══════════════════════════════════════════════════════════════════
 // ENREGISTREMENT RÉCEPTION
 // ═══════════════════════════════════════════════════════════════════
-function enregistrerReception() {
+function enregistrerReception() { return _enregistrerReceptionProtege(); }
+const _enregistrerReceptionProtege = unSeulEnregistrement('reception', () => !(COMBOS.r_mol?.getValue() || document.getElementById('r_mol').value), _enregistrerReception);
+async function _enregistrerReception() {
   const date    = document.getElementById('r_date').value;
   const fourn   = document.getElementById('r_fourn').value;
   const mol     = COMBOS.r_mol?.getValue() || document.getElementById('r_mol').value;
@@ -6127,9 +6149,11 @@ function enregistrerReception() {
   if (!perdate) { toast('❌ Date de péremption requise', 'error'); return; }
   if (!qty || qty <= 0) { toast('❌ Quantité invalide', 'error'); return; }
 
-  dbAdd('receptions', { date, fournisseur: fourn, molecule: mol, lot: libelleLot(perdate), numLot: lot, datePeremption: perdate, quantite: qty, createdAt: new Date().toISOString() })
-    .then(() => { toast('✅ Réception enregistrée', 'success'); effacerReception(); chargerMouvements('receptions'); })
-    .catch(() => toast('❌ Erreur d\'enregistrement', 'error'));
+  try {
+    await dbAdd('receptions', { date, fournisseur: fourn, molecule: mol, lot: libelleLot(perdate), numLot: lot, datePeremption: perdate, quantite: qty, createdAt: new Date().toISOString() });
+    toast('✅ Réception enregistrée', 'success'); effacerReception(); chargerMouvements('receptions');
+    return true;
+  } catch(e) { toast('❌ Erreur d\'enregistrement', 'error'); }
 }
 
 function effacerReception() {
@@ -6166,7 +6190,9 @@ async function majLotsSortie() {
   if (lots.some(l => l.lot === garde)) sel.value = garde;
 }
 
-async function enregistrerSortie() {
+function enregistrerSortie() { return _enregistrerSortieProtege(); }
+const _enregistrerSortieProtege = unSeulEnregistrement('sortie', () => !(COMBOS.s_mol?.getValue() || document.getElementById('s_mol').value), _enregistrerSortie);
+async function _enregistrerSortie() {
   const date   = document.getElementById('s_date').value;
   const motif  = document.getElementById('s_motif').value;
   const mol    = COMBOS.s_mol?.getValue() || document.getElementById('s_mol').value;
@@ -6187,6 +6213,7 @@ async function enregistrerSortie() {
   try {
     await dbAdd('sorties', { date, motif, molecule: mol, lot: lot.lot, numLot: sNum, datePeremption: lot.datePeremption || '', quantite: qty, createdAt: new Date().toISOString() });
     toast('✅ Sortie enregistrée', 'success'); effacerSortie(); chargerMouvements('sorties');
+    return true;
   } catch(e) { toast('❌ Erreur d\'enregistrement', 'error'); }
 }
 
