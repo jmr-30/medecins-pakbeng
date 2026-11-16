@@ -45,6 +45,22 @@ const R = require('./_relais');
   await juste('Écriture annulée');
   console.log('Évolution attendue du disponible :', [d0, d0 - 7, d0 - 3, d0, d0 + 20, d0 + 15, d0 + 13, d0 + 13].join(' → '));
 
+  // 2 bis. Une écriture simple met la mémoire à jour sans tout relire ; le résultat reste identique à la base
+  await p.evaluate(async () => { await calculerStock(); await dbGetAll('stock_config'); }); await lectures();
+  const apres = await p.evaluate(async ([MOL, lot]) => {
+    const id = await dbAdd('consultations', { date: dateAujourdhui(), nom: 'SANS RELECTURE', prescription: [{ molecule: MOL, quantite: 4, lots: [{ lot: lot.lot, datePeremption: lot.datePeremption, quantite: 4 }] }], createdAt: 'm1' });
+    const d1 = stockDisponible((await calculerStock())[MOL]);
+    await dbPut('consultations', { ...(await dbGet('consultations', id)), nom: 'SANS RELECTURE 2' });
+    await dbPut('stock_config', { molecule: 'AAA — test', suivi: true }); await dbPut('stock_config', { molecule: 'AAA — test', suivi: false, stockMinimal: 3 });
+    const idR = await dbAdd('receptions', { date: dateAujourdhui(), fournisseur: 'Test', molecule: MOL, lot: lot.lot, datePeremption: lot.datePeremption, quantite: 9, createdAt: 'm2' });
+    await dbDelete('receptions', idR); await dbDelete('consultations', id);
+    const noms = (await dbGetAll('consultations')).map(c => c.nom);
+    return { d1, d2: stockDisponible((await calculerStock())[MOL]), supprimee: !noms.includes('SANS RELECTURE 2') };
+  }, [MOL, lot]);
+  console.log('Sept écritures simples — lectures complètes :', await lectures(), '| disponible', apres.d1 - apres.d2 === -4 ? 'juste' : 'FAUX', '| suppression vue :', apres.supprimee);
+  const identique = await p.evaluate(async () => { const r = {}; for (const st of ['consultations', 'receptions', 'sorties', 'stock_config']) { const garde = JSON.stringify(await dbGetAll(st)); delete _memoireStores[st]; r[st] = garde === JSON.stringify(await dbGetAll(st)); } return r; });
+  console.log('Mémoire identique à la base après ces écritures :', JSON.stringify(identique));
+
   // 3. Ce que reçoit l'appelant lui appartient : le modifier ne fausse pas la suite
   const r = await p.evaluate(async MOL => {
     const a = await calculerStock(); Object.values(a[MOL]).forEach(l => { l.restant = -999; }); delete a[Object.keys(a)[1]];

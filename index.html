@@ -2852,11 +2852,21 @@ function ouvrirDB() {
 // mémoire de l'appareil (durabilité « stricte »). Le message « ✅ enregistré » n'apparaît donc que si la saisie survit
 // à une coupure de batterie ; si la transaction est annulée, l'écriture est signalée en erreur.
 const OPT_ECRITURE = { durability: 'strict' };
-function transactionEcriture(store, action) {
+// majMemoire(lignes, resultat) : si le contenu du store était gardé en mémoire, il est mis à jour avec ce seul changement
+// au lieu d'être oublié — enregistrer une consultation n'oblige plus à relire ensuite toutes les autres.
+function transactionEcriture(store, action, majMemoire) {
   return new Promise((res, rej) => {
     let tx, resultat;
+    const garde = _memoireStores[store], versionAvant = versionStore(store);
     try { tx = db.transaction(store, 'readwrite', OPT_ECRITURE); } catch(e) { rej(e); return; }
-    tx.oncomplete = () => res(resultat);
+    tx.oncomplete = () => {
+      // Seulement si cette écriture est la seule survenue depuis (début + fin de transaction = deux versions de plus)
+      if (garde && majMemoire && garde.version === versionAvant && versionStore(store) === versionAvant + 2) {
+        try { _memoireStores[store] = { version: versionStore(store), lignes: majMemoire(garde.lignes.slice(), resultat) }; }
+        catch(e) { delete _memoireStores[store]; }
+      }
+      res(resultat);
+    };
     tx.onabort = tx.onerror = () => rej(tx.error || new Error('Écriture annulée'));
     try { const req = action(tx.objectStore(store)); req.onsuccess = () => { resultat = req.result; }; }
     catch(e) { try { tx.abort(); } catch(_) {} rej(e); }
@@ -2893,9 +2903,25 @@ function ecrireEnBloc(ops) {
   });
 }
 
+const CLE_PRIMAIRE = { consultations: 'id', receptions: 'id', sorties: 'id', stock_config: 'molecule' };
+const copieProfonde = o => typeof structuredClone === 'function' ? structuredClone(o) : JSON.parse(JSON.stringify(o));
+// Place un enregistrement (copie de ce qui vient d'être écrit) dans la liste gardée, à la place que lui donne la base
+function poserDansMemoire(lignes, store, obj, cle) {
+  const k = CLE_PRIMAIRE[store], copie = copieProfonde(obj);
+  copie[k] = cle;
+  const i = lignes.findIndex(x => x[k] === cle);
+  if (i >= 0) lignes[i] = copie;
+  else {
+    const enFin = !lignes.length || lignes[lignes.length - 1][k] < cle;
+    lignes.push(copie);
+    if (!enFin) lignes.sort((a, b) => a[k] < b[k] ? -1 : a[k] > b[k] ? 1 : 0);
+  }
+  return lignes;
+}
+
 function dbAdd(store, obj) {
   if (!db || !db.objectStoreNames.contains(store)) return Promise.reject(new Error(`Store "${store}" introuvable`));
-  return transactionEcriture(store, st => st.add(obj));
+  return transactionEcriture(store, st => st.add(obj), CLE_PRIMAIRE[store] && ((lignes, cle) => poserDansMemoire(lignes, store, obj, cle)));
 }
 
 // ── Mémoire des données lues ──────────────────────────────────────
@@ -2988,12 +3014,12 @@ function dbGet(store, key) {
 
 function dbPut(store, obj) {
   if (!db || !db.objectStoreNames.contains(store)) return Promise.reject(new Error(`Store "${store}" introuvable`));
-  return transactionEcriture(store, st => st.put(obj));
+  return transactionEcriture(store, st => st.put(obj), CLE_PRIMAIRE[store] && ((lignes, cle) => poserDansMemoire(lignes, store, obj, cle)));
 }
 
 function dbDelete(store, key) {
   if (!db || !db.objectStoreNames.contains(store)) return Promise.resolve();
-  return transactionEcriture(store, st => st.delete(key)).then(() => undefined);
+  return transactionEcriture(store, st => st.delete(key), CLE_PRIMAIRE[store] && (lignes => lignes.filter(x => x[CLE_PRIMAIRE[store]] !== key))).then(() => undefined);
 }
 
 // ═══════════════════════════════════════════════════════════════════
