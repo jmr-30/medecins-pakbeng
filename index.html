@@ -3879,6 +3879,19 @@ async function confirmerAvantEnregistrement() {
   if (!med1) { toast('❌ Médecin requis', 'error'); return; }
   if (!nom)  { toast('❌ Nom du patient requis', 'error'); return; }
 
+  // Date inhabituelle : on demande confirmation (sans bloquer : l'horloge de la tablette peut être fausse).
+  // Une date hors de la mission fausse la lecture du rapport de fin de mission.
+  const dateModifiee = !_editionConsultation || _editionConsultation.date !== date;
+  if (dateModifiee) {
+    const lisible = d => jourLocal(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const mis = getMissionActive();
+    let alerte = '';
+    if (date > dateAujourdhui()) alerte = `La date saisie (${lisible(date)}) est dans le FUTUR : nous sommes le ${lisible(dateAujourdhui())}.`;
+    else if (mis?.debut && mis?.fin && (!_editionConsultation || _editionConsultation.mission === mis.numero) && (date < mis.debut || date > mis.fin))
+      alerte = `La date saisie (${lisible(date)}) est en dehors de la mission en cours (${mis.numero}, du ${lisible(mis.debut)} au ${lisible(mis.fin)}).`;
+    if (alerte && !(await confirmer(alerte + '\n\nEst-ce bien la bonne date ?', { titre: '⚠ Vérifier la date', ok: 'Oui, garder cette date', annuler: 'Corriger' }))) return;
+  }
+
   const pathos = [];
   for (let i = 1; i <= 4; i++) {
     const p = COMBOS['patho_' + i]?.getValue() || '';
@@ -7588,7 +7601,7 @@ async function mouvementsStock() {
     const village = !!c.lieu && !/^Dispensaire/i.test(c.lieu);
     const lots = Array.isArray(p.lots) && p.lots.length ? p.lots : [{ lot: p.lot || '(sans lot)', quantite: p.quantite || 0 }];
     lots.forEach(a => mv.push({ mol: p.molecule, lot: a.lot, per: a.datePeremption || '', date: c.date || '',
-      type: village ? 'village' : 'dispensaire', q: a.quantite || 0 })); }));
+      type: village ? 'village' : 'dispensaire', q: a.quantite || 0, mission: c.mission || '' })); }));
   sorts.forEach(s => { if (!s.molecule) return;
     mv.push({ mol: s.molecule, lot: s.lot || (s.datePeremption ? libelleLot(s.datePeremption) : '(sans lot)'), per: s.datePeremption || '',
       date: s.date || '', type: s.motif === 'Inventaire' ? 'inventaire' : 'detruit', q: (s.motif === 'Inventaire' ? -1 : 1) * (s.quantite || 0), motif: s.motif }); });
@@ -7631,8 +7644,12 @@ async function exporterMission() {
       if (m.nc) L.nc.add(m.nc);
       if (m.type === 'entree') { if (m.origine) L.origine.add(m.origine); if (m.date && (!L.dateEntree || m.date < L.dateEntree)) L.dateEntree = m.date; }
       const signe = (m.type === 'entree' || m.type === 'inventaire') ? 1 : -1;
-      if (!m.date || m.date < M.debut) { L.debut += signe * m.q; return; }       // avant la mission
-      if (m.date > finMission) return;                                             // après la mission
+      // Une consultation rattachée à cette mission compte dans la mission, même si sa date en sort (erreur de date) :
+      // sinon elle figurait dans l'activité mais pas dans le stock, et le stock de fin du rapport était faux.
+      if (!(m.mission && m.mission === M.numero)) {
+        if (!m.date || m.date < M.debut) { L.debut += signe * m.q; return; }       // avant la mission
+        if (m.date > finMission) return;                                             // après la mission
+      }
       if (m.type === 'entree') L.entrees += m.q;
       else if (m.type === 'dispensaire') L.disp += m.q;
       else if (m.type === 'village') L.vill += m.q;
