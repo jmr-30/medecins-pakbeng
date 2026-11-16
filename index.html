@@ -8643,7 +8643,7 @@ async function genererBlobJSON() {
     dbGetAll('consultations'), dbGetAll('receptions'), dbGetAll('sorties'),
     dbGetAll('stock_config'),  dbGetAllSauf('parametres', [CLE_DOSSIER, CLE_COPIE, CLE_REPERES]),
   ]);
-  const sauvegarde = {
+  const entete = {
     version:      '1.0',
     exportedAt:   new Date().toISOString(),
     appName:      'MedecinsPakbeng',
@@ -8653,9 +8653,22 @@ async function genererBlobJSON() {
     dernierMed2:  localStorage.getItem('dernier_med2')   || null,
     provenance:   { role: roleAppareil(), libelle: libelleRole(roleAppareil()) },
     base:         (() => { try { return JSON.parse(localStorage.getItem('base_reprise') || 'null'); } catch(e) { return null; } })(),
-    consultations, receptions, sorties, stockConfig, parametres: parametres.filter(p => p.cle !== CLE_DOSSIER && p.cle !== CLE_COPIE && p.cle !== CLE_REPERES),
   };
-  return new Blob([JSON.stringify(sauvegarde, null, 2)], { type: 'application/json' });
+  // Le fichier est écrit par morceaux de 500 enregistrements, un enregistrement par ligne, en rendant la main entre deux
+  // morceaux : la sauvegarde automatique, qui part 20 secondes après chaque saisie, ne fige plus l'écran pendant qu'un
+  // médecin tape la consultation suivante. Sans mise en page indentée, le fichier est aussi plus léger à envoyer.
+  const morceaux = [JSON.stringify(entete).slice(0, -1)];
+  const listes = { consultations, receptions, sorties, stockConfig, parametres };
+  for (const [nom, lignes] of Object.entries(listes)) {
+    morceaux.push(`,\n"${nom}":[`);
+    for (let i = 0; i < lignes.length; i += 500) {
+      morceaux.push((i ? ',\n' : '\n') + lignes.slice(i, i + 500).map(x => JSON.stringify(x)).join(',\n'));
+      if (i + 500 < lignes.length) await new Promise(r => setTimeout(r, 0));
+    }
+    morceaux.push('\n]');
+  }
+  morceaux.push('\n}\n');
+  return new Blob(morceaux, { type: 'application/json' });
 }
 
 function marquerExport() {

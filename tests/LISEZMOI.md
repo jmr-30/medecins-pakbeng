@@ -84,6 +84,7 @@ Chaque scénario affiche ✓ (réussi) ou ✗ (échec) avec la raison. Compter e
 | 41 | Consultation en double | même patient, même date, même prescription déjà enregistrés : avertissement à l'enregistrement et à la reprise d'un brouillon ; une seconde visite différente passe sans question |
 | 42 | Stock initial importé en cours de mission | dans le rapport, il reste le « Stock début de mission » ; seules les vraies réceptions comptent en entrées |
 | 43 | Mémoire des données | aucune relecture complète de la base pendant la prescription, en changeant d'écran, ni après une écriture simple ; après chaque sorte d'écriture (ajout, modification, suppression, groupée, directe, annulée) le stock servi est identique à un recalcul complet |
+| 44 | Sauvegarde par morceaux | fichier .json au contenu identique, plus léger, écrit par morceaux en rendant la main à l'écran ; copie interne d'avant reprise ni lue ni exportée ; restauration inchangée |
 
 Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 42 dans un vrai navigateur (Chromium).
 Les scénarios 18 à 35 et 37 à 42 vérifient les corrections de l'audit de novembre 2026 ; ceux du passage de relais partagent les outils de `scenarios/_relais.js`.
