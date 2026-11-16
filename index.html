@@ -2855,6 +2855,21 @@ function transactionEcriture(store, action) {
   });
 }
 
+// Plusieurs écritures liées en UNE SEULE transaction : tout est enregistré, ou rien (interruption, erreur…).
+// ops = [{ store, type: 'add' | 'put' | 'delete', valeur }]
+function ecrireEnBloc(ops) {
+  if (!ops.length) return Promise.resolve();
+  return new Promise((res, rej) => {
+    let tx;
+    try {
+      tx = db.transaction([...new Set(ops.map(o => o.store))], 'readwrite', OPT_ECRITURE);
+      tx.oncomplete = () => { try { planifierSauvegardeAuto(); } catch(e) {} res(); };
+      tx.onabort = tx.onerror = () => rej(tx.error || new Error('Écriture annulée'));
+      for (const o of ops) tx.objectStore(o.store)[o.type](o.valeur);
+    } catch(e) { try { tx && tx.abort(); } catch(_) {} rej(e); }
+  });
+}
+
 function dbAdd(store, obj) {
   if (!db || !db.objectStoreNames.contains(store)) return Promise.reject(new Error(`Store "${store}" introuvable`));
   return transactionEcriture(store, st => st.add(obj));
@@ -4112,16 +4127,39 @@ async function compterUsages(cle, ancien) {
                                    + cfg.filter(x => x.molecule === ancien).length;
   return 0;
 }
+// Renommer un nom de liste dans toutes les données : les changements sont préparés puis écrits en une seule transaction
 async function renommerDansDonnees(cle, ancien, nouveau) {
   if (cle === 'lieux') return renommerLieuDansConsultations(ancien, nouveau);
-  let n = 0;
+  const ops = [];
   if (cle === 'medecins') {
     for (const c of await dbGetAll('consultations')) {
       let m = false;
       if (c.medecin1 === ancien) { c.medecin1 = nouveau; m = true; }
       if (c.medecin2 === ancien) { c.medecin2 = nouveau; m = true; }
-      if (m) { await dbPut('consultations', c); n++; }
+      if (m) ops.push({ store: 'consultations', type: 'put', valeur: c });
     }
+  }
+  if (cle === 'fournisseurs') {
+    for (const r of await dbGetAll('receptions')) if (r.fournisseur === ancien) { r.fournisseur = nouveau; ops.push({ store: 'receptions', type: 'put', valeur: r }); }
+  }
+  if (cle === 'molecules') {
+    for (const c of await dbGetAll('consultations')) {
+      let m = false;
+      (c.prescription || []).forEach(p => { if (p.molecule === ancien) { p.molecule = nouveau; m = true; } });
+      if (m) ops.push({ store: 'consultations', type: 'put', valeur: c });
+    }
+    for (const t of ['receptions', 'sorties'])
+      for (const r of await dbGetAll(t)) if (r.molecule === ancien) { r.molecule = nouveau; ops.push({ store: t, type: 'put', valeur: r }); }
+    // Seuils de stock : la clé est le nom de la molécule
+    const cfgA = await dbGet('stock_config', ancien);
+    if (cfgA) {
+      const cfgN = await dbGet('stock_config', nouveau);
+      if (!cfgN) ops.push({ store: 'stock_config', type: 'put', valeur: { ...cfgA, molecule: nouveau } });
+      ops.push({ store: 'stock_config', type: 'delete', valeur: ancien });
+    }
+  }
+  await ecrireEnBloc(ops);
+  if (cle === 'medecins') {
     const mis = getMissionActive();
     if (mis?.medecins) {
       const liste = mis.medecins.split(',').map(x => x.trim()).map(x => x === ancien ? nouveau : x);
@@ -4131,41 +4169,19 @@ async function renommerDansDonnees(cle, ancien, nouveau) {
     if (localStorage.getItem('dernier_med1') === ancien) localStorage.setItem('dernier_med1', nouveau);
     if (localStorage.getItem('dernier_med2') === ancien) localStorage.setItem('dernier_med2', nouveau);
   }
-  if (cle === 'fournisseurs') {
-    for (const r of await dbGetAll('receptions')) if (r.fournisseur === ancien) { r.fournisseur = nouveau; await dbPut('receptions', r); n++; }
-  }
-  if (cle === 'molecules') {
-    for (const c of await dbGetAll('consultations')) {
-      let m = false;
-      (c.prescription || []).forEach(p => { if (p.molecule === ancien) { p.molecule = nouveau; m = true; } });
-      if (m) { await dbPut('consultations', c); n++; }
-    }
-    for (const t of ['receptions', 'sorties'])
-      for (const r of await dbGetAll(t)) if (r.molecule === ancien) { r.molecule = nouveau; await dbPut(t, r); n++; }
-    // Seuils de stock : la clé est le nom de la molécule
-    const cfgA = await dbGet('stock_config', ancien);
-    if (cfgA) {
-      const cfgN = await dbGet('stock_config', nouveau);
-      if (!cfgN) await dbPut('stock_config', { ...cfgA, molecule: nouveau });
-      await dbDelete('stock_config', ancien);
-      n++;
-    }
-  }
-  return n;
+  return ops.length;
 }
-
-// Renommer un lieu : répercuter sur les consultations existantes
 async function renommerLieuDansConsultations(ancien, nouveau) {
   if (!ancien || !nouveau || ancien === nouveau) return 0;
-  const consults = await dbGetAll('consultations');
-  let n = 0;
-  for (const c of consults) {
+  const ops = [];
+  for (const c of await dbGetAll('consultations')) {
     let modif = false;
     if (c.lieu === ancien)       { c.lieu = nouveau; modif = true; }
     if (c.habitation === ancien) { c.habitation = nouveau; modif = true; }
-    if (modif) { await dbPut('consultations', c); n++; }
+    if (modif) ops.push({ store: 'consultations', type: 'put', valeur: c });
   }
-  return n;
+  await ecrireEnBloc(ops);
+  return ops.length;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -6656,23 +6672,22 @@ async function importerStockInitial(input) {
     let msg = `Importer le stock initial depuis « ${file.name} » ?\n\n${entrees.length} lots trouvés.`;
     if (existants.length) msg += `\n\nLe stock initial actuel (${existants.length} lots) sera REMPLACÉ. Les réceptions saisies à la main sont conservées.`;
     if (!(await confirmer(msg, { titre: 'Importer le stock initial ?', ok: 'Importer', danger: existants.length > 0 }))) return;
-    for (const r of existants) await dbDelete('receptions', r.id);
 
-    // Ajouter à la liste des médicaments ceux qui n'y figurent pas encore
+    // Tout est écrit en une seule fois : l'ancien stock initial retiré, la liste des médicaments complétée, le nouveau stock
+    // ajouté et le repère posé. Si l'import est interrompu, l'ancien stock initial reste en place, entier.
     const liste = await getParam('molecules', REF.molecules);
     const nouveaux = [...new Set(entrees.map(e => e.molecule))].filter(m => !liste.includes(m));
-    if (nouveaux.length) {
-      await setParam('molecules', [...liste, ...nouveaux].sort((x, y) => x.localeCompare(y, 'fr')));
-      await rechargerCombosMolecules();
-    }
-
-    const base = Date.now();
-    await importerDonnéesStock(entrees.map((e, i) => ({
-      ...e, nomCommercial: e.nomCommercial.join(', '),
-      fournisseur: 'Stock initial — ' + file.name, date: dateAujourdhui(),
-      createdAt: new Date(base + i).toISOString(),
-    })), file.name);
-    await marquerStockInitialCharge();
+    const base = Date.now(), quand = new Date().toISOString();
+    const ops = existants.map(r => ({ store: 'receptions', type: 'delete', valeur: r.id }));
+    if (nouveaux.length) ops.push({ store: 'parametres', type: 'put', valeur: { cle: 'molecules', valeur: [...liste, ...nouveaux].sort((x, y) => x.localeCompare(y, 'fr')) } });
+    entrees.forEach((e, i) => ops.push({ store: 'receptions', type: 'add', valeur: {
+      molecule: e.molecule, date: dateAujourdhui(), lot: e.lot || 'Stock initial', datePeremption: e.datePeremption || '', quantite: e.quantite || 0,
+      fournisseur: 'Stock initial — ' + file.name, nomCommercial: e.nomCommercial.join(', '), createdAt: new Date(base + i).toISOString() } }));
+    ops.push({ store: 'parametres', type: 'put', valeur: { cle: CLE_STOCK_INITIAL, valeur: quand } });
+    try { await ecrireEnBloc(ops); }
+    catch(e) { console.error(e); toast('❌ Import interrompu : rien n\'a été modifié, le stock initial précédent est intact', 'error'); return; }
+    try { localStorage.setItem('stock_initial_charge', quand); } catch(e) {}
+    if (nouveaux.length) await rechargerCombosMolecules();
     toast(`✅ ${entrees.length} lots importés` + (nouveaux.length ? ` · ${nouveaux.length} nouveaux médicaments ajoutés à la liste` : ''), 'success');
     try { await chargerStock(); } catch(e) {}
   } catch(e) {
@@ -6681,32 +6696,6 @@ async function importerStockInitial(input) {
   }
 }
 
-async function importerDonnéesStock(entrees, source) {
-  // Vider le stock existant d'abord si c'est un stock initial
-  const wsS  = 'receptions';
-  const wsSM = 'suivi_stock';
-
-  let count = 0;
-  const now = new Date().toISOString();
-  for (const e of entrees) {
-    try {
-      await dbAdd('receptions', {
-        molecule:       e.molecule,
-        date:           e.date || '2026-06-14',
-        lot:            e.lot || 'Stock initial',
-        datePeremption: e.datePeremption || '',
-        quantite:       e.quantite || 0,
-        fournisseur:    e.fournisseur || source,
-        nomCommercial:  e.nomCommercial || '',
-        createdAt:      e.createdAt || now,
-      });
-      count++;
-    } catch(err) {
-      console.warn('Skip:', e.molecule, err.message);
-    }
-  }
-  return count;
-}
 
 // ═══════════════════════════════════════════════════════════════════
 // PROPOSITION DE COMMANDE

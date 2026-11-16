@@ -73,6 +73,7 @@ Chaque scénario affiche ✓ (réussi) ou ✗ (échec) avec la raison. Compter e
 | 30 | Sortie sur un lot existant | le lot se choisit dans la liste des lots du médicament ; quantité supérieure au lot refusée ; médicament sans stock refusé ; aucun lot fantôme, la délivrance suivante voit le vrai stock |
 | 31 | Prescription sans quantité | le médicament prescrit sans quantité est enregistré au dossier, annoncé à la confirmation, sans effet sur le stock ; conservé après modification |
 | 32 | Modification : lots conservés | corriger le nom d'un patient ne redistribue pas la délivrance (lot périmé depuis conservé) ; une quantité modifiée est resservie en FEFO |
+| 33 | Import du stock initial et renommage : tout ou rien | import interrompu : l'ancien stock initial reste entier ; renommage interrompu : aucun enregistrement renommé ; puis opérations complètes |
 
 Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 30 dans un vrai navigateur (Chromium).
 Les scénarios 18 à 30 vérifient les corrections de l'audit de novembre 2026 ; ceux du passage de relais partagent les outils de `scenarios/_relais.js`.
