@@ -69,6 +69,7 @@ Chaque scénario affiche ✓ (réussi) ou ✗ (échec) avec la raison. Compter e
 | 26 | Stock initial chargé une seule fois | premier lancement interrompu : rien d'enregistré, puis chargement complet ; repère gardé dans la base : pas de second chargement si les préférences du navigateur sont perdues |
 | 27 | Écriture confirmée après validation | ajout, modification, réglage et suppression confirmés seulement une fois la transaction validée, en durabilité stricte ; transaction annulée signalée en erreur |
 | 28 | Base incomplète jamais effacée | une partie de la base manque : rien n'est supprimé, message clair au démarrage, sauvegarde de secours de ce qui est lisible |
+| 29 | Inventaire : solde des « à régulariser » | quantités délivrées au-delà du stock connu soldées quand tous les lots du médicament sont comptés, pas avant ; entrée « Inventaire » traçable ; stock juste après une réception |
 
 Les scénarios 01 à 09 tournent dans un navigateur simulé ; 10 à 16 dans un vrai navigateur (Chromium).
 

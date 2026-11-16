@@ -5729,7 +5729,8 @@ function afficherInventaire() {
       .filter(l => l.lot !== LOT_A_REGULARISER && (vides || l.restant !== 0 || b.comptes[invCle(mol, l.lot)] != null))
       .sort((x, y) => String(x.datePeremption).localeCompare(String(y.datePeremption)));
     if (!lots.length) return;
-    rows.push(`<tr style="background:var(--sable)"><td colspan="4" style="font-weight:700;font-size:.84rem">${esc(mol)}${uniteDe(mol) === 'plaquette' ? ' <span class="badge" style="font-size:.62rem">plaquettes</span>' : ''}</td></tr>`);
+    const dette = -(_invMoteur[mol][LOT_A_REGULARISER]?.restant || 0);   // délivré au-delà du stock connu
+    rows.push(`<tr style="background:var(--sable)"><td colspan="4" style="font-weight:700;font-size:.84rem">${esc(mol)}${uniteDe(mol) === 'plaquette' ? ' <span class="badge" style="font-size:.62rem">plaquettes</span>' : ''}${dette > 0 ? ` <span class="badge badge-warn" style="font-size:.62rem;font-weight:600" title="Quantité délivrée au-delà du stock connu">⚠ ${dette} à régulariser — soldé à la validation si tous les lots sont comptés</span>` : ''}</td></tr>`);
     lots.forEach(l => {
       nbLots++;
       const k = invCle(mol, l.lot);
@@ -5817,10 +5818,26 @@ async function validerInventaire() {
   (b.nouveaux || []).forEach(n => lignes.push({ molecule: n.molecule, lot: libelleLot(n.datePeremption), datePeremption: n.datePeremption,
     theorique: 0, compte: n.quantite, ecart: n.quantite, nouveau: true }));
   if (!lignes.length) { toast('Aucun comptage saisi', 'error'); return; }
+  // Quantités « à régulariser » (délivrées au-delà du stock connu) : une fois TOUS les lots d'un médicament comptés,
+  // le comptage fait foi et cette dette est soldée par une entrée « Inventaire ». Sinon elle fausserait le stock pour toujours.
+  const comptes = {};
+  lignes.forEach(l => (comptes[l.molecule] = comptes[l.molecule] || new Set()).add(l.lot));
+  const soldes = [];
+  Object.entries(comptes).forEach(([mol, lotsComptes]) => {
+    const reg = _invMoteur[mol]?.[LOT_A_REGULARISER];
+    if (!reg || reg.restant >= 0) return;
+    const tousComptes = Object.values(_invMoteur[mol]).every(l => l.lot === LOT_A_REGULARISER || l.restant === 0 || lotsComptes.has(l.lot));
+    if (tousComptes) soldes.push({ molecule: mol, lot: LOT_A_REGULARISER, datePeremption: '', theorique: reg.restant, compte: 0, ecart: -reg.restant, regularisation: true });
+  });
+  const nbComptes = lignes.length;
+  const ecartsComptes = lignes.filter(l => l.ecart !== 0);
+  lignes.push(...soldes);
   const ecarts = lignes.filter(l => l.ecart !== 0);
-  const moins = ecarts.filter(l => l.ecart < 0).reduce((a, l) => a - l.ecart, 0);
-  const plus  = ecarts.filter(l => l.ecart > 0).reduce((a, l) => a + l.ecart, 0);
-  if (!(await confirmer(`${lignes.length} lot(s) compté(s), ${ecarts.length} écart(s) :\n• ${moins} unité(s) en moins (enregistrées en sortie « Inventaire »)\n• ${plus} unité(s) en plus (enregistrées en entrée « Inventaire »)`, { titre: 'Valider l\'inventaire ?', ok: 'Valider' }))) return;
+  const moins = ecartsComptes.filter(l => l.ecart < 0).reduce((a, l) => a - l.ecart, 0);
+  const plus  = ecartsComptes.filter(l => l.ecart > 0).reduce((a, l) => a + l.ecart, 0);
+  if (!(await confirmer(`${nbComptes} lot(s) compté(s), ${ecartsComptes.length} écart(s) :\n• ${moins} unité(s) en moins (enregistrées en sortie « Inventaire »)\n• ${plus} unité(s) en plus (enregistrées en entrée « Inventaire »)` +
+      (soldes.length ? `\n\n${soldes.length} médicament(s) entièrement compté(s) avaient des quantités « à régulariser » (${soldes.reduce((a, l) => a + l.ecart, 0)} au total) : elles sont soldées, le comptage fait foi.` : ''),
+      { titre: 'Valider l\'inventaire ?', ok: 'Valider' }))) return;
   const date = dateAujourdhui(), now = Date.now();
   let i = 0;
   for (const l of ecarts) {
@@ -5832,7 +5849,7 @@ async function validerInventaire() {
   invs.unshift({ le: new Date().toISOString(), date, type: 'medicaments', mission: getMissionNumero() || '', lignes });
   await setParam('inventaires', invs.slice(0, 50));
   localStorage.removeItem(INV_KEY);
-  toast(`✅ Inventaire enregistré — ${ecarts.length} écart(s) corrigé(s)`, 'success');
+  toast(`✅ Inventaire enregistré — ${ecartsComptes.length} écart(s) corrigé(s)${soldes.length ? ` · ${soldes.length} « à régulariser » soldé(s)` : ''}`, 'success');
   await chargerInventaire();
   try { await chargerStock(); } catch(e) {}
 }
