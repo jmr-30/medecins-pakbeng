@@ -5003,6 +5003,7 @@ function controlerSauvegarde(data) {
   const pbs = [];
   if (!data || typeof data !== 'object' || Array.isArray(data)) return ['le fichier ne contient pas une sauvegarde'];
   if (data.appName !== 'MedecinsPakbeng' || !data.version) return ['ce fichier ne vient pas de l\'application'];
+  if (typeof data.exportedAt !== 'string' || isNaN(new Date(data.exportedAt))) pbs.push('la date de la sauvegarde est absente');
   const objet = r => r && typeof r === 'object' && !Array.isArray(r);
   for (const [store, type] of STORES_DONNEES) {
     const l = data[store];
@@ -5070,6 +5071,17 @@ async function reprendreSauvegarde(input) {
   }
   const f = iso => iso ? new Date(iso).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '?';
 
+  // Ce fichier est-il plus ancien que celui déjà repris sur cet appareil ? (ou le même ?)
+  let derniere = null;
+  try { derniere = JSON.parse(localStorage.getItem('base_reprise') || 'null'); } catch(e) {}
+  const dejaRepris = !!(derniere?.exportedAt && data.exportedAt === derniere.exportedAt);
+  if (derniere?.exportedAt && data.exportedAt < derniere.exportedAt) {
+    await confirmer(`Ce fichier date du ${f(data.exportedAt)}.\n\nIl est plus ANCIEN que la sauvegarde déjà reprise sur cet appareil (${libelleRole(derniere.role)} — ${f(derniere.exportedAt)}).\n\n` +
+      `Le reprendre ferait revenir d'anciennes données. Rien n'a été modifié.\n\nVérifiez que vous avez choisi le dernier fichier reçu.`,
+      { titre: '⛔ Fichier trop ancien', ok: 'Compris', annuler: false, danger: true });
+    return;
+  }
+
   // Saisies annulées volontairement (selon le journal de la sauvegarde) : à ne pas réintégrer
   const journalSauv = data.parametres.find(p => p.cle === 'journal_corrections')?.valeur || [];
   const annuleesSauv = new Set(journalSauv.filter(j => j.action === 'annulation' && j.avant?.createdAt).map(j => j.type + '|' + j.avant.createdAt));
@@ -5095,6 +5107,7 @@ async function reprendreSauvegarde(input) {
   msg += `\n\nLes données de cet appareil seront REMPLACÉES par celles de la sauvegarde (corrections et annulations comprises). Les réglages de l'appareil sont conservés.`;
   if (aGarder.length) msg += `\n\n✅ Saisies faites ici et absentes de la sauvegarde, qui seront CONSERVÉES (${aGarder.length}) :\n${liste(aGarder)}`;
   if (modifsGardees.length) msg += `\n\n✅ Corrections faites ici plus récentes que la sauvegarde, qui seront CONSERVÉES (${modifsGardees.length}) :\n${liste(modifsGardees)}`;
+  if (dejaRepris) msg += `\n\nℹ Ce fichier a DÉJÀ été repris sur cet appareil${derniere.le ? ' le ' + f(derniere.le) : ''}. Le reprendre une seconde fois ne change rien.`;
   if (data.provenance?.role && data.provenance.role === roleAppareil()) msg += `\n\n⚠ Cette sauvegarde vient d'un appareil de même rôle que celui-ci (${libelleRole(roleAppareil())}). Vérifiez qu'il s'agit bien du bon fichier.`;
   if (!(await confirmer(msg, { titre: 'Reprendre les données de cette sauvegarde ?', ok: 'Remplacer', danger: true }))) return;
 
@@ -5160,7 +5173,11 @@ async function reprendreSauvegarde(input) {
   // 3. Mission et repères de la reprise
   try {
     if (data.mission) localStorage.setItem('mission_active', JSON.stringify(typeof data.mission === 'string' ? JSON.parse(data.mission) : data.mission));
-    localStorage.setItem('base_reprise', JSON.stringify({ role: data.provenance?.role || '', exportedAt: data.exportedAt }));
+    // Repère de la dernière reprise. Si c'est une sauvegarde de CET appareil qui est restaurée (retour en arrière),
+    // on revient au repère qu'elle portait : le fichier reçu ensuite pourra être repris de nouveau.
+    const propreSauvegarde = !!data.provenance?.role && data.provenance.role === roleAppareil();
+    const repere = propreSauvegarde ? (data.base?.exportedAt ? data.base : null) : { role: data.provenance?.role || '', exportedAt: data.exportedAt, le: new Date().toISOString() };
+    if (repere) localStorage.setItem('base_reprise', JSON.stringify(repere)); else localStorage.removeItem('base_reprise');
     localStorage.setItem('stock_initial_charge', localStorage.getItem('stock_initial_charge') || new Date().toISOString());
     localStorage.setItem('nbConsultationsConnu', String((await dbGetAll('consultations')).length));
     localStorage.setItem('message_apres_reprise', `✅ Données reprises — ${aGarder.length + modifsGardees.length} saisie(s) locale(s) conservée(s)`);
