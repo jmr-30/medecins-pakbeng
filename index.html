@@ -5168,7 +5168,7 @@ async function reprendreSauvegarde(input, fichier) {
     for (const p of data.parametres) {
       if (p.cle === CLE_DOSSIER || p.cle === CLE_COPIE) continue;
       if (p.cle === 'journal_corrections') params.set(p.cle, fusionner(p.cle, p.valeur, 500));
-      else if (p.cle === 'inventaires') params.set(p.cle, fusionner(p.cle, p.valeur, 50));
+      else if (p.cle === 'inventaires') params.set(p.cle, limiterInventaires(fusionner(p.cle, p.valeur, Infinity)));
       else if (LISTES_NOMS.includes(p.cle) && Array.isArray(p.valeur)) {
         // Listes : les noms corrigés ici restent corrigés
         const noms = p.valeur.map(v => renomIci.filter(x => !x.liste || x.liste === p.cle).reduce((n, x) => n === x.ancien ? x.nouveau : n, v));
@@ -5364,6 +5364,13 @@ async function modifierConsultation(id, contexte) {
   if (enCours && !_editionConsultation &&
       !(await confirmer('La consultation en cours de saisie sera effacée pour ouvrir la modification.', { titre: 'Modifier cette consultation ?', ok: 'Continuer', danger: true }))) return;
 
+  // Le formulaire a 5 lignes de prescription et 4 pathologies : une consultation qui en a davantage (données importées)
+  // serait tronquée à l'enregistrement. On refuse la modification plutôt que de perdre des lignes.
+  if ((c.prescription || []).length > 5 || (c.pathologies || []).length > 4) {
+    await confirmer('Cette consultation contient plus de 5 médicaments ou plus de 4 pathologies : la modifier ici ferait perdre les lignes en trop.\n\nElle n\'a pas été modifiée.', { titre: 'Modification impossible', ok: 'Compris', annuler: false });
+    return;
+  }
+
   _editionRetour = contexte || 'recherche';
   goScreen('consultation');
   effacerConsultation();
@@ -5439,7 +5446,7 @@ async function chargerMouvements(type) {
       <div style="min-width:0">
         <div style="font-size:.84rem;font-weight:700;color:var(--brun)">${esc(m.molecule)}</div>
         <div style="font-size:.74rem;color:var(--brun-doux)">
-          ${m.date ? jourLocal(m.date).toLocaleDateString('fr-FR') : '—'} · ${esc(m.lot || '—')} · <strong>${m.quantite || 0} u.</strong>
+          ${m.date ? jourLocal(m.date).toLocaleDateString('fr-FR') : '—'} · ${esc(m.lot || '—')} · <strong>${m.quantite || 0} ${libUnite(m.molecule, m.quantite || 0)}</strong>
           ${type === 'receptions' ? ' · ' + esc(m.fournisseur || '') : ' · ' + esc(m.motif || '')}
         </div>
       </div>
@@ -5530,6 +5537,13 @@ function statutLot(datePeremption, lot) {
   if (d < auj) return 'perime';
   if (d < dans60) return 'bientot';
   return 'ok';
+}
+
+// Historique des inventaires (du plus récent au plus ancien) : on garde les 50 derniers de CHAQUE sorte.
+// Médicaments et consommables partageaient la même limite : beaucoup d'inventaires de l'un effaçaient ceux de l'autre.
+function limiterInventaires(invs) {
+  const n = {};
+  return invs.filter(x => { const t = x.type || 'medicaments'; n[t] = (n[t] || 0) + 1; return n[t] <= 50; });
 }
 
 // Anomalies de stock : situations où le stock calculé ne peut pas correspondre à l'étagère.
@@ -5917,9 +5931,15 @@ async function validerInventaire() {
   const ecartsComptes = lignes.filter(l => l.ecart !== 0);
   lignes.push(...soldes);
   const ecarts = lignes.filter(l => l.ecart !== 0);
-  const moins = ecartsComptes.filter(l => l.ecart < 0).reduce((a, l) => a - l.ecart, 0);
-  const plus  = ecartsComptes.filter(l => l.ecart > 0).reduce((a, l) => a + l.ecart, 0);
-  if (!(await confirmer(`${nbComptes} lot(s) compté(s), ${ecartsComptes.length} écart(s) :\n• ${moins} unité(s) en moins (enregistrées en sortie « Inventaire »)\n• ${plus} unité(s) en plus (enregistrées en entrée « Inventaire »)` +
+  // Unités et plaquettes (contraceptifs) ne s'additionnent pas : elles sont annoncées séparément
+  const somme = l => {
+    const u = l.filter(x => uniteDe(x.molecule) !== 'plaquette').reduce((a, x) => a + Math.abs(x.ecart), 0);
+    const pl = l.filter(x => uniteDe(x.molecule) === 'plaquette').reduce((a, x) => a + Math.abs(x.ecart), 0);
+    return `${u} unité(s)` + (pl ? ` et ${pl} plaquette(s)` : '');
+  };
+  const moins = somme(ecartsComptes.filter(l => l.ecart < 0));
+  const plus  = somme(ecartsComptes.filter(l => l.ecart > 0));
+  if (!(await confirmer(`${nbComptes} lot(s) compté(s), ${ecartsComptes.length} écart(s) :\n• ${moins} en moins (enregistrées en sortie « Inventaire »)\n• ${plus} en plus (enregistrées en entrée « Inventaire »)` +
       (soldes.length ? `\n\n${soldes.length} médicament(s) entièrement compté(s) avaient des quantités « à régulariser » (${soldes.reduce((a, l) => a + l.ecart, 0)} au total) : elles sont soldées, le comptage fait foi.` : ''),
       { titre: 'Valider l\'inventaire ?', ok: 'Valider' }))) return;
   const date = dateAujourdhui(), now = Date.now();
@@ -5931,7 +5951,7 @@ async function validerInventaire() {
   }
   const invs = await getParam('inventaires', []);
   invs.unshift({ le: new Date().toISOString(), date, type: 'medicaments', mission: getMissionNumero() || '', lignes });
-  await setParam('inventaires', invs.slice(0, 50));
+  await setParam('inventaires', limiterInventaires(invs));
   localStorage.removeItem(INV_KEY);
   toast(`✅ Inventaire enregistré — ${ecartsComptes.length} écart(s) corrigé(s)${soldes.length ? ` · ${soldes.length} « à régulariser » soldé(s)` : ''}`, 'success');
   await chargerInventaire();
@@ -6036,7 +6056,7 @@ async function validerInventaireConso() {
   const invs = await getParam('inventaires', []);
   invs.unshift({ le: new Date().toISOString(), date: dateAujourdhui(), type: 'consommables', mission: getMissionNumero() || '',
                  remarque: (b.remarque || '').trim(), lignes });
-  await setParam('inventaires', invs.slice(0, 50));
+  await setParam('inventaires', limiterInventaires(invs));
   localStorage.removeItem(CONSO_KEY);
   document.getElementById('consoRemarque').value = '';
   toast(`✅ Inventaire enregistré — ${lignes.length} article(s)`, 'success');
@@ -6222,8 +6242,10 @@ async function chargerStock() {
     const aCommander = (sMin != null && stockUtile <= sMin && sCon != null)
       ? Math.max(sCon - stockUtile, 0) : null;
 
-    const stockColor = stockTotal <= 0 ? 'var(--rouge)'
-      : (sMin != null && stockTotal <= sMin) ? 'var(--orange)' : 'var(--vert)';
+    // La couleur suit le stock UTILISABLE (hors périmés), comme le seuil de commande ; les périmés sont annoncés à part
+    const perimes = Math.max(stockTotal - stockUtile, 0);
+    const stockColor = stockUtile <= 0 ? 'var(--rouge)'
+      : (sMin != null && stockUtile <= sMin) ? 'var(--orange)' : 'var(--vert)';
 
     let badgeCmd = '<span style="color:#b0bec5">—</span>';
     if (aCommander != null) {
@@ -6253,7 +6275,7 @@ async function chargerStock() {
       ${nbLots > 1 ? `<span id="lot-toggle-${molIdx}" class="lot-toggle" style="margin-right:4px;color:var(--brun-clair);font-size:.75rem">▶</span>` : ''}
         ${esc(mol)}${suivi ? '' : ' <span class="badge" style="background:#f5f7f8;color:#90a4ae;font-size:.62rem">non suivi</span>'}
       </td>
-      <td class="c-stock" style="font-weight:800;color:${suivi ? stockColor : 'var(--brun-clair)'};font-size:1rem;text-align:center">${stockTotal}${uniteDe(mol) === 'plaquette' ? '<div style="font-size:.62rem;font-weight:600">plaq.</div>' : ''}</td>
+      <td class="c-stock" style="font-weight:800;color:${suivi ? stockColor : 'var(--brun-clair)'};font-size:1rem;text-align:center">${stockTotal}${uniteDe(mol) === 'plaquette' ? '<div style="font-size:.62rem;font-weight:600">plaq.</div>' : ''}${perimes > 0 ? `<div style="font-size:.62rem;font-weight:700;color:var(--rouge)">dont ${perimes} périmé${perimes > 1 ? 's' : ''}</div>` : ''}</td>
       <td class="c-lot${nbLots > 1 ? ' multi' : ''}" style="font-size:.75rem;color:var(--brun-doux);text-align:center">
         ${nbLots === 1 && lotsTries[0] ? `${lotsTries[0].lot !== '(sans lot)' ? lotsTries[0].lot : '—'}` : `${nbLots} lot${nbLots > 1 ? 's' : ''}`}
       </td>
@@ -8239,8 +8261,8 @@ async function importerJSON(input) {
       } else if (p.cle === 'inventaires' && Array.isArray(p.valeur)) {
         const local = await getParam('inventaires', []);
         const vus = new Set(local.map(x => x.le));
-        await setParam('inventaires', [...local, ...p.valeur.filter(x => !vus.has(x.le))]
-          .sort((a, b) => String(b.le).localeCompare(String(a.le))).slice(0, 50));
+        await setParam('inventaires', limiterInventaires([...local, ...p.valeur.filter(x => !vus.has(x.le))]
+          .sort((a, b) => String(b.le).localeCompare(String(a.le)))));
         continue;
       } else if (p.cle === 'journal_corrections' && Array.isArray(p.valeur)) {
         const local = await getParam('journal_corrections', []);
